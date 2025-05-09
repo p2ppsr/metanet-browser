@@ -1,11 +1,24 @@
 import React from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { UserInterface } from '@bsv/brc100-ui-react-components';
+import packageJson from '../package.json';
+
+async function onWalletReady() {
+    console.log('onWalletReady');
+}
+
+async function nativeHandlers() {
+    console.log('nativeHandlers');
+}
 
 export default function RootLayout() {
   return (
-    <Text style={styles.text}>
-      blank
-    </Text>
+    <UserInterface
+      onWalletReady={onWalletReady}
+      nativeHandlers={nativeHandlers}
+      appVersion={packageJson.version}
+      appName="Metanet Mobile"
+    />
   );
 }
 
