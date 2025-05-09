@@ -1,24 +1,52 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { UserInterface } from '@bsv/brc100-ui-react-components';
+import { Text, StyleSheet, View } from 'react-native';
+import { WalletContextProvider } from './context/WalletContext';
+import { UserContextProvider } from './context/UserContext';
 import packageJson from '../package.json';
+import { WalletInterface } from '@bsv/sdk';
+import { NativeHandlers } from './context/UserContext';
 
-async function onWalletReady() {
-    console.log('onWalletReady');
+async function onWalletReady(wallet: WalletInterface): Promise<(() => void) | undefined> {
+    return () => {
+        console.log('onWalletReady', wallet);
+    }
 }
 
-async function nativeHandlers() {
-    console.log('nativeHandlers');
+const nativeHandlers: NativeHandlers = {
+    isFocused: async () => false,
+    onFocusRequested: async () => { },
+    onFocusRelinquished: async () => { },
+    onDownloadFile: async (fileData: Blob, fileName: string) => {
+      try {
+          const url = window.URL.createObjectURL(fileData);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          return true;
+      } catch (error) {
+          console.error('Download failed:', error);
+          return false;
+      }
+    }
 }
 
 export default function RootLayout() {
   return (
-    <UserInterface
-      onWalletReady={onWalletReady}
-      nativeHandlers={nativeHandlers}
-      appVersion={packageJson.version}
+    <UserContextProvider 
+      nativeHandlers={nativeHandlers} 
+      appVersion={packageJson.version} 
       appName="Metanet Mobile"
-    />
+    >
+      <WalletContextProvider onWalletReady={onWalletReady}>
+        <View>
+          <Text style={styles.text}>Getting Started</Text>
+        </View>
+      </WalletContextProvider>
+    </UserContextProvider>
   );
 }
 

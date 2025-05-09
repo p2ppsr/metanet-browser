@@ -12,7 +12,7 @@ import {
   TwilioPhoneInteractor,
   WABClient,
   PermissionRequest
-} from '@bsv/wallet-toolbox-client'
+} from '@bsv/wallet-toolbox-mobile'
 import {
   KeyDeriver,
   PrivateKey,
@@ -21,7 +21,7 @@ import {
   LookupResolver,
   WalletInterface
 } from '@bsv/sdk'
-import { DEFAULT_SETTINGS, WalletSettings, WalletSettingsManager } from '@bsv/wallet-toolbox-client/out/src/WalletSettingsManager'
+import { DEFAULT_SETTINGS, WalletSettings, WalletSettingsManager } from '@bsv/wallet-toolbox-mobile/out/src/WalletSettingsManager'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { DEFAULT_WAB_URL, DEFAULT_STORAGE_URL, DEFAULT_CHAIN, ADMIN_ORIGINATOR } from './config'
@@ -149,12 +149,12 @@ export interface WABConfig {
 }
 
 interface WalletContextProps {
-  children?: React.ReactNode;
+  children: React.ReactNode;
   onWalletReady: (wallet: WalletInterface) => Promise<(() => void) | undefined>;
 }
 
 export const WalletContextProvider: React.FC<WalletContextProps> = ({
-  children,
+  children = <></>,
   onWalletReady
 }) => {
   const [managers, setManagers] = useState<ManagerState>({});
@@ -503,24 +503,24 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     }
   }, [wabUrl]);
 
-  // Auto-fetch WAB info and apply default configuration when component mounts
-  useEffect(() => {
-    if (!localStorage.snap && configStatus === 'initial') {
-      (async () => {
-        try {
-          const info = await fetchWabInfo();
+  // does not work on mobile
+//   useEffect(() => {
+//     if (!localStorage.snap && configStatus === 'initial') {
+//       (async () => {
+//         try {
+//           const info = await fetchWabInfo();
 
-          if (info && info.supportedAuthMethods && info.supportedAuthMethods.length > 0) {
-            setSelectedAuthMethod(info.supportedAuthMethods[0]);
-            // Automatically apply default configuration
-            setConfigStatus('configured');
-          }
-        } catch (error: any) {
-          console.error("Error in initial WAB setup", error);
-        }
-      })();
-    }
-  }, [wabUrl, configStatus, fetchWabInfo]);
+//           if (info && info.supportedAuthMethods && info.supportedAuthMethods.length > 0) {
+//             setSelectedAuthMethod(info.supportedAuthMethods[0]);
+//             // Automatically apply default configuration
+//             setConfigStatus('configured');
+//           }
+//         } catch (error: any) {
+//           console.error("Error in initial WAB setup", error);
+//         }
+//       })();
+//     }
+//   }, [wabUrl, configStatus, fetchWabInfo]);
 
   // For new users: mark configuration complete when WalletConfig is submitted.
   const finalizeConfig = (wabConfig: WABConfig): boolean => {
@@ -629,17 +629,18 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // Load snapshot function
   const loadWalletSnapshot = useCallback(async (walletManager: WalletAuthenticationManager) => {
-    if (localStorage.snap) {
-      try {
-        const snapArr = Utils.toArray(localStorage.snap, 'base64');
-        await walletManager.loadSnapshot(snapArr);
-        // We'll handle setting snapshotLoaded in a separate effect watching authenticated state
-      } catch (err: any) {
-        console.error("Error loading snapshot", err);
-        localStorage.removeItem('snap'); // Clear invalid snapshot
-        toast.error("Couldn't load saved data: " + err.message);
-      }
-    }
+    // if (localStorage.snap) {
+    //   try {
+    //     const snapArr = Utils.toArray(localStorage.snap, 'base64');
+    //     await walletManager.loadSnapshot(snapArr);
+    //     // We'll handle setting snapshotLoaded in a separate effect watching authenticated state
+    //   } catch (err: any) {
+    //     console.error("Error loading snapshot", err);
+    //     localStorage.removeItem('snap'); // Clear invalid snapshot
+    //     toast.error("Couldn't load saved data: " + err.message);
+    //   }
+    // }
+    toast.error("Snapshots are not supported on mobile");
   }, []);
 
   // Watch for wallet authentication after snapshot is loaded
@@ -738,9 +739,9 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   const logout = useCallback(() => {
     // Clear localStorage to prevent auto-login
-    if (localStorage.snap) {
-      localStorage.removeItem('snap');
-    }
+    // if (localStorage.snap) {
+    //   localStorage.removeItem('snap');
+    // }
 
     // Reset manager state
     setManagers({});
@@ -792,24 +793,25 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     return Promise.all(dataPromises)
   }
 
-  useEffect(() => {
-    if (typeof managers.permissionsManager === 'object') {
-      (async () => {
-        const storedApps = window.localStorage.getItem('recentApps')
-        if (storedApps) {
-          setRecentApps(JSON.parse(storedApps))
-        }
-        // Parse out the app data from the domains
-        const appDomains = await getApps({ permissionsManager: managers.permissionsManager!, adminOriginator })
-        const parsedAppData = await resolveAppDataFromDomain({ appDomains })
-        parsedAppData.sort((a, b) => a.appName.localeCompare(b.appName))
-        setRecentApps(parsedAppData)
+  // no local storage on mobile
+//   useEffect(() => {
+//     if (typeof managers.permissionsManager === 'object') {
+//     //   (async () => {
+//     //     // const storedApps = window.localStorage.getItem('recentApps')
+//     //     if (storedApps) {
+//     //       setRecentApps(JSON.parse(storedApps))
+//     //     }
+//     //     // Parse out the app data from the domains
+//     //     const appDomains = await getApps({ permissionsManager: managers.permissionsManager!, adminOriginator })
+//     //     const parsedAppData = await resolveAppDataFromDomain({ appDomains })
+//     //     parsedAppData.sort((a, b) => a.appName.localeCompare(b.appName))
+//     //     setRecentApps(parsedAppData)
 
-        // store for next app load
-        window.localStorage.setItem('recentApps', JSON.stringify(parsedAppData))
-      })()
-    }
-  }, [adminOriginator, managers?.permissionsManager])
+//     //     // store for next app load
+//     //     // window.localStorage.setItem('recentApps', JSON.stringify(parsedAppData))
+//     //   })()
+//     }
+//   }, [adminOriginator, managers?.permissionsManager])
 
   const contextValue = useMemo<WalletContextValue>(() => ({
     managers,

@@ -26,19 +26,19 @@ async function fetchAndCacheAppData(
   const manifestKey = `manifest_${appDomain}`;
 
   // Try to load data from cache first
-  const cachedFavicon = window.localStorage.getItem(faviconKey);
-  const cachedManifest = window.localStorage.getItem(manifestKey);
+  // const cachedFavicon = window.localStorage.getItem(faviconKey);
+  // const cachedManifest = window.localStorage.getItem(manifestKey);
 
-  if (cachedFavicon) {
-    setAppIcon(cachedFavicon);
-  } else {
+  // if (cachedFavicon) {
+  //   setAppIcon(cachedFavicon);
+  // } else {
     // If no cache, default to fallback icon
-    setAppIcon(DEFAULT_APP_ICON);
-  }
+  setAppIcon(DEFAULT_APP_ICON);
+  // }
 
-  if (cachedManifest) {
-    setAppName(cachedManifest);
-  }
+  // if (cachedManifest) {
+  // setAppName(cachedManifest);
+  // }
 
   // Always fetch the latest data
   try {
@@ -49,14 +49,14 @@ async function fetchAndCacheAppData(
 
       if (isValidImage) {
         setAppIcon(faviconUrl);
-        window.localStorage.setItem(faviconKey, faviconUrl);
+        // window.localStorage.setItem(faviconKey, faviconUrl);
       } else {
         setAppIcon(DEFAULT_APP_ICON);
       }
 
       if (typeof manifest.name === 'string') {
         setAppName(manifest.name);
-        window.localStorage.setItem(manifestKey, manifest.name);
+        // window.localStorage.setItem(manifestKey, manifest.name);
       }
     }
   } catch (error) {
