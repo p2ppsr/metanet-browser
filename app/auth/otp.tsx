@@ -13,8 +13,14 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useTheme } from '@/context/theme/ThemeContext';
+import { useThemeStyles } from '@/context/theme/useThemeStyles';
 
 export default function OtpScreen() {
+  // Apply theme
+  const { colors, isDark } = useTheme();
+  const themeStyles = useThemeStyles();
+
   const params = useLocalSearchParams();
   const phoneNumber = params.phoneNumber as string;
   
@@ -96,15 +102,15 @@ export default function OtpScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidingView}
       >
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>Verification Code</Text>
-          <Text style={styles.subtitle}>
+        <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Verification Code</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Enter the 6-digit code sent to {phoneNumber}
           </Text>
           
@@ -117,7 +123,18 @@ export default function OtpScreen() {
                     ref={(ref) => {
                       inputRefs.current[index] = ref;
                     }}
-                    style={[styles.otpInput, otp.length === index && styles.otpInputFocused]}
+                    style={[
+                      styles.otpInput, 
+                      { 
+                        backgroundColor: colors.inputBackground,
+                        borderColor: colors.inputBorder,
+                        color: colors.textPrimary
+                      },
+                      otp.length === index && {
+                        borderColor: colors.primary,
+                        borderWidth: 2
+                      }
+                    ]}
                     keyboardType="phone-pad"
                     maxLength={1}
                     value={otp[index] || ''}
@@ -150,26 +167,29 @@ export default function OtpScreen() {
           <TouchableOpacity 
             style={[
               styles.verifyButton, 
-              otp.length !== 6 && styles.verifyButtonDisabled
+              { backgroundColor: colors.primary },
+              otp.length !== 6 && {
+                backgroundColor: colors.inputBorder
+              }
             ]} 
             onPress={handleVerify}
             disabled={otp.length !== 6 || loading}
           >
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.buttonText} />
             ) : (
-              <Text style={styles.verifyButtonText}>Verify</Text>
+              <Text style={[styles.verifyButtonText, { color: colors.buttonText }]}>Verify</Text>
             )}
           </TouchableOpacity>
           
           <View style={styles.resendContainer}>
-            <Text style={styles.resendText}>Didn't receive the code?</Text>
+            <Text style={[styles.resendText, { color: colors.textSecondary }]}>Didn't receive the code?</Text>
             {canResend ? (
               <TouchableOpacity onPress={handleResend} disabled={loading}>
-                <Text style={styles.resendActionText}>Resend Code</Text>
+                <Text style={[styles.resendActionText, { color: colors.secondary }]}>Resend Code</Text>
               </TouchableOpacity>
             ) : (
-              <Text style={styles.countdownText}>
+              <Text style={[styles.countdownText, { color: colors.textSecondary, opacity: 0.7 }]}>
                 Resend in {countdown}s
               </Text>
             )}
@@ -179,7 +199,7 @@ export default function OtpScreen() {
             style={styles.changeNumberButton}
             onPress={() => router.back()}
           >
-            <Text style={styles.changeNumberText}>Change Phone Number</Text>
+            <Text style={[styles.changeNumberText, { color: colors.secondary }]}>Change Phone Number</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -190,7 +210,6 @@ export default function OtpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -209,7 +228,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 30,
     textAlign: 'center',
   },
@@ -223,9 +241,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   otpInput: {
-    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 10,
     fontSize: 20,
     padding: 12,
@@ -233,12 +249,8 @@ const styles = StyleSheet.create({
     width: 45,
     height: 55,
   },
-  otpInputFocused: {
-    borderColor: '#0066cc',
-    borderWidth: 2,
-  },
+  otpInputFocused: {},  // Styles now applied inline with theme colors
   verifyButton: {
-    backgroundColor: '#0066cc',
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 10,
@@ -246,11 +258,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  verifyButtonDisabled: {
-    backgroundColor: '#cccccc',
-  },
+  verifyButtonDisabled: {}, // Styles now applied inline with theme colors
   verifyButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -261,21 +270,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   resendText: {
-    color: '#666',
     marginRight: 5,
   },
   resendActionText: {
-    color: '#0066cc',
     fontWeight: 'bold',
   },
-  countdownText: {
-    color: '#999',
-  },
+  countdownText: {},  // Color now applied inline with theme colors
   changeNumberButton: {
     marginTop: 20,
   },
   changeNumberText: {
-    color: '#0066cc',
     fontSize: 14,
   },
 });
