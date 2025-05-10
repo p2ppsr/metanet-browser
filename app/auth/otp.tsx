@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -8,10 +8,10 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
-  Alert
+  Alert,
+  TextInput
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import OTPInputs from 'react-native-otp-inputs';
 import { StatusBar } from 'expo-status-bar';
 
 export default function OtpScreen() {
@@ -22,6 +22,9 @@ export default function OtpScreen() {
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(60); // 60 second countdown for resending OTP
   const [canResend, setCanResend] = useState(false);
+
+  // Create refs for the input fields
+  const inputRefs = useRef<Array<TextInput | null>>([]);
   
   // Start countdown timer when component mounts
   useEffect(() => {
@@ -103,16 +106,42 @@ export default function OtpScreen() {
           </Text>
           
           <View style={styles.otpContainer}>
-            <OTPInputs
-              handleChange={setOtp}
-              numberOfInputs={6}
-              autofillFromClipboard
-              autoFocus
-              inputStyles={styles.otpInput}
-              focusStyles={styles.otpInputFocused}
-              style={styles.otpInputsContainer}
-              keyboardType="number-pad"
-            />
+            <View style={styles.otpInputsContainer}>
+              {[0, 1, 2, 3, 4, 5].map((index) => {
+                return (
+                  <TextInput
+                    key={index}
+                    ref={(ref) => {
+                      inputRefs.current[index] = ref;
+                    }}
+                    style={[styles.otpInput, otp.length === index && styles.otpInputFocused]}
+                    keyboardType="phone-pad"
+                    maxLength={1}
+                    value={otp[index] || ''}
+                    onChangeText={(text) => {
+                      // Update the OTP value at this index
+                      if (text.length === 0) {
+                        // Backspace - clear current digit
+                        setOtp(otp.slice(0, index));
+                      } else {
+                        // Add digit to OTP
+                        const newOtp = otp.slice(0, index) + text + otp.slice(index + 1);
+                        setOtp(newOtp);
+                        
+                        // Auto-focus next input if this one is filled
+                        if (index < 5 && text.length === 1) {
+                          // Move to next input using React Native refs
+                          if (inputRefs.current[index + 1]) {
+                            inputRefs.current[index + 1]?.focus();
+                          }
+                        }
+                      }
+                    }}
+                    autoFocus={index === 0}
+                  />
+                );
+              })}
+            </View>
           </View>
           
           <TouchableOpacity 
