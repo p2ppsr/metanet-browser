@@ -4,6 +4,7 @@ import { UserContextProvider, NativeHandlers } from '../context/UserContext';
 import packageJson from '../package.json';
 import { WalletInterface } from '@bsv/sdk';
 import { WalletContextProvider } from '@/context/WalletContext';
+import { ThemeProvider } from '@/context/theme/ThemeContext';
 
 async function onWalletReady(wallet: WalletInterface): Promise<(() => void) | undefined> {
     return () => {
@@ -43,20 +44,40 @@ export default function RootLayout() {
       appName="Metanet Mobile"
     >
       <WalletContextProvider onWalletReady={onWalletReady}>
-        <Stack>
-          <Stack.Screen 
-            name="index" 
-            options={{ 
-              headerShown: false 
-            }} 
-          />
-          <Stack.Screen 
-            name="(tabs)" 
-            options={{ 
-              headerShown: true
-            }} 
-          />
-        </Stack>
+        <ThemeProvider>
+          <Stack
+            screenOptions={{
+              animation: 'slide_from_right', // Default animation for most screens
+            }}
+          >
+            <Stack.Screen 
+              name="config" 
+              options={{ 
+                headerShown: false,
+                animation: 'slide_from_bottom',
+                presentation: 'modal'
+              }}
+            />
+            <Stack.Screen 
+              name="index" 
+              options={{ 
+                headerShown: false
+              }} 
+            />
+            <Stack.Screen 
+              name="(tabs)" 
+              options={{ 
+                headerShown: true
+              }} 
+            />
+            <Stack.Screen 
+              name="auth" 
+              options={{ 
+                headerShown: false 
+              }} 
+            />
+          </Stack>
+        </ThemeProvider>
       </WalletContextProvider>
     </UserContextProvider>
   );

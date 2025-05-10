@@ -2,11 +2,24 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
+import AppLogo from '@/components/AppLogo';
+import { useTheme } from '@/context/theme/ThemeContext';
+import { useThemeStyles } from '@/context/theme/useThemeStyles';
 
 export default function LoginScreen() {
+  // Get theme colors
+  const { colors, isDark } = useTheme();
+  const themeStyles = useThemeStyles();
+  
   // Navigate to phone auth screen
   const handleGetStarted = () => {
     router.push('/auth/phone');
+  };
+
+  // Navigate to config screen
+  const handleConfig = () => {
+    router.push('/config');
   };
 
   return (
@@ -14,15 +27,12 @@ export default function LoginScreen() {
       <StatusBar style="dark" />
       <View style={styles.contentContainer}>
         <View style={styles.logoContainer}>
-          {/* Replace with your app logo */}
-          <View style={styles.logoPlaceholder}>
-            <Text style={styles.logoText}>M</Text>
-          </View>
+          <AppLogo />
         </View>
         
-        <Text style={styles.welcomeTitle}>Welcome to Metanet Mobile</Text>
+        <Text style={styles.welcomeTitle}>Metanet Mobile</Text>
         <Text style={styles.welcomeText}>
-          Your secure gateway to the Bitcoin SV ecosystem
+          Secure BSV Blockchain Wallet
         </Text>
         
         <TouchableOpacity 
@@ -35,6 +45,16 @@ export default function LoginScreen() {
         <Text style={styles.termsText}>
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
+        
+        <TouchableOpacity 
+          style={styles.configButton} 
+          onPress={handleConfig}
+        >
+          <View style={styles.configIconContainer}>
+            <Ionicons name="settings-outline" size={20} color={colors.secondary} />
+            <Text style={styles.configButtonText}>Configure Providers</Text>
+          </View>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -92,6 +112,26 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  configButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 50,
+    padding: 10,
+  },
+  configIconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  configButtonText: {
+    color: '#0066cc',
+    fontSize: 14,
+    marginLeft: 2,
+  },
+  chevronIcon: {
+    marginRight: 2,
   },
   termsText: {
     fontSize: 12,

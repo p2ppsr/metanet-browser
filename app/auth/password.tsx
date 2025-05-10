@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   TouchableOpacity, 
   SafeAreaView,
   ActivityIndicator,
@@ -14,6 +13,8 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/context/theme/ThemeContext';
+import { useThemeStyles } from '@/context/theme/useThemeStyles';
 
 export default function PasswordScreen() {
   const params = useLocalSearchParams();
@@ -22,6 +23,10 @@ export default function PasswordScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Get theme styles and colors
+  const { colors, isDark } = useTheme();
+  const styles = useThemeStyles();
   
   // Check if the password meets minimum requirements
   const isValidPassword = () => {
@@ -61,10 +66,10 @@ export default function PasswordScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardAvoidingView}
+        style={{ flex: 1 }}
       >
         <View style={styles.contentContainer}>
           <Text style={styles.title}>Enter Password</Text>
@@ -73,23 +78,24 @@ export default function PasswordScreen() {
           </Text>
           
           <View style={styles.inputContainer}>
-            <View style={styles.passwordInputContainer}>
+            <View style={styles.input}>
               <TextInput
-                style={styles.passwordInput}
+                style={styles.inputText}
                 placeholder="Password"
+                placeholderTextColor={colors.textSecondary}
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
                 autoFocus
               />
               <TouchableOpacity 
-                style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
               >
                 <Ionicons 
                   name={showPassword ? 'eye-off' : 'eye'} 
                   size={24} 
-                  color="#999"
+                  color={colors.textSecondary}
+                  style={styles.icon}
                 />
               </TouchableOpacity>
             </View>
@@ -103,107 +109,24 @@ export default function PasswordScreen() {
           
           <TouchableOpacity 
             style={[
-              styles.submitButton, 
-              !isButtonEnabled() && styles.submitButtonDisabled
+              styles.button, 
+              !isButtonEnabled() && styles.buttonDisabled
             ]} 
             onPress={handleSubmit}
             disabled={!isButtonEnabled()}
           >
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.buttonText} />
             ) : (
-              <Text style={styles.submitButtonText}>Continue</Text>
+              <Text style={styles.buttonText}>Continue</Text>
             )}
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.forgotPasswordButton}>
-            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          <TouchableOpacity style={{ marginTop: 15 }}>
+            <Text style={styles.link}>Forgot password?</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 30,
-  },
-  passwordInputContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  passwordInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingHorizontal: 15,
-    height: '100%',
-  },
-  eyeIcon: {
-    padding: 10,
-  },
-  validationError: {
-    color: '#ff3b30',
-    fontSize: 12,
-    marginBottom: 15,
-    marginTop: -10,
-  },
-  submitButton: {
-    backgroundColor: '#0066cc',
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 10,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#cccccc',
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  forgotPasswordButton: {
-    marginTop: 15,
-  },
-  forgotPasswordText: {
-    color: '#0066cc',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
