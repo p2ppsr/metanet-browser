@@ -23,26 +23,26 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      <View style={styles.contentContainer}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
         <View style={styles.logoContainer}>
           <AppLogo />
         </View>
         
-        <Text style={styles.welcomeTitle}>Metanet Mobile</Text>
-        <Text style={styles.welcomeText}>
+        <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>Metanet Mobile</Text>
+        <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
           Secure BSV Blockchain Wallet
         </Text>
         
         <TouchableOpacity 
-          style={styles.getStartedButton} 
+          style={[styles.getStartedButton, { backgroundColor: colors.primary }]} 
           onPress={handleGetStarted}
         >
-          <Text style={styles.getStartedButtonText}>Get Started</Text>
+          <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>Get Started</Text>
         </TouchableOpacity>
         
-        <Text style={styles.termsText}>
+        <Text style={[styles.termsText, { color: colors.textSecondary }]}>
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
         
@@ -63,7 +63,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   contentContainer: {
     flex: 1,
@@ -95,21 +94,17 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 16,
+    marginBottom: 30,
     textAlign: 'center',
-    marginBottom: 40,
-    color: '#666',
   },
   getStartedButton: {
-    backgroundColor: '#0066cc',
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 10,
     width: '100%',
     alignItems: 'center',
-    marginBottom: 20,
   },
   getStartedButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -135,8 +130,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 12,
-    color: '#888',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 15,
   },
 });

@@ -48,16 +48,26 @@ const AppLogo: React.FC<AppLogoProps> = ({ size = 150, color = '#2196F3', rotate
     });
   }
 
-  // Create connections between vertices
+  // Create connections between vertices with a specific pattern
   const connections = [];
   for (let i = 0; i < vertices.length; i++) {
-    for (let j = i + 1; j < vertices.length; j++) {
-      connections.push({
-        startX: vertices[i].x,
-        startY: vertices[i].y,
-        endX: vertices[j].x,
-        endY: vertices[j].y
-      });
+    // Determine how many connections this vertex should have
+    // Every second vertex will connect to 6 others instead of 7
+    const skipVertexIndex = i % 2 === 0 ? (i + 4) % 8 : -1; // Skip the opposite vertex for even-indexed vertices
+    
+    for (let j = 0; j < vertices.length; j++) {
+      // Don't connect vertex to itself and apply the skipping pattern
+      if (i !== j && j !== skipVertexIndex) {
+        // Avoid duplicate connections (only add if i < j)
+        if (i < j) {
+          connections.push({
+            startX: vertices[i].x,
+            startY: vertices[i].y,
+            endX: vertices[j].x,
+            endY: vertices[j].y
+          });
+        }
+      }
     }
   }
 
@@ -77,19 +87,7 @@ const AppLogo: React.FC<AppLogoProps> = ({ size = 150, color = '#2196F3', rotate
         }
       ]}
     >
-      {/* Background circle */}
-      <View 
-        style={[
-          styles.backgroundCircle, 
-          {
-            width: radius * 2,
-            height: radius * 2,
-            borderRadius: radius,
-            left: centerX - radius,
-            top: centerY - radius,
-          }
-        ]} 
-      />
+      {/* No background circle */}
       
       {/* Connections between vertices */}
       {connections.map((connection, index) => {
@@ -132,17 +130,7 @@ const AppLogo: React.FC<AppLogoProps> = ({ size = 150, color = '#2196F3', rotate
         />
       ))}
       
-      {/* Center dot */}
-      <View 
-        style={[
-          styles.centerDot,
-          {
-            left: centerX - 8,
-            top: centerY - 8,
-            backgroundColor: logoColor
-          }
-        ]}
-      />
+      {/* No center dot */}
     </Animated.View>
   );
 };
@@ -153,7 +141,7 @@ const styles = StyleSheet.create({
   },
   backgroundCircle: {
     position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'transparent',
   },
   line: {
     position: 'absolute',
