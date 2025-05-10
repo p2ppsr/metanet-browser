@@ -1,10 +1,9 @@
 import React from 'react';
-import { Text, StyleSheet, View } from 'react-native';
-import { WalletContextProvider } from './context/WalletContext';
-import { UserContextProvider } from './context/UserContext';
+import { Stack } from 'expo-router';
+import { UserContextProvider, NativeHandlers } from '../context/UserContext';
 import packageJson from '../package.json';
 import { WalletInterface } from '@bsv/sdk';
-import { NativeHandlers } from './context/UserContext';
+import { WalletContextProvider } from '@/context/WalletContext';
 
 async function onWalletReady(wallet: WalletInterface): Promise<(() => void) | undefined> {
     return () => {
@@ -34,7 +33,9 @@ const nativeHandlers: NativeHandlers = {
     }
 }
 
+// Root layout component that sets up providers and navigation
 export default function RootLayout() {
+  // With Expo Router, we need a simpler layout setup
   return (
     <UserContextProvider 
       nativeHandlers={nativeHandlers} 
@@ -42,19 +43,21 @@ export default function RootLayout() {
       appName="Metanet Mobile"
     >
       <WalletContextProvider onWalletReady={onWalletReady}>
-        <View>
-          <Text style={styles.text}>Getting Started</Text>
-        </View>
+        <Stack>
+          <Stack.Screen 
+            name="index" 
+            options={{ 
+              headerShown: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="(tabs)" 
+            options={{ 
+              headerShown: true
+            }} 
+          />
+        </Stack>
       </WalletContextProvider>
     </UserContextProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  text: {
-    fontSize: 50,
-    color: '#333',
-    textAlign: 'center',
-    marginTop: 100,
-  },
-});
