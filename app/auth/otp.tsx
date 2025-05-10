@@ -56,8 +56,11 @@ export default function OtpScreen() {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // For demo purposes, any 6-digit code is accepted
-      // Navigate to main app after successful verification
-      router.replace('/apps');
+      // Navigate to password screen after OTP verification
+      router.push({
+        pathname: '/auth/password',
+        params: { phoneNumber: phoneNumber }
+      });
     } catch (error) {
       console.error('Error verifying OTP:', error);
       Alert.alert('Verification Failed', 'The code you entered is incorrect. Please try again.');
