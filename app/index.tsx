@@ -5,27 +5,43 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import AppLogo from '@/components/AppLogo';
 import { useTheme } from '@/context/theme/ThemeContext';
-import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
+import { DEFAULT_WAB_URL, DEFAULT_CHAIN, DEFAULT_STORAGE_URL } from '@/context/config';
+import { Alert } from 'react-native';
 
 export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
-  const themeStyles = useThemeStyles();
-  const { managers } = useWallet();
+  const { managers, finalizeConfig } = useWallet();
 
   useEffect(() => {
-    managers?.walletManager?.isAuthenticated({})
-    .then(({ authenticated }) => {
-      if (authenticated) {
-        router.replace('/(tabs)/apps');
-      }
-    });
+    if (managers?.walletManager?.authenticated) {
+      router.replace('/(tabs)/apps');
+    }
   }, [managers]);
   
   // Navigate to phone auth screen
-  const handleGetStarted = () => {
+  const handleGetStarted = async () => {
+    const res = await fetch(`${DEFAULT_WAB_URL}/info`)
+    if (!res.ok) {
+      throw new Error(`Failed to fetch info: ${res.status}`)
+    }
+    const wabInfo = await res.json()
+    console.log({ wabInfo })
+    const success = finalizeConfig({
+      wabUrl: DEFAULT_WAB_URL,
+      wabInfo,
+      method: wabInfo.supportedAuthMethods[0],
+      network: DEFAULT_CHAIN,
+      storageUrl: DEFAULT_STORAGE_URL
+    })
+    console.log({ success })
+    if (!success) {
+      Alert.alert('Error', 'Failed to finalize configuration. Please try again.');
+      return
+    }
     router.push('/auth/phone');
+    return
   };
 
   // Navigate to config screen

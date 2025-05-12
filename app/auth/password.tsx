@@ -49,10 +49,10 @@ export default function PasswordScreen() {
     setLoading(true);
     
     try {
-      await managers?.walletManager?.providePassword(password);
+      await managers!.walletManager!.providePassword(password);
       
-      if (managers?.walletManager?.authenticated) {
-        const snapshot = Utils.toBase64(managers?.walletManager?.saveSnapshot())
+      if (managers!.walletManager!.authenticated) {
+        const snapshot = Utils.toBase64(managers!.walletManager!.saveSnapshot())
         // TODO save the snapshot behind a biometric secure storage of some sort
         router.replace('/(tabs)/apps');
       } else {

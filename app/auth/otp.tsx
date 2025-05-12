@@ -57,7 +57,7 @@ export default function OtpScreen() {
     setLoading(true);
     
     try {
-      await managers?.walletManager?.completeAuth({
+      await managers!.walletManager!.completeAuth({
         phoneNumber,
         otp,
       });

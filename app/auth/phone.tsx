@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -62,13 +62,16 @@ export default function PhoneScreen() {
   };
   
   // Handle login button press
-  const handleContinue = async () => {
+  const handleContinue = useCallback(async () => {
+    console.log('handleContinue', formattedNumber, managers?.walletManager);
     if (!isValidPhoneNumber()) return;
     
     setLoading(true);
+
+    console.log('startAuth', formattedNumber, managers);
     
     try {
-      await managers?.walletManager?.startAuth({
+      await managers!.walletManager!.startAuth({
         phoneNumber: formattedNumber,
       });
       
@@ -83,7 +86,7 @@ export default function PhoneScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [managers?.walletManager, formattedNumber]);
 
   return (
     <SafeAreaView style={styles.container}>

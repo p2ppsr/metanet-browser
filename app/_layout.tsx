@@ -5,6 +5,8 @@ import packageJson from '../package.json';
 import { WalletInterface } from '@bsv/sdk';
 import { WalletContextProvider } from '@/context/WalletContext';
 import { ThemeProvider } from '@/context/theme/ThemeContext';
+import PasswordHandler from '@/components/PasswordHandler';
+import RecoveryKeySaver from '@/components/RecoveryKeySaver';
 
 async function onWalletReady(wallet: WalletInterface): Promise<(() => void) | undefined> {
     return () => {
@@ -45,6 +47,8 @@ export default function RootLayout() {
     >
       <WalletContextProvider onWalletReady={onWalletReady}>
         <ThemeProvider>
+          <PasswordHandler />
+          <RecoveryKeySaver />
           <Stack
             screenOptions={{
               animation: 'slide_from_right', // Default animation for most screens
