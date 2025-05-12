@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { 
   Modal, 
   View, 
@@ -55,20 +55,40 @@ const PasswordHandler: React.FC = () => {
     })
   }, [focusHandler])
 
+  // Define a dummy function for initialization
+  const dummyPasswordHandler = useCallback((reason: string, test: (pwd: string) => boolean): Promise<string> => {
+    console.warn('Password handler called before initialization')
+    return Promise.resolve('')
+  }, [])
+  
+  // Create a ref to store the handler function
+  const handlerRef = useRef(dummyPasswordHandler)
+  
+  // Set up the actual handler function
   useEffect(() => {
-    setPasswordRetriever((): any => {
+    handlerRef.current = (reason: string, testFn: (passwordCandidate: string) => boolean): Promise<string> => {
+      return new Promise<string>((resolvePromise: Function, rejectPromise: Function) => {
+        setReason(reason)
+        setTest(() => testFn)
+        setResolve(() => resolvePromise)
+        setReject(() => rejectPromise)
+        setOpen(true)
+        manageFocus()
+      })
+    }
+  }, [manageFocus])
+  
+  // Register the handler exactly once on mount
+  useEffect(() => {
+    // Provide a stable reference that delegates to our ref
+    const stableHandler = (): any => {
       return (reason: string, test: (passwordCandidate: string) => boolean): Promise<string> => {
-        return new Promise<string>((resolvePromise: Function, rejectPromise: Function) => {
-          setReason(reason)
-          setTest(() => test)
-          setResolve(() => resolvePromise)
-          setReject(() => rejectPromise)
-          setOpen(true)
-          manageFocus()
-        })
+        return handlerRef.current(reason, test)
       }
-    })
-  }, [manageFocus, setPasswordRetriever])
+    }
+    
+    setPasswordRetriever(stableHandler)
+  }, [])
 
   const handleClose = useCallback(() => {
     setOpen(false)

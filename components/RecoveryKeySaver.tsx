@@ -1,225 +1,415 @@
-import { useState, useEffect, FC, useContext } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  FormControlLabel,
-  Checkbox,
-  Typography,
-  useTheme,
-  Box,
-  IconButton,
-  Grid,
-  Stack
-} from '@mui/material'
-import CustomDialog from './CustomDialog/index'
-import LockIcon from '@mui/icons-material/Lock'
-import DownloadIcon from '@mui/icons-material/Download'
-import { Utils } from '@bsv/sdk';
-import { WalletContext } from '../WalletContext'
-import CheckIcon from '@mui/icons-material/Check'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import { toast } from 'react-toastify'
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Share,
+  Alert
+} from 'react-native'
+import * as Clipboard from 'expo-clipboard'
+import { Ionicons } from '@expo/vector-icons'
+import { Utils } from '@bsv/sdk'
+import { useWallet } from '@/context/WalletContext'
+import { useTheme } from '@/context/theme/ThemeContext'
+import { useThemeStyles } from '@/context/theme/useThemeStyles'
 
-const RecoveryKeyHandler: FC = () => {
-  const { managers, setRecoveryKeySaver } = useContext(WalletContext)
+const RecoveryKeySaver = () => {
+  // Theme hooks
+  const { colors, isDark } = useTheme()
+  const themeStyles = useThemeStyles()
+  
+  // State management
   const [open, setOpen] = useState(false)
-  const [recoveryKey, setRecoveryKey] = useState<string>('')
+  const [wasOriginallyFocused, setWasOriginallyFocused] = useState<boolean>(false)
+  const [recoveryKey, setRecoveryKey] = useState('')
+  const [resolve, setResolve] = useState<Function>(() => {})
+  const [reject, setReject] = useState<Function>(() => {})
+  const [copied, setCopied] = useState(false)
+  
+  // Checkbox states
   const [affirmative1, setAffirmative1] = useState(false)
   const [affirmative2, setAffirmative2] = useState(false)
   const [affirmative3, setAffirmative3] = useState(false)
-
-  const [resolve, setResolve] = useState<Function>(() => { })
-  const [reject, setReject] = useState<Function>(() => { })
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = (data) => {
-    navigator.clipboard.writeText(data)
-    setCopied(true)
-    setTimeout(() => {
-      setCopied(false)
-    }, 2000)
-  }
-
+  
+  const { setRecoveryKeySaver } = useWallet()
+  
+  const isAllChecked = affirmative1 && affirmative2 && affirmative3
+  
+  // Define a dummy function for initialization
+  const dummyHandler = useCallback((key: number[]): Promise<true> => {
+    console.warn('Recovery key handler called before initialization')
+    return Promise.resolve(true)
+  }, [])
+  
+  // Create a ref to store the handler function
+  const handlerRef = useRef(dummyHandler)
+  
+  // Create a stable recovery key handler function
   useEffect(() => {
-    setRecoveryKeySaver((): any => {
-      return (key: number[]): Promise<true> => {
-        return new Promise((resolve, reject) => {
+    // Define the actual handler
+    handlerRef.current = (key: number[]): Promise<true> => {
+      return new Promise<true>((resolvePromise, rejectPromise) => {
+        try {
+          // Guard against undefined or invalid keys
+          if (!key || !Array.isArray(key)) {
+            // console.error('Invalid recovery key provided:', key)
+            rejectPromise(new Error('Invalid recovery key format'))
+            return
+          }
+          
           const keyAsStr = Utils.toBase64(key)
-          setResolve(() => { return resolve })
-          setReject(() => { return reject })
           setRecoveryKey(keyAsStr)
+          setResolve(() => resolvePromise)
+          setReject(() => rejectPromise)
           setOpen(true)
-        })
-      }
-    })
-  }, [managers])
-
-  const onKeySaved = async (): Promise<void> => {
+        } catch (error) {
+          console.error('Error processing recovery key:', error)
+          rejectPromise(error)
+        }
+      })
+    }
+  }, [])
+  
+  // Register the handler with WalletContext exactly once on mount
+  useEffect(() => {
+    // Provide a stable reference that delegates to our ref
+    const stableHandler = (key: number[]): Promise<true> => {
+      return handlerRef.current(key)
+    }
+    
+    setRecoveryKeySaver(stableHandler)
+  }, [])
+  
+  const handleClose = () => {
+    setOpen(false)
+    setAffirmative1(false)
+    setAffirmative2(false)
+    setAffirmative3(false)
+    setCopied(false)
+  }
+  
+  const onAbandon = () => {
+    reject(new Error('User abandoned recovery key'))
+    handleClose()
+  }
+  
+  const onKeySaved = () => {
     resolve(true)
-    setOpen(false)
+    handleClose()
   }
 
-  const onAbandon = async (): Promise<void> => {
-    reject(new Error('User abandoned the backup process'))
-    setOpen(false)
-  }
-
-  const handleDownload = async (): Promise<void> => {
-    const recoveryKeyData = `Metanet Recovery Key:\n\n${recoveryKey}\n\nSaved: ${new Date()}`
+  const handleCopy = async () => {
     try {
-      // Create a blob from the text data
-      const blob = new Blob([recoveryKeyData], { type: 'text/plain' })
-      
-      // Create a URL for the blob
-      const url = URL.createObjectURL(blob)
-      
-      // Create and configure a download link
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'Metanet Recovery Key.txt'
-      
-      // Append to document, trigger click, and cleanup
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-      
-      toast.success('Recovery key downloaded successfully')
+      await Clipboard.setStringAsync(recoveryKey)
+      setCopied(true)
+      Alert.alert('Success', 'Recovery key copied to clipboard')
+      setTimeout(() => setCopied(false), 3000)
     } catch (error) {
-      console.error('Download error:', error)
-      toast.error('Failed to download recovery key')
+      Alert.alert('Error', 'Failed to copy recovery key')
     }
   }
-
-
-  const theme = useTheme()
-
-  return (
-    <CustomDialog
-      open={open}
-      title='Secure Access Backup and Recovery'
+  
+  const handleShare = async () => {
+    try {
+      const result = await Share.share({
+        message: `Metanet Recovery Key:\n\n${recoveryKey}\n\nSaved: ${new Date().toLocaleString()}`,
+        title: 'Metanet Recovery Key'
+      })
+      
+      if (result.action === Share.sharedAction) {
+        Alert.alert('Success', 'Recovery key shared successfully')
+      }
+    } catch (error) {
+      console.error('Error sharing recovery key:', error)
+      Alert.alert('Error', 'Failed to share recovery key')
+    }
+  }
+  
+  // Custom checkbox component for consistent styling
+  const Checkbox = ({ checked, onPress, label }: { checked: boolean, onPress: () => void, label: string }) => (
+    <TouchableOpacity 
+      style={styles.checkboxContainer} 
+      onPress={onPress}
+      activeOpacity={0.6}
     >
-      <DialogContent>
-        {!affirmative1 && <>
-          <DialogContentText variant='body1' sx={{ mt: 3, mb: 1, color: theme.palette.getContrastText(theme.palette.background.default) }}>
-            Save Your Recovery Key Now:
-          </DialogContentText>
-          <Grid container spacing={2} width='100%'>
-            <Stack sx={{ my: 3 }} direction="row" alignItems="center" justifyContent="space-between">
-              <Typography
-                variant='body1'
-                sx={{
-                  userSelect: 'all',
-                  overflow: 'hidden',
-                  wordBreak: 'break-all'
-                }}
-                color={theme.palette.getContrastText(theme.palette.background.default)}>
-                {recoveryKey}
-              </Typography>
-              <Stack>
-                <IconButton size='large' onClick={() => handleCopy(recoveryKey)} disabled={copied} sx={{ ml: 1 }}>
-                  {copied ? <CheckIcon /> : <ContentCopyIcon fontSize='small' />}
-                </IconButton></Stack>
-            </Stack>
-            <Button
-              variant='contained'
-              color='primary'
-              startIcon={<DownloadIcon />}
-              onClick={handleDownload}
-              fullWidth
-              sx={{ p: 2 }}
-            >
-              Save as a File
-            </Button>
-          </Grid>
-          <Box my={3}>
-            <DialogContentText>Take a screenshot, email it to yourself, print it out and put it in a safe, or save it to secure cloud storage.</DialogContentText>
-          </Box>
-        </>}
-        <DialogContentText sx={{ color: theme.palette.getContrastText(theme.palette.background.default) }}>
-          <FormControlLabel
-            control={<Checkbox
-              checked={affirmative1}
-              onChange={() => setAffirmative1(x => !x)}
-            />}
-            label={'I have saved my recovery key in a secure location'}
-            labelPlacement="start"
-            sx={{ m: 0, p: 0 }}
-          />
-        </DialogContentText>
-        {affirmative1 && <>
-          <DialogContentText variant='body1' sx={{ mt: 3, mb: 1 }}>
-            Any 2 of 3 factors are required to access your data:
-          </DialogContentText>
-          <DialogContentText sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold', color: theme.palette.getContrastText(theme.palette.background.default) }}>
-            Phone, Password, Recovery Key
-          </DialogContentText>
-          <DialogContentText variant='body1' sx={{ mt: 3, mb: 1 }}>
-            When you lose your phone or forget your password, you must use the other factors to re-establish secure control. This is a perfectly normal and unavoidable fact of life. However -
-          </DialogContentText>
-          <DialogContentText>
-            <Typography
-              variant="body2"
-              color="error"
-              sx={{
-                mt: 2,
-                mb: 2,
-                fontWeight: 'bold',
-                textAlign: 'center',
-                border: '1px solid',
-                borderColor: 'error.main',
-                p: 2,
-                borderRadius: 1
-              }}
-            >
-              Loss of more than one factor will result in TOTAL LOSS of access to all assets, encrypted data, and certificates.
-            </Typography>
-          </DialogContentText>
-          <DialogContentText sx={{ color: theme.palette.getContrastText(theme.palette.background.default) }}>
-            <FormControlLabel
-              control={<Checkbox
-                checked={affirmative3}
-                onChange={() => setAffirmative3(x => !x)}
-              />}
-              label={'I will immediately recover lost factors using the other two'}
-              labelPlacement="start"
-              sx={{ m: 0, p: 0 }}
-            />
-          </DialogContentText>
-          <DialogContentText sx={{ color: theme.palette.getContrastText(theme.palette.background.default) }}>
-            <FormControlLabel
-              control={<Checkbox
-                checked={affirmative2}
-                onChange={() => setAffirmative2(x => !x)}
-              />}
-              label={'I am solely responsible for maintaining access to my own data'}
-              labelPlacement="start"
-              sx={{ m: 0, p: 0 }}
-            />
-          </DialogContentText>
-        </>}
-      </DialogContent>
-      <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button
-          onClick={onAbandon}
-          variant='text'
-        >
-          Abandon
-        </Button>
-        <Button
-          onClick={onKeySaved}
-          sx={{ backgroundColor: '#006600' }}
-          endIcon={<LockIcon />}
-          variant='contained'
-          disabled={(!affirmative1) || (!affirmative2) || (!affirmative3)}
-        >
-          Securely Saved
-        </Button>
-      </DialogActions>
-    </CustomDialog>
+      <View style={[styles.checkbox, { borderColor: colors.primary }]}>
+        {checked && (
+          <Ionicons name="checkmark" size={18} color={colors.primary} />
+        )}
+      </View>
+      <Text style={[styles.checkboxLabel, { color: colors.textPrimary }]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  )
+  
+  return (
+    <Modal
+      visible={open}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onAbandon}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardAvoid}
+          >
+            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Secure Access Backup and Recovery</Text>
+              
+              <ScrollView style={styles.scrollView}>
+                {!affirmative1 && (
+                  <View>
+                    <Text style={[styles.subtitle, { color: colors.textPrimary }]}>
+                      Save Your Recovery Key Now:
+                    </Text>
+                    
+                    <View style={[styles.keyContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+                      <Text style={[styles.recoveryKey, { color: colors.textPrimary }]} selectable>
+                        {recoveryKey}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.buttonsRow}>
+                      <TouchableOpacity 
+                        style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                        onPress={handleCopy}
+                      >
+                        <Ionicons name={copied ? "checkmark" : "copy-outline"} size={18} color={colors.buttonText} style={styles.buttonIcon} />
+                        <Text style={[styles.buttonText, { color: colors.buttonText }]}>Copy to Clipboard</Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity 
+                        style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                        onPress={handleShare}
+                      >
+                        <Ionicons name="share-outline" size={18} color={colors.buttonText} style={styles.buttonIcon} />
+                        <Text style={[styles.buttonText, { color: colors.buttonText }]}>Share</Text>
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <Text style={[styles.description, { color: colors.textSecondary }]}>
+                      Take a screenshot, email it to yourself, print it out and put it in a safe, or save it to secure cloud storage.
+                    </Text>
+                  </View>
+                )}
+                
+                <View style={styles.checkboxesContainer}>
+                  <Checkbox
+                    checked={affirmative1}
+                    onPress={() => setAffirmative1(!affirmative1)}
+                    label="I have saved my recovery key in a secure location"
+                  />
+                </View>
+                
+                {affirmative1 && (
+                  <View>
+                    <Text style={[styles.subtitle, { color: colors.textPrimary }]}>
+                      Any 2 of 3 factors are required to access your data:
+                    </Text>
+                    
+                    <Text style={[styles.centeredText, { color: colors.textPrimary, fontWeight: 'bold' }]}>
+                      Phone, Password, Recovery Key
+                    </Text>
+                    
+                    <Text style={[styles.description, { color: colors.textSecondary, marginTop: 16 }]}>
+                      When you lose your phone or forget your password, you must use the other factors to re-establish secure control. This is a perfectly normal and unavoidable fact of life. However -
+                    </Text>
+                    
+                    <View style={[styles.warningBox, { borderColor: colors.error }]}>
+                      <Text style={[styles.warningText, { color: colors.error }]}>
+                        Loss of more than one factor will result in TOTAL LOSS of access to all assets, encrypted data, and certificates.
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.checkboxesContainer}>
+                      <Checkbox
+                        checked={affirmative3}
+                        onPress={() => setAffirmative3(!affirmative3)}
+                        label="I will immediately recover lost factors using the other two"
+                      />
+                      
+                      <Checkbox
+                        checked={affirmative2}
+                        onPress={() => setAffirmative2(!affirmative2)}
+                        label="I am solely responsible for maintaining access to my own data"
+                      />
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
+              
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity 
+                  style={[styles.buttonSecondary]} 
+                  onPress={onAbandon}
+                >
+                  <Text style={[styles.buttonSecondaryText, { color: colors.textPrimary }]}>Abandon</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.buttonPrimary, { 
+                    backgroundColor: isAllChecked ? '#006600' : colors.inputBorder,
+                    opacity: isAllChecked ? 1 : 0.5
+                  }]}
+                  onPress={onKeySaved}
+                  disabled={!isAllChecked}
+                >
+                  <Text style={[styles.buttonText, { color: colors.buttonText }]}>Securely Saved</Text>
+                  <Ionicons name="lock-closed" size={20} color={colors.buttonText} style={styles.buttonIcon} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
   )
 }
 
-export default RecoveryKeyHandler
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  keyboardAvoid: {
+    width: '90%',
+    maxWidth: 500
+  },
+  modalContent: {
+    borderRadius: 8,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    maxHeight: '80%'
+  },
+  scrollView: {
+    maxHeight: 450,
+    marginVertical: 16
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 12
+  },
+  description: {
+    fontSize: 16,
+    marginTop: 12,
+    marginBottom: 16
+  },
+  keyContainer: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginVertical: 16
+  },
+  recoveryKey: {
+    fontSize: 16,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: '500'
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 12
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 0.48
+  },
+  buttonIcon: {
+    marginRight: 8
+  },
+  warningBox: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 12,
+    marginVertical: 16
+  },
+  warningText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center'
+  },
+  centeredText: {
+    textAlign: 'center',
+    fontSize: 18,
+    marginVertical: 12
+  },
+  checkboxesContainer: {
+    marginVertical: 16
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  checkbox: {
+    height: 24,
+    width: 24,
+    borderWidth: 2,
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12
+  },
+  checkboxLabel: {
+    flex: 1,
+    fontSize: 16
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16
+  },
+  buttonPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    minWidth: 150
+  },
+  buttonSecondary: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 6
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '500'
+  },
+  buttonSecondaryText: {
+    fontSize: 16
+  }
+})
+
+export default RecoveryKeySaver

@@ -643,11 +643,11 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   }, []);
 
   // Watch for wallet authentication after snapshot is loaded
-  useEffect(() => {
-    if (managers?.walletManager?.authenticated && localStorage.snap) {
-      setSnapshotLoaded(true);
-    }
-  }, [managers?.walletManager?.authenticated]);
+  // useEffect(() => {
+  //   if (managers?.walletManager?.authenticated && localStorage.snap) {
+  //     setSnapshotLoaded(true);
+  //   }
+  // }, [managers?.walletManager?.authenticated]);
 
   // ---- Build the wallet manager once all required inputs are ready.
   useEffect(() => {
