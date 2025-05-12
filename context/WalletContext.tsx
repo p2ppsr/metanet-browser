@@ -31,7 +31,8 @@ import { DEFAULT_WAB_URL, DEFAULT_STORAGE_URL, DEFAULT_CHAIN, ADMIN_ORIGINATOR }
 import { UserContext } from './UserContext'
 import isImageUrl from '../utils/isImageUrl'
 import parseAppManifest from '../utils/parseAppManifest'
-import { useLocalStorage } from '@/components/KeyProvider'
+import { useLocalStorage } from "@/context/LocalStorageProvider";
+import getApps from "@/utils/getApps";
 
 // -----
 // Context Types
@@ -165,7 +166,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   const [adminOriginator, setAdminOriginator] = useState(ADMIN_ORIGINATOR);
   const [recentApps, setRecentApps] = useState<any[]>([])
 
-  const { storage, logout } = useLocalStorage()
+  const { getItem, setItem, deleteItem } = useLocalStorage()
 
   const { isFocused, onFocusRequested, onFocusRelinquished, setBasketAccessModalOpen, setCertificateAccessModalOpen, setProtocolAccessModalOpen, setSpendingAuthorizationModalOpen } = useContext(UserContext);
 
@@ -508,24 +509,26 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     }
   }, [wabUrl]);
 
-  // does not work on mobile
-//   useEffect(() => {
-//     if (!localStorage.snap && configStatus === 'initial') {
-//       (async () => {
-//         try {
-//           const info = await fetchWabInfo();
+  // snap
+  useEffect(() => {
+    // if there is no snapshot available and the configuration is initial
+    const snap = getItem('snap')
+    if (!snap && configStatus === 'initial') {
+      (async () => {
+        try {
+          const info = await fetchWabInfo();
 
-//           if (info && info.supportedAuthMethods && info.supportedAuthMethods.length > 0) {
-//             setSelectedAuthMethod(info.supportedAuthMethods[0]);
-//             // Automatically apply default configuration
-//             setConfigStatus('configured');
-//           }
-//         } catch (error: any) {
-//           console.error("Error in initial WAB setup", error);
-//         }
-//       })();
-//     }
-//   }, [wabUrl, configStatus, fetchWabInfo]);
+          if (info && info.supportedAuthMethods && info.supportedAuthMethods.length > 0) {
+            setSelectedAuthMethod(info.supportedAuthMethods[0]);
+            // Automatically apply default configuration
+            setConfigStatus('configured');
+          }
+        } catch (error: any) {
+          console.error("Error in initial WAB setup", error);
+        }
+      })();
+    }
+  }, [wabUrl, configStatus, fetchWabInfo]);
 
   // For new users: mark configuration complete when WalletConfig is submitted.
   const finalizeConfig = (wabConfig: WABConfig): boolean => {
@@ -634,17 +637,18 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // Load snapshot function
   const loadWalletSnapshot = useCallback(async (walletManager: WalletAuthenticationManager) => {
-    // if (localStorage.snap) {
-    //   try {
-    //     const snapArr = Utils.toArray(localStorage.snap, 'base64');
-    //     await walletManager.loadSnapshot(snapArr);
-    //     // We'll handle setting snapshotLoaded in a separate effect watching authenticated state
-    //   } catch (err: any) {
-    //     console.error("Error loading snapshot", err);
-    //     localStorage.removeItem('snap'); // Clear invalid snapshot
-    //     toast.error("Couldn't load saved data: " + err.message);
-    //   }
-    // }
+    const snap = await getItem('snap')
+    if (snap) {
+      try {
+        const snapArr = Utils.toArray(snap, 'base64');
+        await walletManager.loadSnapshot(snapArr);
+        // We'll handle setting snapshotLoaded in a separate effect watching authenticated state
+      } catch (err: any) {
+        console.error("Error loading snapshot", err);
+        deleteItem('snap'); // Clear invalid snapshot
+        toast.error("Couldn't load saved data: " + err.message);
+      }
+    }
     toast.error("Snapshots are not supported on mobile");
   }, []);
 
@@ -744,9 +748,11 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   const logout = useCallback(() => {
     // Clear localStorage to prevent auto-login
-    // if (localStorage.snap) {
-    //   localStorage.removeItem('snap');
-    // }
+    getItem('snap').then(snap => {
+      if (snap) {
+        deleteItem('snap');
+      }
+    })
 
     // Reset manager state
     setManagers({});
@@ -798,11 +804,10 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     return Promise.all(dataPromises)
   }
 
-  // no local storage on mobile
   useEffect(() => {
     if (typeof managers.permissionsManager === 'object') {
       (async () => {
-        const storedApps = window.localStorage.getItem('recentApps')
+        const storedApps = await getItem('recentApps')
         if (storedApps) {
           setRecentApps(JSON.parse(storedApps))
         }
@@ -813,7 +818,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         setRecentApps(parsedAppData)
 
         // store for next app load
-        // window.localStorage.setItem('recentApps', JSON.stringify(parsedAppData))
+        await setItem('recentApps', JSON.stringify(parsedAppData))
       })()
     }
   }, [adminOriginator, managers?.permissionsManager])
