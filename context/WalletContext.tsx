@@ -1,3 +1,6 @@
+import "expo-crypto";
+import "react-native-get-random-values";
+
 import React, { useState, useEffect, createContext, useMemo, useCallback, useContext } from 'react'
 import {
   Wallet,
@@ -28,6 +31,7 @@ import { DEFAULT_WAB_URL, DEFAULT_STORAGE_URL, DEFAULT_CHAIN, ADMIN_ORIGINATOR }
 import { UserContext } from './UserContext'
 import isImageUrl from '../utils/isImageUrl'
 import parseAppManifest from '../utils/parseAppManifest'
+import { useLocalStorage } from '@/components/KeyProvider'
 
 // -----
 // Context Types
@@ -160,6 +164,8 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [adminOriginator, setAdminOriginator] = useState(ADMIN_ORIGINATOR);
   const [recentApps, setRecentApps] = useState<any[]>([])
+
+  const { storage, logout } = useLocalStorage()
 
   const { isFocused, onFocusRequested, onFocusRelinquished, setBasketAccessModalOpen, setCertificateAccessModalOpen, setProtocolAccessModalOpen, setSpendingAuthorizationModalOpen } = useContext(UserContext);
 
@@ -793,24 +799,24 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   }
 
   // no local storage on mobile
-//   useEffect(() => {
-//     if (typeof managers.permissionsManager === 'object') {
-//     //   (async () => {
-//     //     // const storedApps = window.localStorage.getItem('recentApps')
-//     //     if (storedApps) {
-//     //       setRecentApps(JSON.parse(storedApps))
-//     //     }
-//     //     // Parse out the app data from the domains
-//     //     const appDomains = await getApps({ permissionsManager: managers.permissionsManager!, adminOriginator })
-//     //     const parsedAppData = await resolveAppDataFromDomain({ appDomains })
-//     //     parsedAppData.sort((a, b) => a.appName.localeCompare(b.appName))
-//     //     setRecentApps(parsedAppData)
+  useEffect(() => {
+    if (typeof managers.permissionsManager === 'object') {
+      (async () => {
+        const storedApps = window.localStorage.getItem('recentApps')
+        if (storedApps) {
+          setRecentApps(JSON.parse(storedApps))
+        }
+        // Parse out the app data from the domains
+        const appDomains = await getApps({ permissionsManager: managers.permissionsManager!, adminOriginator })
+        const parsedAppData = await resolveAppDataFromDomain({ appDomains })
+        parsedAppData.sort((a, b) => a.appName.localeCompare(b.appName))
+        setRecentApps(parsedAppData)
 
-//     //     // store for next app load
-//     //     // window.localStorage.setItem('recentApps', JSON.stringify(parsedAppData))
-//     //   })()
-//     }
-//   }, [adminOriginator, managers?.permissionsManager])
+        // store for next app load
+        // window.localStorage.setItem('recentApps', JSON.stringify(parsedAppData))
+      })()
+    }
+  }, [adminOriginator, managers?.permissionsManager])
 
   const contextValue = useMemo<WalletContextValue>(() => ({
     managers,

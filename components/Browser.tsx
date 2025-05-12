@@ -1,10 +1,11 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View, SafeAreaView } from 'react-native';
 import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
-import { useKeyContext } from './KeyProvider';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
+import { useWallet } from '@/context/WalletContext';
+import { WalletInterface } from '@bsv/sdk';
 
 const DEFAULT_URL = 'https://p2pmnee.atx.systems';
 
@@ -95,9 +96,16 @@ export default function Browser() {
   // Theme integration
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
+  const [wallet, setWallet] = useState<WalletInterface | undefined>(undefined);
+  const { managers } = useWallet();
+
+  useEffect(() => {
+    if (managers?.walletManager?.authenticated) {
+      setWallet(managers?.walletManager)
+    }
+  }, [managers])
 
   const webviewRef = useRef<WebView>(null);
-  const { wallet } = useKeyContext();
   const [lastMessage, setLastMessage] = useState<string>('');
   
   // URL and navigation state
@@ -504,6 +512,7 @@ export default function Browser() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         containerStyle={{ backgroundColor: colors.background }}
+        injectedJavaScript={injectedJavaScript}
       />
       
       {lastMessage ? (
