@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
+import { useWallet } from '@/context/WalletContext';
 
 // Common country codes with country names and dial codes
 const countryCodes = [
@@ -40,6 +41,7 @@ export default function PhoneScreen() {
   const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { managers } = useWallet();
   
   // Get theme styles and colors
   const { colors, isDark } = useTheme();
@@ -66,11 +68,9 @@ export default function PhoneScreen() {
     setLoading(true);
     
     try {
-      // In a real app, you would call your backend to send OTP
-      console.log('Sending OTP to:', formattedNumber);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await managers?.walletManager?.startAuth({
+        phoneNumber: formattedNumber,
+      });
       
       // Navigate to OTP screen
       router.push({

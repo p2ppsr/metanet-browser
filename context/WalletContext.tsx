@@ -865,3 +865,5 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     </WalletContext.Provider>
   )
 }
+
+export const useWallet = () => useContext(WalletContext);

@@ -15,6 +15,8 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
+import { useWallet } from '@/context/WalletContext';
+import { Utils } from '@bsv/sdk';
 
 export default function PasswordScreen() {
   const params = useLocalSearchParams();
@@ -27,6 +29,8 @@ export default function PasswordScreen() {
   // Get theme styles and colors
   const { colors, isDark } = useTheme();
   const styles = useThemeStyles();
+  
+  const { managers } = useWallet();
   
   // Check if the password meets minimum requirements
   const isValidPassword = () => {
@@ -45,17 +49,15 @@ export default function PasswordScreen() {
     setLoading(true);
     
     try {
-      // In a real app, you would authenticate or register the user
-      console.log('Authenticating user with phone:', phoneNumber);
+      await managers?.walletManager?.providePassword(password);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // This would integrate with the wallet system in a real app
-      // Could be either first-time registration or returning user login
-      
-      // Navigate to apps screen
-      router.replace('/(tabs)/apps');
+      if (managers?.walletManager?.authenticated) {
+        const snapshot = Utils.toBase64(managers?.walletManager?.saveSnapshot())
+        // TODO save the snapshot behind a biometric secure storage of some sort
+        router.replace('/(tabs)/apps');
+      } else {
+        Alert.alert('Error', 'Authentication failed, maybe password is incorrect?')
+      }
     } catch (error) {
       console.error('Error authenticating:', error);
       Alert.alert('Error', 'Authentication failed. Please try again.');

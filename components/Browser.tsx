@@ -1,8 +1,12 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View, SafeAreaView } from 'react-native';
 import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import { useKeyContext } from './KeyProvider';
+import { StatusBar } from 'expo-status-bar';
+import { useTheme } from '@/context/theme/ThemeContext';
+import { useThemeStyles } from '@/context/theme/useThemeStyles';
 
+const DEFAULT_URL = 'https://p2pmnee.atx.systems';
 
 const styles = StyleSheet.create({
   container: {
@@ -88,14 +92,18 @@ const styles = StyleSheet.create({
 });
 
 export default function Browser() {
+  // Theme integration
+  const { colors, isDark } = useTheme();
+  const themeStyles = useThemeStyles();
+
   const webviewRef = useRef<WebView>(null);
   const { wallet } = useKeyContext();
   const [lastMessage, setLastMessage] = useState<string>('');
   
   // URL and navigation state
-  const [url, setUrl] = useState<string>('https://metanet.bsvb.tech');
-  const [currentUrl, setCurrentUrl] = useState<string>('https://metanet.bsvb.tech');
-  const [inputUrl, setInputUrl] = useState<string>('https://metanet.bsvb.tech');
+  const [url, setUrl] = useState<string>(DEFAULT_URL);
+  const [currentUrl, setCurrentUrl] = useState<string>(DEFAULT_URL);
+  const [inputUrl, setInputUrl] = useState<string>(DEFAULT_URL);
   const [canGoBack, setCanGoBack] = useState<boolean>(false);
   const [canGoForward, setCanGoForward] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -419,36 +427,50 @@ export default function Browser() {
   };
   
   return (
-    <View style={styles.container}>
-      <View style={styles.titleContainer} />
-      
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />      
       {/* URL input and navigation controls */}
-      <View style={styles.urlBarContainer}>
+      <View style={[styles.urlBarContainer, { backgroundColor: colors.inputBackground }]}>
         <TouchableOpacity 
-          style={[styles.navButton, !canGoBack && styles.disabledButton]}
+          style={[
+            styles.navButton, 
+            { backgroundColor: colors.secondary },
+            !canGoBack && [styles.disabledButton, { backgroundColor: colors.inputBorder }]
+          ]}
           onPress={() => webviewRef.current?.goBack()}
           disabled={!canGoBack}
         >
-          <Text style={styles.navButtonText}>←</Text>
+          <Text style={[styles.navButtonText, { color: colors.buttonText }]}>←</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.navButton, !canGoForward && styles.disabledButton]}
+          style={[
+            styles.navButton, 
+            { backgroundColor: colors.secondary },
+            !canGoForward && [styles.disabledButton, { backgroundColor: colors.inputBorder }]
+          ]}
           onPress={() => webviewRef.current?.goForward()}
           disabled={!canGoForward}
         >
-          <Text style={styles.navButtonText}>→</Text>
+          <Text style={[styles.navButtonText, { color: colors.buttonText }]}>→</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.navButton}
+          style={[styles.navButton, { backgroundColor: colors.secondary }]}
           onPress={() => webviewRef.current?.reload()}
         >
-          <Text style={styles.navButtonText}>↻</Text>
+          <Text style={[styles.navButtonText, { color: colors.buttonText }]}>↻</Text>
         </TouchableOpacity>
         
         <TextInput
-          style={styles.urlInput}
+          style={[
+            styles.urlInput,
+            { 
+              backgroundColor: colors.inputBackground,
+              borderColor: colors.inputBorder,
+              color: colors.textPrimary 
+            }
+          ]}
           value={inputUrl}
           onChangeText={setInputUrl}
           onSubmitEditing={handleUrlSubmit}
@@ -457,22 +479,21 @@ export default function Browser() {
           keyboardType="url"
           returnKeyType="go"
           selectTextOnFocus
+          placeholderTextColor={colors.textSecondary}
         />
         
         <TouchableOpacity 
-          style={styles.goButton}
+          style={[styles.goButton, { backgroundColor: colors.primary }]}
           onPress={handleUrlSubmit}
         >
-          <Text style={styles.goButtonText}>Go</Text>
+          <Text style={[styles.goButtonText, { color: colors.buttonText }]}>Go</Text>
         </TouchableOpacity>
       </View>
       
       {/* Loading indicator */}
-      {isLoading && (
-        <View style={styles.loadingBar}>
-          <View style={styles.loadingIndicator} />
-        </View>
-      )}
+      <View style={[styles.loadingBar, { backgroundColor: isDark ? '#333' : '#eee' }]}>
+        {isLoading && <View style={[styles.loadingIndicator, { backgroundColor: colors.primary }]} />}
+      </View>
       
       <WebView
         ref={webviewRef}
@@ -482,16 +503,16 @@ export default function Browser() {
         onNavigationStateChange={handleNavigationStateChange}
         javaScriptEnabled={true}
         domStorageEnabled={true}
-        // injectedJavaScript={injectedJavaScript}
+        containerStyle={{ backgroundColor: colors.background }}
       />
       
       {lastMessage ? (
-        <View style={styles.messageContainer}>
-          <Text style={styles.messageText}>Last message: {lastMessage}</Text>
+        <View style={[styles.messageContainer, { backgroundColor: isDark ? '#333' : '#e0e0e0' }]}>
+          <Text style={[styles.messageText, { color: colors.textPrimary }]}>Last message: {lastMessage}</Text>
         </View>
       ) : null}
       
-      <View style={styles.buttonContainer}>
+      <View style={[styles.buttonContainer, { backgroundColor: colors.background }]}>
         <Button
           title="Send HELLO"
           onPress={() => sendResponseToWebView('HELLO', { greeting: 'Hi from BSV wallet app' })}
@@ -509,6 +530,6 @@ export default function Browser() {
           }}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

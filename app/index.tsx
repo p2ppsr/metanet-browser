@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -6,15 +6,26 @@ import { Ionicons } from '@expo/vector-icons';
 import AppLogo from '@/components/AppLogo';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
+import { useWallet } from '@/context/WalletContext';
 
 export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
+  const { managers } = useWallet();
+
+  useEffect(() => {
+    managers?.walletManager?.isAuthenticated({})
+    .then(({ authenticated }) => {
+      if (authenticated) {
+        router.replace('/(tabs)/apps');
+      }
+    });
+  }, [managers]);
   
   // Navigate to phone auth screen
   const handleGetStarted = () => {
-    router.push('/(tabs)/apps');
+    router.push('/auth/phone');
   };
 
   // Navigate to config screen

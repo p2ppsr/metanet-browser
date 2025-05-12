@@ -15,12 +15,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
+import { useWallet } from '@/context/WalletContext';
 
 export default function OtpScreen() {
   // Apply theme
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
 
+  const { managers } = useWallet();
   const params = useLocalSearchParams();
   const phoneNumber = params.phoneNumber as string;
   
@@ -55,13 +57,11 @@ export default function OtpScreen() {
     setLoading(true);
     
     try {
-      // In a real app, you would verify OTP with your backend
-      console.log('Verifying OTP:', otp, 'for phone:', phoneNumber);
+      await managers?.walletManager?.completeAuth({
+        phoneNumber,
+        otp,
+      });
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, any 6-digit code is accepted
       // Navigate to password screen after OTP verification
       router.push({
         pathname: '/auth/password',

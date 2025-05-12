@@ -3,23 +3,10 @@ import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
+import Browser from '../../components/Browser';
 
 export default function AppsScreen() {
-  // Get theme colors
-  const { colors, isDark } = useTheme();
-  const themeStyles = useThemeStyles();
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Apps</Text>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>
-          Your connected Metanet applications will appear here.
-        </Text>
-      </View>
-    </SafeAreaView>
-  );
+  return <Browser />
 }
 
 const styles = StyleSheet.create({
