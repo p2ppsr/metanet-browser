@@ -24,15 +24,15 @@ export default function TabsLayout() {
   }, [walletContext]);
   
   // If not logged in, redirect to the login screen
-  if (!isLoggedIn) {
-    // router.replace('/');
-    return null;
-  }
+  // if (!isLoggedIn) {
+  // router.replace('/');
+  //   return null;
+  // }
   
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ color, size }) => {
           // Set icons for each tab based on route name
           const routeName = route.name.toString();
           
@@ -59,44 +59,15 @@ export default function TabsLayout() {
           backgroundColor: colors.background
         },
         headerTintColor: colors.textPrimary,
-        headerShadowVisible: false
+        headerShadowVisible: false,
+        headerShown: false
       })}
     >
-      <Tabs.Screen 
-        name="apps" 
-        options={{ 
-          title: 'Apps',
-          headerShown: true 
-        }} 
-      />
-      <Tabs.Screen 
-        name="identity" 
-        options={{ 
-          title: 'Identity', 
-          headerShown: true 
-        }} 
-      />
-      <Tabs.Screen 
-        name="trust" 
-        options={{ 
-          title: 'Trust', 
-          headerShown: true 
-        }} 
-      />
-      <Tabs.Screen 
-        name="security" 
-        options={{ 
-          title: 'Security', 
-          headerShown: true 
-        }} 
-      />
-      <Tabs.Screen 
-        name="settings" 
-        options={{ 
-          title: 'Settings', 
-          headerShown: true 
-        }} 
-      />
+      <Tabs.Screen name="apps" options={{ title: 'Apps' }} />
+      <Tabs.Screen name="identity" options={{ title: 'Identity' }} />
+      <Tabs.Screen name="trust" options={{ title: 'Trust' }} />
+      <Tabs.Screen name="security" options={{ title: 'Security' }} />
+      <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
     </Tabs>
   );
 }

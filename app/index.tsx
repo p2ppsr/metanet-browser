@@ -14,7 +14,7 @@ export default function LoginScreen() {
   
   // Navigate to phone auth screen
   const handleGetStarted = () => {
-    router.push('/auth/phone');
+    router.push('/(tabs)/apps');
   };
 
   // Navigate to config screen
