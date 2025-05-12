@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import { useContext } from 'react';
 import { WalletContext } from '../../context/WalletContext';
+import { useTheme } from '../../context/theme/ThemeContext';
 import { router } from 'expo-router';
 
 export default function TabsLayout() {
+  // Get theme colors
+  const { colors, isDark } = useTheme();
+  
   // Get authentication state from WalletContext
   const walletContext = useContext(WalletContext);
   
@@ -46,8 +49,17 @@ export default function TabsLayout() {
           }
           return <MaterialIcons name="circle" size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#0066cc',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: colors.secondary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.inputBorder
+        },
+        headerStyle: {
+          backgroundColor: colors.background
+        },
+        headerTintColor: colors.textPrimary,
+        headerShadowVisible: false
       })}
     >
       <Tabs.Screen 

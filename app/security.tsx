@@ -1,12 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useTheme } from '@/context/theme/ThemeContext';
+import { useThemeStyles } from '@/context/theme/useThemeStyles';
 
 export default function SecurityScreen() {
+  // Get theme colors
+  const { colors, isDark } = useTheme();
+  const themeStyles = useThemeStyles();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.contentContainer}>
-        <Text style={styles.title}>Security</Text>
-        <Text style={styles.description}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Security</Text>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>
           Manage your wallet security settings and access controls.
         </Text>
       </View>
@@ -17,7 +25,6 @@ export default function SecurityScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   contentContainer: {
     flex: 1,

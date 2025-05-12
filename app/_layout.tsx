@@ -70,12 +70,6 @@ export default function RootLayout() {
                 headerShown: true
               }} 
             />
-            <Stack.Screen 
-              name="auth" 
-              options={{ 
-                headerShown: false 
-              }} 
-            />
           </Stack>
         </ThemeProvider>
       </WalletContextProvider>
