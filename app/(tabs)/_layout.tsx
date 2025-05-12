@@ -12,7 +12,7 @@ export default function TabsLayout() {
   // Get authentication state from WalletContext
   const walletContext = useContext(WalletContext);
   
-  // Check if the user is logged in
+  // Check if the user is logged in 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function TabsLayout() {
   
   // If not logged in, redirect to the login screen
   if (!isLoggedIn) {
-    router.replace('/');
+    // router.replace('/');
     return null;
   }
   

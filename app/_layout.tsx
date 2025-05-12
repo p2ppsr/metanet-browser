@@ -48,6 +48,7 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               animation: 'slide_from_right', // Default animation for most screens
+              headerShown: false
             }}
           >
             <Stack.Screen 
@@ -59,16 +60,10 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen 
-              name="index" 
-              options={{ 
-                headerShown: false
-              }} 
+              name="index"
             />
             <Stack.Screen 
               name="(tabs)" 
-              options={{ 
-                headerShown: true
-              }} 
             />
           </Stack>
         </ThemeProvider>

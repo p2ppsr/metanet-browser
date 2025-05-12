@@ -55,7 +55,7 @@ export default function PasswordScreen() {
       // Could be either first-time registration or returning user login
       
       // Navigate to apps screen
-      router.replace('/apps');
+      router.replace('/(tabs)/apps');
     } catch (error) {
       console.error('Error authenticating:', error);
       Alert.alert('Error', 'Authentication failed. Please try again.');

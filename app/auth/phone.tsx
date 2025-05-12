@@ -87,7 +87,7 @@ export default function PhoneScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
