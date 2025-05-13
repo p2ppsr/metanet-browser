@@ -1,13 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Button } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
+import { useLocalStorage } from '@/context/LocalStorageProvider';
 
 export default function SecurityScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
+  const { getItem } = useLocalStorage();
+
+  const getSnap = async () => {
+    const snap = await getItem('snap')
+    console.log({ snap })
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -17,6 +24,7 @@ export default function SecurityScreen() {
         <Text style={[styles.description, { color: colors.textSecondary }]}>
           Manage your wallet security settings and access controls.
         </Text>
+        <Button title="Get Data" onPress={getSnap} />
       </View>
     </SafeAreaView>
   );

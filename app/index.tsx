@@ -8,11 +8,13 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import { DEFAULT_WAB_URL, DEFAULT_CHAIN, DEFAULT_STORAGE_URL } from '@/context/config';
 import { Alert } from 'react-native';
+import { useLocalStorage } from '@/context/LocalStorageProvider';
 
 export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
   const { managers, finalizeConfig } = useWallet();
+  const { getItem } = useLocalStorage();
 
   useEffect(() => {
     if (managers?.walletManager?.authenticated) {
@@ -22,6 +24,15 @@ export default function LoginScreen() {
   
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
+    // if there's a wallet snapshot, load that
+    const snap = await getItem('snap')
+    console.log({ snap })
+    if (snap) {
+      router.replace('/(tabs)/apps')
+      return
+    }
+
+    // Fetch WAB info
     const res = await fetch(`${DEFAULT_WAB_URL}/info`)
     if (!res.ok) {
       throw new Error(`Failed to fetch info: ${res.status}`)

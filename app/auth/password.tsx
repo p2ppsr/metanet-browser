@@ -17,6 +17,7 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 import { Utils } from '@bsv/sdk';
+import { setItem } from 'expo-secure-store';
 
 export default function PasswordScreen() {
   const params = useLocalSearchParams();
@@ -53,7 +54,7 @@ export default function PasswordScreen() {
       
       if (managers!.walletManager!.authenticated) {
         const snapshot = Utils.toBase64(managers!.walletManager!.saveSnapshot())
-        // TODO save the snapshot behind a biometric secure storage of some sort
+        await setItem('snap', snapshot)
         router.replace('/(tabs)/apps');
       } else {
         Alert.alert('Error', 'Authentication failed, maybe password is incorrect?')

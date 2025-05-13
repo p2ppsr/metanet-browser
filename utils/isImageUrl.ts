@@ -1,8 +1,11 @@
-export default (url: string) => {
-  const img = new window.Image()
-  img.src = url
-  return new Promise((resolve) => {
-    img.onload = () => resolve(true)
-    img.onerror = () => resolve(false)
-  })
+import { Image } from 'react-native';
+
+export default async (url: string): Promise<boolean> => {
+  try {
+    await Image.prefetch(url);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
+ 
