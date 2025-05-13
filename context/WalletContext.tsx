@@ -33,6 +33,7 @@ import isImageUrl from '../utils/isImageUrl'
 import parseAppManifest from '../utils/parseAppManifest'
 import { useLocalStorage } from "@/context/LocalStorageProvider";
 import getApps from "@/utils/getApps";
+import { router } from "expo-router";
 
 // -----
 // Context Types
@@ -761,19 +762,21 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   const logout = useCallback(() => {
     // Clear localStorage to prevent auto-login
     getItem('snap').then(snap => {
+      console.log('snap', snap)
       if (snap) {
+        console.log('deleting snap')
         deleteItem('snap');
       }
+      // Reset manager state
+      setManagers({});
+
+      // Reset configuration state
+      setConfigStatus('configured');
+      setSnapshotLoaded(false);
+      setWalletBuilt(false);
+      router.replace('/')
     })
-
-    // Reset manager state
-    setManagers({});
-
-    // Reset configuration state
-    setConfigStatus('configured');
-    setSnapshotLoaded(false);
-    setWalletBuilt(false);
-  }, []);
+  }, [getItem, deleteItem]);
 
   const resolveAppDataFromDomain = async ({ appDomains }: { appDomains: string[] }) => {
     const dataPromises = appDomains.map(async (domain, index) => {

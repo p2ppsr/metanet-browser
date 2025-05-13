@@ -3,12 +3,12 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } fr
 import { useTheme, ThemeMode } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { Ionicons } from '@expo/vector-icons';
-import { WalletContext } from '@/context/WalletContext';
+import { useWallet } from '@/context/WalletContext';
 
 export default function SettingsScreen() {
   const { colors, isDark, mode, setThemeMode } = useTheme();
   const styles = useThemeStyles();
-  const { updateSettings, settings } = useContext(WalletContext);
+  const { updateSettings, settings, logout } = useWallet();
   
   // Handle theme mode change
   const handleThemeChange = async (newMode: ThemeMode) => {
@@ -85,7 +85,25 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
           
+          {/* Account Section */}
+          <View style={[styles.card, { marginTop: 20 }]}>
+            <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18, marginBottom: 15 }]}>
+              Account
+            </Text>
+            
+            <TouchableOpacity 
+              style={[styles.row, { padding: 15, borderRadius: 8, backgroundColor: colors.error + '20' }]}
+              onPress={logout}
+            >
+              <View style={[styles.row, { flex: 1 }]}>
+                <Ionicons name="log-out-outline" size={24} color={colors.error} style={{ marginRight: 10 }} />
+                <Text style={[styles.text, { color: colors.error }]}>Logout</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
           {/* Other Settings Sections can be added here */}
+          
         </View>
       </ScrollView>
     </SafeAreaView>
