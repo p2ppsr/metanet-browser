@@ -9,6 +9,9 @@ import PasswordHandler from '@/components/PasswordHandler';
 import RecoveryKeySaver from '@/components/RecoveryKeySaver';
 import LocalStorageProvider from '@/context/LocalStorageProvider';
 import ProtocolAccessModal from '@/components/ProtocolAccessModal';
+import BasketAccessModal from '@/components/BasketAccessModal';
+import CertificateAccessModal from '@/components/CertificateAccessModal';
+import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal';
 
 async function onWalletReady(wallet: WalletInterface): Promise<(() => void) | undefined> {
     return () => {
@@ -53,6 +56,9 @@ export default function RootLayout() {
             <PasswordHandler />
             <RecoveryKeySaver />
             <ProtocolAccessModal />
+            <BasketAccessModal />
+            <CertificateAccessModal />
+            <SpendingAuthorizationModal />
             <Stack
               screenOptions={{
                   animation: 'slide_from_right', // Default animation for most screens
