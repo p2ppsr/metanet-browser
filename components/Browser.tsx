@@ -513,24 +513,6 @@ export default function Browser() {
         injectedJavaScript={injectedJavaScript}
       />
       
-      <View style={[styles.buttonContainer, { backgroundColor: colors.background }]}>
-        <Button
-          title="Send HELLO"
-          onPress={() => sendResponseToWebView('HELLO', { greeting: 'Hi from BSV wallet app' })}
-        />
-        
-        <Button
-          title="Send WALLET_INFO"
-          onPress={() => {
-            if (wallet) {
-              sendResponseToWebView('WALLET_INFO', { 
-                isAuthenticated: true,
-                capabilities: ['payments', 'authentication']
-              });
-            }
-          }}
-        />
-      </View>
     </SafeAreaView>
   );
 }

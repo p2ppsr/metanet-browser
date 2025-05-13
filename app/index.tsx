@@ -9,31 +9,27 @@ import { useWallet } from '@/context/WalletContext';
 import { DEFAULT_WAB_URL, DEFAULT_CHAIN, DEFAULT_STORAGE_URL } from '@/context/config';
 import { Alert } from 'react-native';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
+import { Utils } from '@bsv/sdk';
 
 export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
   const { managers, finalizeConfig } = useWallet();
-  const { getItem } = useLocalStorage();
+  const { getItem, auth } = useLocalStorage();
   const [loading, setLoading] = React.useState(false);
 
-  useEffect(() => {
-    if (managers?.walletManager?.authenticated) {
-      router.replace('/(tabs)/apps');
-    }
-  }, [managers]);
-  
+
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
     try {
       setLoading(true)
+      
       // Fetch WAB info
       const res = await fetch(`${DEFAULT_WAB_URL}/info`)
       if (!res.ok) {
         throw new Error(`Failed to fetch info: ${res.status}`)
       }
       const wabInfo = await res.json()
-      console.log({ wabInfo })
       const success = finalizeConfig({
         wabUrl: DEFAULT_WAB_URL,
         wabInfo,
@@ -45,14 +41,18 @@ export default function LoginScreen() {
         Alert.alert('Error', 'Failed to finalize configuration. Please try again.');
         return
       }
+      
       // if there's a wallet snapshot, load that
+      await auth(true)
       const snap = await getItem('snap')
-      console.log({ snap })
-      if (snap) {
-        router.replace('/(tabs)/apps')
+      if (!snap) {
+        router.push('/auth/phone');
         return
       }
-      router.push('/auth/phone');
+      const snapArr = Utils.toArray(snap, 'base64')
+      await managers?.walletManager?.loadSnapshot(snapArr)
+      
+      router.replace('/(tabs)/apps')
       return
     } catch (error) {
       console.error(error)

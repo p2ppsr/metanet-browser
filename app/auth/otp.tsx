@@ -82,11 +82,7 @@ export default function OtpScreen() {
     setLoading(true);
     
     try {
-      // In a real app, you would call your backend to resend OTP
-      console.log('Resending OTP to:', phoneNumber);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await managers!.walletManager!.startAuth({ phoneNumber });
       
       // Reset countdown
       setCountdown(60);

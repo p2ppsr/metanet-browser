@@ -63,12 +63,9 @@ export default function PhoneScreen() {
   
   // Handle login button press
   const handleContinue = useCallback(async () => {
-    console.log('handleContinue', formattedNumber, managers?.walletManager);
     if (!isValidPhoneNumber()) return;
     
     setLoading(true);
-
-    console.log('startAuth', formattedNumber, managers);
     
     try {
       await managers!.walletManager!.startAuth({

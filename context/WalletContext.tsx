@@ -165,8 +165,9 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [adminOriginator, setAdminOriginator] = useState(ADMIN_ORIGINATOR);
   const [recentApps, setRecentApps] = useState<any[]>([])
+  const [walletBuilt, setWalletBuilt] = useState<boolean>(false)
 
-  const { getItem, setItem, deleteItem } = useLocalStorage()
+  const { getItem, setItem, deleteItem, auth } = useLocalStorage()
 
   const { isFocused, onFocusRequested, onFocusRelinquished, setBasketAccessModalOpen, setCertificateAccessModalOpen, setProtocolAccessModalOpen, setSpendingAuthorizationModalOpen } = useContext(UserContext);
 
@@ -577,7 +578,6 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     privilegedKeyManager: PrivilegedKeyManager
   ): Promise<any> => {
     try {
-      console.log('line579', { primaryKey, privilegedKeyManager })
       const newManagers = {} as any;
       const chain = selectedNetwork;
       const keyDeriver = new KeyDeriver(new PrivateKey(primaryKey));
@@ -591,8 +591,6 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       const client = new StorageClient(wallet, selectedStorageUrl);
       await client.makeAvailable();
       await storageManager.addWalletStorageProvider(client);
-
-      console.log('line595', { wallet })
 
       // Setup permissions with provided callbacks.
       const permissionsManager = new WalletPermissionsManager(wallet, adminOriginator, {
@@ -623,7 +621,6 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       
       setManagers(m => ({ ...m, ...newManagers }));
       
-      console.log('line620', { permissionsManager })
       return permissionsManager;
     } catch (error: any) {
       console.error("Error building wallet:", error);
@@ -642,15 +639,16 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // Load snapshot function
   const loadWalletSnapshot = useCallback(async (walletManager: WalletAuthenticationManager) => {
-    console.log('loadWalletSnapshot', walletManager)
+    const response = await auth(true)
+    if (!response) {
+      return
+    }
     const snap = await getItem('snap')
-    console.log({ snap })
     if (snap) {
       try {
         const snapArr = Utils.toArray(snap, 'base64');
         await walletManager.loadSnapshot(snapArr);
         await walletManager.waitForAuthentication({})
-        console.log('snapshot loaded YAAS')
         // We'll handle setting snapshotLoaded in a separate effect watching authenticated state
       } catch (err: any) {
         console.error("Error loading snapshot", err);
@@ -659,15 +657,14 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       }
     }
     toast.error("Snapshots are not supported on mobile");
+    return walletManager
   }, [getItem, deleteItem]);
 
   // Watch for wallet authentication after snapshot is loaded
   useEffect(() => {
     (async () => {
-      console.log('watching wallet authentication', managers?.walletManager?.authenticated)
       const snap = await getItem('snap')
       if (managers?.walletManager?.authenticated && snap) {
-        console.log('snapshot was loaded')
         setSnapshotLoaded(true);
       }
     })()
@@ -675,12 +672,11 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // ---- Build the wallet manager once all required inputs are ready.
   useEffect(() => {
-    console.log('building wallet manager', !!passwordRetriever, !!recoveryKeySaver, configStatus, !managers.walletManager)
     if (
       passwordRetriever &&
       recoveryKeySaver &&
       configStatus !== 'editing' && // either user configured or snapshot exists
-      !managers.walletManager // build only once
+      !walletBuilt // build only once
     ) {
       try {
         // Create network service based on selected network
@@ -720,11 +716,12 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         // Store in window for debugging
         (window as any).walletManager = walletManager;
 
-        // Set initial managers state to prevent null references
-        setManagers(m => ({ ...m, walletManager }));
-
         // Load snapshot if available
-        loadWalletSnapshot(walletManager);
+        loadWalletSnapshot(walletManager).then(walletManager => {
+          // Set initial managers state to prevent null references
+          setManagers(m => ({ ...m, walletManager }));
+          setWalletBuilt(true)
+        })
 
       } catch (err: any) {
         console.error("Error initializing wallet manager:", err);
@@ -775,6 +772,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     // Reset configuration state
     setConfigStatus('configured');
     setSnapshotLoaded(false);
+    setWalletBuilt(false);
   }, []);
 
   const resolveAppDataFromDomain = async ({ appDomains }: { appDomains: string[] }) => {

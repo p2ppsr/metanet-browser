@@ -1,6 +1,6 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 class SecureDataStore {
     /**
@@ -19,17 +19,7 @@ class SecureDataStore {
    * @returns {Promise<string | null>} - The stored data if authentication succeeds, null if the key doesn't exist, or throws an error if authentication fails.
    */
     static async getItem(key: string): Promise<string | null> {
-        const authResult = await LocalAuthentication.authenticateAsync({
-            promptMessage: 'Authenticate to access sensitive data',
-            cancelLabel: 'Cancel',
-            disableDeviceFallback: false,
-        });
-
-        if (authResult.success) {
-            return await SecureStore.getItemAsync(key);
-        } else {
-            throw new Error('Authentication failed');
-        }
+        return await SecureStore.getItemAsync(key);
     }
 
     static async deleteItem(key: string): Promise<void> {
@@ -41,21 +31,47 @@ interface LocalStorageContextType {
     setItem: (key: string, value: string) => Promise<void>;
     getItem: (key: string) => Promise<string | null>;
     deleteItem: (key: string) => Promise<void>;
+    auth: (activelyRequestPermission?: boolean) => Promise<boolean>;
+    authenticated: boolean;
 }
 
 export const LocalStorageContext = createContext<LocalStorageContextType>({
     setItem: async (key: string, value: string) => {},
     getItem: async (key: string) => '',
     deleteItem: async (key: string) => {},
+    auth: async (activelyRequestPermission?: boolean) => Promise.resolve(false),
+    authenticated: false,
 });
 
 export const useLocalStorage = () => useContext(LocalStorageContext);
 
 export default function LocalStorageProvider({ children }: { children: React.ReactNode }) {
+    const [authenticated, setAuthenticated] = useState<boolean>(false);
+
+    const auth = useCallback(async (activelyRequestPermission: boolean = false) => {
+        try {
+            if (authenticated) return true;
+            if (!activelyRequestPermission) return false;
+            const authResult = await LocalAuthentication.authenticateAsync({
+                promptMessage: 'Authenticate to access sensitive data',
+                cancelLabel: 'Cancel',
+                disableDeviceFallback: false,
+            });
+            if (authResult.success) {
+                setAuthenticated(true);
+                return true;
+            } else {
+                setAuthenticated(false);
+                return false;
+            }
+        } catch (error) {
+            setAuthenticated(false);
+            return false;
+        }
+    }, [authenticated]);
 
     const setItem = async (key: string, value: string) => {
         try {
-            console.log('setItem', { key, value })
             await SecureDataStore.storeItem(key, value);
         } catch (error) {
             console.log({ error });
@@ -64,9 +80,11 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
     const getItem = async (key: string) => {
         try {
-            console.log('getItem', { key })
+            const authResult = await auth(false);
+            if (!authResult) throw new Error('Not authenticated');
             return await SecureDataStore.getItem(key);  
         } catch (error) {
+            console.log({ error })
             return null;
         }
     }
@@ -79,5 +97,5 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
         }
     }
 
-    return <LocalStorageContext.Provider value={{ setItem, getItem, deleteItem }}>{children}</LocalStorageContext.Provider>;
+    return <LocalStorageContext.Provider value={{ auth, authenticated, setItem, getItem, deleteItem }}>{children}</LocalStorageContext.Provider>;
 }
