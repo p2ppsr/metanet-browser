@@ -55,6 +55,7 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
     const setItem = async (key: string, value: string) => {
         try {
+            console.log('setItem', { key, value })
             await SecureDataStore.storeItem(key, value);
         } catch (error) {
             console.log({ error });
@@ -63,9 +64,9 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
     const getItem = async (key: string) => {
         try {
-            return await SecureDataStore.getItem(key);
+            console.log('getItem', { key })
+            return await SecureDataStore.getItem(key);  
         } catch (error) {
-            console.log({ error });
             return null;
         }
     }

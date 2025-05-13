@@ -577,6 +577,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     privilegedKeyManager: PrivilegedKeyManager
   ): Promise<any> => {
     try {
+      console.log('line579', { primaryKey, privilegedKeyManager })
       const newManagers = {} as any;
       const chain = selectedNetwork;
       const keyDeriver = new KeyDeriver(new PrivateKey(primaryKey));
@@ -591,6 +592,8 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       await client.makeAvailable();
       await storageManager.addWalletStorageProvider(client);
 
+      console.log('line595', { wallet })
+
       // Setup permissions with provided callbacks.
       const permissionsManager = new WalletPermissionsManager(wallet, adminOriginator, {
         seekProtocolPermissionsForEncrypting: false,
@@ -600,6 +603,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         seekPermissionsForIdentityResolution: false,
       });
 
+      
       if (protocolPermissionCallback) {
         permissionsManager.bindCallback('onProtocolPermissionRequested', protocolPermissionCallback);
       }
@@ -612,13 +616,14 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       if (certificateAccessCallback) {
         permissionsManager.bindCallback('onCertificateAccessRequested', certificateAccessCallback);
       }
-
+      
       // Store in window for debugging
       (window as any).permissionsManager = permissionsManager;
       newManagers.permissionsManager = permissionsManager;
-
+      
       setManagers(m => ({ ...m, ...newManagers }));
-
+      
+      console.log('line620', { permissionsManager })
       return permissionsManager;
     } catch (error: any) {
       console.error("Error building wallet:", error);

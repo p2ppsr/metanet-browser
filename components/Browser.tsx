@@ -106,7 +106,6 @@ export default function Browser() {
   }, [managers])
 
   const webviewRef = useRef<WebView>(null);
-  const [lastMessage, setLastMessage] = useState<string>('');
   
   // URL and navigation state
   const [url, setUrl] = useState<string>(DEFAULT_URL);
@@ -161,98 +160,97 @@ export default function Browser() {
           ...prevLogs.slice(0, 49)
         ]);
         
-        // Also update the last message display
-        setLastMessage(`[WebView ${msg.method}]: ${msg.args.join(' ')}`);
         return;
       }
       
       // Handle API calls
       console.log(msg.call, msg.args);
-      setLastMessage(JSON.stringify(msg));
+
+      const origin = currentUrl.split('/')[2];
 
       let response: any;
       switch(msg.call) {
         case 'getPublicKey':
-          response = await wallet?.getPublicKey(msg?.args || {})
+          response = await wallet?.getPublicKey(msg?.args || {}, origin)
           break;
         case 'revealCounterpartyKeyLinkage':
-          response = await wallet?.revealCounterpartyKeyLinkage(msg?.args || {})
+          response = await wallet?.revealCounterpartyKeyLinkage(msg?.args || {}, origin)
           break;
         case 'revealSpecificKeyLinkage':
-          response = await wallet?.revealSpecificKeyLinkage(msg?.args || {})
+          response = await wallet?.revealSpecificKeyLinkage(msg?.args || {}, origin)
           break;
         case 'encrypt':
-          response = await wallet?.encrypt(msg?.args || {})
+          response = await wallet?.encrypt(msg?.args || {}, origin)
           break;
         case 'decrypt':
-          response = await wallet?.decrypt(msg?.args || {})
+          response = await wallet?.decrypt(msg?.args || {}, origin)
           break;
         case 'createHmac':
-          response = await wallet?.createHmac(msg?.args || {})
+          response = await wallet?.createHmac(msg?.args || {}, origin)
           break;
         case 'verifyHmac':
-          response = await wallet?.verifyHmac(msg?.args || {})
+          response = await wallet?.verifyHmac(msg?.args || {}, origin)
           break;
         case 'createSignature':
-          response = await wallet?.createSignature(msg?.args || {})
+          response = await wallet?.createSignature(msg?.args || {}, origin)
           break;
         case 'verifySignature':
-          response = await wallet?.verifySignature(msg?.args || {})
+          response = await wallet?.verifySignature(msg?.args || {}, origin)
           break;
         case 'createAction':
-          response = await wallet?.createAction(msg?.args || {})
+          response = await wallet?.createAction(msg?.args || {}, origin)
           break;
         case 'signAction':
-          response = await wallet?.signAction(msg?.args || {})
+          response = await wallet?.signAction(msg?.args || {}, origin)
           break;
         case 'abortAction':
-          response = await wallet?.abortAction(msg?.args || {})
+          response = await wallet?.abortAction(msg?.args || {}, origin)
           break;
         case 'listActions':
-          response = await wallet?.listActions(msg?.args || {})
+          response = await wallet?.listActions(msg?.args || {}, origin)
           break;
         case 'internalizeAction':
-          response = await wallet?.internalizeAction(msg?.args || {})
+          response = await wallet?.internalizeAction(msg?.args || {}, origin)
           break;
         case 'listOutputs':
-          response = await wallet?.listOutputs(msg?.args || {})
+          response = await wallet?.listOutputs(msg?.args || {}, origin)
           break;
         case 'relinquishOutput':
-          response = await wallet?.relinquishOutput(msg?.args || {})
+          response = await wallet?.relinquishOutput(msg?.args || {}, origin)
           break;
         case 'acquireCertificate':
-          response = await wallet?.acquireCertificate(msg?.args || {})
+          response = await wallet?.acquireCertificate(msg?.args || {}, origin)
           break;
         case 'listCertificates':
-          response = await wallet?.listCertificates(msg?.args || {})
+          response = await wallet?.listCertificates(msg?.args || {}, origin)
           break;
         case 'proveCertificate':
-          response = await wallet?.proveCertificate(msg?.args || {})
+          response = await wallet?.proveCertificate(msg?.args || {}, origin)
           break;
         case 'relinquishCertificate':
-          response = await wallet?.relinquishCertificate(msg?.args || {})
+          response = await wallet?.relinquishCertificate(msg?.args || {}, origin)
           break;
         case 'discoverByIdentityKey':
-          response = await wallet?.discoverByIdentityKey(msg?.args || {})
+          response = await wallet?.discoverByIdentityKey(msg?.args || {}, origin)
           break;
         case 'isAuthenticated':
-          response = await wallet?.isAuthenticated({})
+          response = await wallet?.isAuthenticated({}, origin)
           break;
         case 'waitForAuthentication':
-          response = await wallet?.waitForAuthentication({})
+          response = await wallet?.waitForAuthentication({}, origin)
           break;
         case 'getHeight':
-          response = await wallet?.getHeight({})
+          response = await wallet?.getHeight({}, origin)
           break;
         case 'getHeaderForHeight':
-          response = await wallet?.getHeaderForHeight(msg?.args || {})
+          response = await wallet?.getHeaderForHeight(msg?.args || {}, origin)
           break;
         case 'getNetwork':
-          response = await wallet?.getNetwork({})
+          response = await wallet?.getNetwork({}, origin)
           break;
         case 'getVersion':
         default:
-          response = await wallet?.getVersion({})
+          response = await wallet?.getVersion({}, origin)
           break;
       }
       sendResponseToWebView(msg.id, response)
@@ -514,12 +512,6 @@ export default function Browser() {
         containerStyle={{ backgroundColor: colors.background }}
         injectedJavaScript={injectedJavaScript}
       />
-      
-      {lastMessage ? (
-        <View style={[styles.messageContainer, { backgroundColor: isDark ? '#333' : '#e0e0e0' }]}>
-          <Text style={[styles.messageText, { color: colors.textPrimary }]}>Last message: {lastMessage}</Text>
-        </View>
-      ) : null}
       
       <View style={[styles.buttonContainer, { backgroundColor: colors.background }]}>
         <Button
