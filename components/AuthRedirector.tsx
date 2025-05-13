@@ -9,6 +9,7 @@ export default function AuthRedirector() {
     const { managers, snapshotLoaded } = useWallet()
 
     useEffect(() => {
+        console.log('auth redirector', managers?.walletManager?.authenticated, snapshotLoaded)
         if (
             managers?.walletManager?.authenticated && snapshotLoaded
         ) {

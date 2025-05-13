@@ -4,16 +4,23 @@ import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
+import { useWallet } from '@/context/WalletContext';
+import { Utils } from '@bsv/sdk';
 
 export default function SecurityScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
   const { getItem } = useLocalStorage();
+  const { managers } = useWallet();
 
   const getSnap = async () => {
     const snap = await getItem('snap')
     console.log({ snap })
+    if (snap) {
+      const snapData = Utils.toArray(snap, 'base64')
+      managers?.walletManager?.loadSnapshot(snapData)
+    }
   }
 
   return (

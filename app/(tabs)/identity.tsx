@@ -21,9 +21,11 @@ export default function IdentityScreen() {
   };
 
   useEffect(() => {
+    console.log('line24', managers?.permissionsManager)
     async function getIdentityKey() {
       const response = await managers?.permissionsManager?.getPublicKey({ identityKey: true }, adminOriginator)
       if (response) {
+        console.log('line28', response)
         setIdentityKey(response.publicKey)
       }
     }

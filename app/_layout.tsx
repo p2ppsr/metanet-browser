@@ -42,41 +42,41 @@ const nativeHandlers: NativeHandlers = {
 export default function RootLayout() {
   // With Expo Router, we need a simpler layout setup
   return (
-    <UserContextProvider 
-      nativeHandlers={nativeHandlers} 
-      appVersion={packageJson.version} 
-      appName="Metanet Mobile"
-    >
-      <WalletContextProvider onWalletReady={onWalletReady}>
-        <LocalStorageProvider>
+    <LocalStorageProvider>
+      <UserContextProvider 
+        nativeHandlers={nativeHandlers} 
+        appVersion={packageJson.version} 
+        appName="Metanet Mobile"
+      >
+        <WalletContextProvider onWalletReady={onWalletReady}>
           <ThemeProvider>
             <PasswordHandler />
             <RecoveryKeySaver />
             <AuthRedirector />
             <Stack
               screenOptions={{
-                animation: 'slide_from_right', // Default animation for most screens
-              headerShown: false
-            }}
-            >
-              <Stack.Screen 
-                name="config" 
-                options={{ 
-                  headerShown: false,
-                  animation: 'slide_from_bottom',
-                  presentation: 'modal'
-                }}
-              />
-              <Stack.Screen 
-                name="index"
-              />
-              <Stack.Screen 
-                name="(tabs)" 
-              />
-            </Stack>
+                  animation: 'slide_from_right', // Default animation for most screens
+                headerShown: false
+              }}
+              >
+                <Stack.Screen 
+                  name="config" 
+                  options={{ 
+                    headerShown: false,
+                    animation: 'slide_from_bottom',
+                    presentation: 'modal'
+                  }}
+                />
+                <Stack.Screen 
+                  name="index"
+                />
+                <Stack.Screen 
+                  name="(tabs)" 
+                />
+              </Stack>
           </ThemeProvider>
-        </LocalStorageProvider>
-      </WalletContextProvider>
-    </UserContextProvider>
+        </WalletContextProvider>
+      </UserContextProvider>
+    </LocalStorageProvider>
   );
 }

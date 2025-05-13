@@ -637,11 +637,15 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // Load snapshot function
   const loadWalletSnapshot = useCallback(async (walletManager: WalletAuthenticationManager) => {
+    console.log('loadWalletSnapshot', walletManager)
     const snap = await getItem('snap')
+    console.log({ snap })
     if (snap) {
       try {
         const snapArr = Utils.toArray(snap, 'base64');
         await walletManager.loadSnapshot(snapArr);
+        await walletManager.waitForAuthentication({})
+        console.log('snapshot loaded YAAS')
         // We'll handle setting snapshotLoaded in a separate effect watching authenticated state
       } catch (err: any) {
         console.error("Error loading snapshot", err);
@@ -650,13 +654,15 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       }
     }
     toast.error("Snapshots are not supported on mobile");
-  }, []);
+  }, [getItem, deleteItem]);
 
   // Watch for wallet authentication after snapshot is loaded
   useEffect(() => {
     (async () => {
+      console.log('watching wallet authentication', managers?.walletManager?.authenticated)
       const snap = await getItem('snap')
       if (managers?.walletManager?.authenticated && snap) {
+        console.log('snapshot was loaded')
         setSnapshotLoaded(true);
       }
     })()
@@ -664,6 +670,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // ---- Build the wallet manager once all required inputs are ready.
   useEffect(() => {
+    console.log('building wallet manager', !!passwordRetriever, !!recoveryKeySaver, configStatus, !managers.walletManager)
     if (
       passwordRetriever &&
       recoveryKeySaver &&
@@ -765,25 +772,6 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     setSnapshotLoaded(false);
   }, []);
 
-  useEffect(() => {
-    if (managers?.walletManager?.authenticated) {
-      const wallet = managers.walletManager;
-      let unlistenFn: (() => void) | undefined;
-
-      const setupListener = async () => {
-        unlistenFn = await onWalletReady(wallet);
-      };
-
-      setupListener();
-
-      return () => {
-        if (unlistenFn) {
-          unlistenFn();
-        }
-      };
-    }
-  }, [managers]);
-
   const resolveAppDataFromDomain = async ({ appDomains }: { appDomains: string[] }) => {
     const dataPromises = appDomains.map(async (domain, index) => {
       let appIconImageUrl
@@ -808,7 +796,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   }
 
   useEffect(() => {
-    if (typeof managers.permissionsManager === 'object') {
+    if (typeof managers?.permissionsManager === 'object') {
       (async () => {
         const storedApps = await getItem('recentApps')
         if (storedApps) {

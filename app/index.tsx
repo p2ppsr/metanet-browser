@@ -15,6 +15,7 @@ export default function LoginScreen() {
   const { colors, isDark } = useTheme();
   const { managers, finalizeConfig } = useWallet();
   const { getItem } = useLocalStorage();
+  const [loading, setLoading] = React.useState(false);
 
   useEffect(() => {
     if (managers?.walletManager?.authenticated) {
@@ -24,35 +25,41 @@ export default function LoginScreen() {
   
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
-    // if there's a wallet snapshot, load that
-    const snap = await getItem('snap')
-    console.log({ snap })
-    if (snap) {
-      router.replace('/(tabs)/apps')
+    try {
+      setLoading(true)
+      // Fetch WAB info
+      const res = await fetch(`${DEFAULT_WAB_URL}/info`)
+      if (!res.ok) {
+        throw new Error(`Failed to fetch info: ${res.status}`)
+      }
+      const wabInfo = await res.json()
+      console.log({ wabInfo })
+      const success = finalizeConfig({
+        wabUrl: DEFAULT_WAB_URL,
+        wabInfo,
+        method: wabInfo.supportedAuthMethods[0],
+        network: DEFAULT_CHAIN,
+        storageUrl: DEFAULT_STORAGE_URL
+      })
+      if (!success) {
+        Alert.alert('Error', 'Failed to finalize configuration. Please try again.');
+        return
+      }
+      // if there's a wallet snapshot, load that
+      const snap = await getItem('snap')
+      console.log({ snap })
+      if (snap) {
+        router.replace('/(tabs)/apps')
+        return
+      }
+      router.push('/auth/phone');
       return
+    } catch (error) {
+      console.error(error)
+      Alert.alert('Error', 'Failed to get started. Please try again.');
+    } finally {
+      setLoading(false)
     }
-
-    // Fetch WAB info
-    const res = await fetch(`${DEFAULT_WAB_URL}/info`)
-    if (!res.ok) {
-      throw new Error(`Failed to fetch info: ${res.status}`)
-    }
-    const wabInfo = await res.json()
-    console.log({ wabInfo })
-    const success = finalizeConfig({
-      wabUrl: DEFAULT_WAB_URL,
-      wabInfo,
-      method: wabInfo.supportedAuthMethods[0],
-      network: DEFAULT_CHAIN,
-      storageUrl: DEFAULT_STORAGE_URL
-    })
-    console.log({ success })
-    if (!success) {
-      Alert.alert('Error', 'Failed to finalize configuration. Please try again.');
-      return
-    }
-    router.push('/auth/phone');
-    return
   };
 
   // Navigate to config screen
@@ -74,8 +81,9 @@ export default function LoginScreen() {
         </Text>
         
         <TouchableOpacity 
-          style={[styles.getStartedButton, { backgroundColor: colors.primary }]} 
+          style={[styles.getStartedButton, { backgroundColor: colors.primary, opacity: loading ? 0.2 : 1 }]} 
           onPress={handleGetStarted}
+          disabled={loading}
         >
           <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>Get Started</Text>
         </TouchableOpacity>
