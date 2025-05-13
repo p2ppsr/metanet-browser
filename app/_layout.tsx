@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/context/theme/ThemeContext';
 import PasswordHandler from '@/components/PasswordHandler';
 import RecoveryKeySaver from '@/components/RecoveryKeySaver';
 import LocalStorageProvider from '@/context/LocalStorageProvider';
+import ProtocolAccessModal from '@/components/ProtocolAccessModal';
 
 async function onWalletReady(wallet: WalletInterface): Promise<(() => void) | undefined> {
     return () => {
@@ -51,6 +52,7 @@ export default function RootLayout() {
           <ThemeProvider>
             <PasswordHandler />
             <RecoveryKeySaver />
+            <ProtocolAccessModal />
             <Stack
               screenOptions={{
                   animation: 'slide_from_right', // Default animation for most screens

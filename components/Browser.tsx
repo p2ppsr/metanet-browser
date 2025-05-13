@@ -7,7 +7,7 @@ import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 import { WalletInterface } from '@bsv/sdk';
 
-const DEFAULT_URL = 'https://p2pmnee.atx.systems';
+const DEFAULT_URL = 'https://deggen.ngrok.app';
 
 const styles = StyleSheet.create({
   container: {
@@ -101,6 +101,7 @@ export default function Browser() {
 
   useEffect(() => {
     if (managers?.walletManager?.authenticated) {
+      console.log('setting wallet')
       setWallet(managers?.walletManager)
     }
   }, [managers])
@@ -164,9 +165,9 @@ export default function Browser() {
       }
       
       // Handle API calls
-      console.log(msg.call, msg.args);
-
       const origin = currentUrl.split('/')[2];
+      console.log(msg.call, msg.args, origin);
+
 
       let response: any;
       switch(msg.call) {
@@ -262,6 +263,7 @@ export default function Browser() {
   // Send a message to the WebView
   const sendResponseToWebView = (id: string, result: any) => {
     try {
+      console.log("sendResponseToWebViewd", id, result);
       if (!webviewRef.current) return;
       
       // Create a message in the format expected by XDM
@@ -273,9 +275,9 @@ export default function Browser() {
         status: 'ok'
       };
       
-      // Send the message to the WebView
+      // Send the message to the WebView using injectJavaScript
       webviewRef.current?.postMessage(JSON.stringify(message));
-      console.info(message);
+      console.info({ message });
     } catch (error) {
       console.error('Error sending message to WebView:', error);
     }
@@ -512,7 +514,7 @@ export default function Browser() {
         containerStyle={{ backgroundColor: colors.background }}
         injectedJavaScript={injectedJavaScript}
       />
-      
+
     </SafeAreaView>
   );
 }
