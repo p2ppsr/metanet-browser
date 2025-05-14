@@ -181,22 +181,22 @@ const SpendingAuthorizationModal = () => {
                         {/* Action buttons */}
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity
-                                style={[styles.button, styles.denyButton, themeStyles.button]}
+                                style={themeStyles.buttonSecondary}
                                 onPress={handleDeny}
                             >
-                                <Text style={[styles.buttonText, themeStyles.buttonText]}>Deny</Text>
+                                <Text style={themeStyles.buttonSecondaryText}>Deny</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.button, styles.grantButton, themeStyles.button]}
+                                style={themeStyles.button}
                                 onPress={() => handleGrant({ singular: false, amount: upgradeAmount })}
                             >
-                                <Text style={[styles.buttonText, themeStyles.buttonText]}>Allow Up To &nbsp;<AmountDisplay color={colors.buttonText}>{upgradeAmount}</AmountDisplay></Text>
+                                <Text style={themeStyles.buttonText}>Allow Up To &nbsp;<AmountDisplay color={colors.buttonText}>{upgradeAmount}</AmountDisplay></Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.button, styles.grantButton, themeStyles.button]}
+                                style={themeStyles.button}
                                 onPress={() => handleGrant({ singular: true })}
                             >
-                                <Text style={[styles.buttonText, themeStyles.buttonText]}>Spend</Text>
+                                <Text style={themeStyles.buttonText}>Spend</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>

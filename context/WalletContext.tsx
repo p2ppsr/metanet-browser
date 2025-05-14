@@ -297,7 +297,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     requestID: string
     certificate?: {
       certType?: string
-      fields?: Record<string, any>
+      fields?: string[]
       verifier?: string
     }
     originator: string
@@ -323,10 +323,10 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         // Extract certificate data, safely handling potentially undefined values
         const certificate = incomingRequest.certificate as any
         const certType = certificate?.certType || ''
-        const fields = certificate?.fields || {}
+        const fields = certificate?.fields || []
 
         // Extract field names as an array for the CertificateChip component
-        const fieldsArray = fields ? Object.keys(fields) : []
+        const fieldsArray = fields
 
         const verifier = certificate?.verifier || ''
 

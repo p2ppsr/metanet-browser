@@ -70,6 +70,26 @@ export const useThemeStyles = () => {
     buttonTextDisabled: {
       color: colors.buttonTextDisabled,
     },
+    // Secondary button styles (transparent with border)
+    buttonSecondary: {
+      backgroundColor: 'transparent',
+      paddingVertical: 13,
+      paddingHorizontal: 38,
+      borderRadius: 10,
+      width: '100%',
+      alignItems: 'center',
+      marginBottom: 20,
+      borderWidth: 2,
+      borderColor: colors.buttonBackground,
+    },
+    buttonSecondaryText: {
+      color: colors.textPrimary,
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    buttonSecondaryDisabled: {
+      borderColor: colors.buttonBackgroundDisabled,
+    },
     
     // Input styles
     inputContainer: {

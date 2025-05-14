@@ -50,12 +50,12 @@ const ProtocolAccessModal = () => {
                     </Text>
 
                     {/* App section */}
-                    <AppChip
-                        size={1.5}
-                        showDomain
-                        label={originator || 'unknown'}
-                        clickable={false}
-                    />
+                    <View style={styles.infoRow}>
+                        <Text style={[styles.label, themeStyles.text]}>Application:</Text>
+                        <Text style={[styles.value, themeStyles.text]}>
+                            {originator || 'unknown'}
+                        </Text>
+                    </View>
 
                     <View style={styles.divider} />
 
@@ -98,16 +98,16 @@ const ProtocolAccessModal = () => {
                     {/* Action buttons */}
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity
-                            style={[styles.button, styles.denyButton, themeStyles.button]}
+                            style={themeStyles.buttonSecondary}
                             onPress={handleDeny}
                         >
-                            <Text style={[styles.buttonText, themeStyles.buttonText]}>Deny</Text>
+                            <Text style={themeStyles.buttonSecondaryText}>Deny</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.button, styles.grantButton, themeStyles.button]}
+                            style={themeStyles.button}
                             onPress={handleGrant}
                         >
-                            <Text style={[styles.buttonText, themeStyles.buttonText]}>Grant Access</Text>
+                            <Text style={themeStyles.buttonText}>Grant Access</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
         borderRadius: 2
     },
     buttonContainer: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         justifyContent: 'space-between',
         marginTop: 10
     },
