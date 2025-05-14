@@ -3,24 +3,27 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'rea
 import { WalletContext } from '../context/WalletContext'
 import { UserContext } from '../context/UserContext'
 import { useThemeStyles } from '../context/theme/useThemeStyles'
+import { useTheme } from '../context/theme/ThemeContext'
 import AppChip from './AppChip'
 import { deterministicColor } from '../utils/deterministicColor'
-import { Services } from '@bsv/wallet-toolbox-mobile'
-
-const services = new Services('main')
+import AmountDisplay from './AmountDisplay'
+import { ExchangeRateContext } from '../context/ExchangeRateContext'
 
 const SpendingAuthorizationModal = () => {
     const { spendingRequests, advanceSpendingQueue, managers } = useContext(WalletContext)
+    const { colors } = useTheme() // Import colors from theme
+    
     const { spendingAuthorizationModalOpen, setSpendingAuthorizationModalOpen } = useContext(UserContext)
+    const { satoshisPerUSD } = useContext(ExchangeRateContext)
     const themeStyles = useThemeStyles()
-    const [usdPerBsv, setUsdPerBSV] = useState(35)
 
     // Handle denying the request
     const handleDeny = async () => {
         if (spendingRequests.length > 0) {
             managers.permissionsManager?.denyPermission(spendingRequests[0].requestID)
+            advanceSpendingQueue()
         }
-        advanceSpendingQueue()
+        // Close the modal
         setSpendingAuthorizationModalOpen(false)
     }
 
@@ -32,24 +35,37 @@ const SpendingAuthorizationModal = () => {
                 ephemeral: singular,
                 amount
             })
+            advanceSpendingQueue()
         }
-        advanceSpendingQueue()
+        // Close the modal
         setSpendingAuthorizationModalOpen(false)
     }
 
-    // Format satoshis to BSV
-    const formatBSV = (sats: number) => {
-        return (sats / 100000000).toFixed(8)
+    const determineUpgradeAmount = (previousAmountInSats: any, returnType = 'sats') => {
+        let usdAmount
+        const previousAmountInUsd = previousAmountInSats / satoshisPerUSD
+    
+        // The supported spending limits are $5, $10, $20, $50
+        if (previousAmountInUsd <= 5) {
+          usdAmount = 5
+        } else if (previousAmountInUsd <= 10) {
+          usdAmount = 10
+        } else if (previousAmountInUsd <= 20) {
+          usdAmount = 20
+        } else {
+          usdAmount = 50
+        }
+    
+        if (returnType === 'sats') {
+          return Math.round(usdAmount * satoshisPerUSD)
+        }
+        return usdAmount
     }
 
-    // Format USD amount
-    const formatUSD = (sats: number) => {
-        const bsv = sats / 100000000
-        return (bsv * usdPerBsv).toFixed(2)
-    }
-
-    if (!spendingAuthorizationModalOpen || !spendingRequests.length) return null
-
+    
+    // Use debug data for testing, otherwise check if we should display modal
+    if (!spendingAuthorizationModalOpen || spendingRequests.length === 0) return null
+    
     const {
         originator,
         description,
@@ -61,43 +77,22 @@ const SpendingAuthorizationModal = () => {
         lineItems
     } = spendingRequests[0]
 
+    const upgradeAmount = determineUpgradeAmount(amountPreviouslyAuthorized)
+    
     return (
-        <Modal
-            visible={spendingAuthorizationModalOpen}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={handleDeny}
-        >
-            <View style={[styles.modalContainer, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
-                <View style={[styles.modalContent, themeStyles.card]}>
-                    <ScrollView>
-                        {/* Title */}
-                        <Text style={[styles.title, themeStyles.text]}>
-                            {renewal ? 'Spending Authorization Renewal' : 'Spending Authorization Request'}
-                        </Text>
-
+        <Modal visible={spendingAuthorizationModalOpen} transparent={true} animationType="slide">
+            <View style={styles.modalContainer}>
+                <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+                        <ScrollView>
                         {/* App section */}
-                        <AppChip
-                            size={1.5}
-                            showDomain
-                            label={originator || 'unknown'}
-                            clickable={false}
-                        />
+                        <View style={styles.infoRow}>
+                            <Text style={[styles.label, themeStyles.text]}>Application:</Text>
+                            <Text style={[styles.value, themeStyles.text]}>
+                                {originator || 'unknown'}
+                            </Text>
+                        </View>
 
                         <View style={styles.divider} />
-
-                        {/* Transaction Amount */}
-                        <View style={styles.infoRow}>
-                            <Text style={[styles.label, themeStyles.text]}>Transaction Amount:</Text>
-                            <View style={styles.amountContainer}>
-                                <Text style={[styles.value, themeStyles.text]}>
-                                    {formatBSV(transactionAmount)} BSV
-                                </Text>
-                                <Text style={[styles.subValue, themeStyles.textSecondary]}>
-                                    (${formatUSD(transactionAmount)})
-                                </Text>
-                            </View>
-                        </View>
 
                         {/* Past Spending */}
                         {totalPastSpending > 0 && (
@@ -105,10 +100,7 @@ const SpendingAuthorizationModal = () => {
                                 <Text style={[styles.label, themeStyles.text]}>Total Past Spending:</Text>
                                 <View style={styles.amountContainer}>
                                     <Text style={[styles.value, themeStyles.text]}>
-                                        {formatBSV(totalPastSpending)} BSV
-                                    </Text>
-                                    <Text style={[styles.subValue, themeStyles.textSecondary]}>
-                                        (${formatUSD(totalPastSpending)})
+                                        <AmountDisplay>{totalPastSpending}</AmountDisplay>
                                     </Text>
                                 </View>
                             </View>
@@ -120,10 +112,7 @@ const SpendingAuthorizationModal = () => {
                                 <Text style={[styles.label, themeStyles.text]}>Previously Authorized:</Text>
                                 <View style={styles.amountContainer}>
                                     <Text style={[styles.value, themeStyles.text]}>
-                                        {formatBSV(amountPreviouslyAuthorized)} BSV
-                                    </Text>
-                                    <Text style={[styles.subValue, themeStyles.textSecondary]}>
-                                        (${formatUSD(amountPreviouslyAuthorized)})
+                                        <AmountDisplay>{amountPreviouslyAuthorized}</AmountDisplay>
                                     </Text>
                                 </View>
                             </View>
@@ -133,7 +122,16 @@ const SpendingAuthorizationModal = () => {
                         {lineItems && lineItems.length > 0 && (
                             <>
                                 <View style={styles.divider} />
-                                <Text style={[styles.sectionTitle, themeStyles.text]}>Line Items:</Text>
+                                <View style={styles.lineItem}>
+                                    <Text style={[styles.label, themeStyles.text]}>
+                                        Description
+                                    </Text>
+                                    <View style={styles.amountContainer}>
+                                        <Text style={[styles.label, themeStyles.text]}>
+                                            Amount
+                                        </Text>
+                                    </View>
+                                </View>
                                 {lineItems.map((item: any, index: number) => (
                                     <View key={index} style={styles.lineItem}>
                                         <Text style={[styles.lineItemText, themeStyles.text]}>
@@ -141,16 +139,23 @@ const SpendingAuthorizationModal = () => {
                                         </Text>
                                         <View style={styles.amountContainer}>
                                             <Text style={[styles.value, themeStyles.text]}>
-                                                {formatBSV(item.amount)} BSV
-                                            </Text>
-                                            <Text style={[styles.subValue, themeStyles.textSecondary]}>
-                                                (${formatUSD(item.amount)})
+                                                <AmountDisplay>{item.amount}</AmountDisplay>
                                             </Text>
                                         </View>
                                     </View>
                                 ))}
                             </>
                         )}
+
+                        {/* Transaction Amount */}
+                        <View style={{ ...styles.infoRow, backgroundColor: colors.buttonBackground, padding: 16, marginVertical: 16 }}>
+                            <Text style={[styles.label, themeStyles.text, { color: colors.buttonText }]}>Total:</Text>
+                            <View style={styles.amountContainer}>
+                                <Text style={[styles.value, themeStyles.text, { color: colors.buttonText, fontWeight: 'bold' }]}>
+                                    <AmountDisplay>{transactionAmount}</AmountDisplay>
+                                </Text>
+                            </View>
+                        </View>
 
                         {/* Description */}
                         {description && (
@@ -183,15 +188,15 @@ const SpendingAuthorizationModal = () => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.button, styles.grantButton, themeStyles.button]}
-                                onPress={() => handleGrant({ singular: true })}
+                                onPress={() => handleGrant({ singular: false, amount: upgradeAmount })}
                             >
-                                <Text style={[styles.buttonText, themeStyles.buttonText]}>Grant Once</Text>
+                                <Text style={[styles.buttonText, themeStyles.buttonText]}>Allow Up To &nbsp;<AmountDisplay color={colors.buttonText}>{upgradeAmount}</AmountDisplay></Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.button, styles.grantButton, themeStyles.button]}
-                                onPress={() => handleGrant({ singular: false, amount: authorizationAmount })}
+                                onPress={() => handleGrant({ singular: true })}
                             >
-                                <Text style={[styles.buttonText, themeStyles.buttonText]}>Grant Always</Text>
+                                <Text style={[styles.buttonText, themeStyles.buttonText]}>Spend</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>
@@ -270,7 +275,7 @@ const styles = StyleSheet.create({
         borderRadius: 2
     },
     buttonContainer: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         justifyContent: 'space-between',
         marginTop: 10
     },
@@ -278,7 +283,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 12,
         borderRadius: 8,
-        marginHorizontal: 5
     },
     denyButton: {
         borderWidth: 1

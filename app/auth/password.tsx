@@ -113,7 +113,7 @@ export default function PasswordScreen() {
           <TouchableOpacity 
             style={[
               styles.button, 
-              !isButtonEnabled() && styles.buttonDisabled
+              (!isValidPassword() || loading) && styles.buttonDisabled
             ]} 
             onPress={handleSubmit}
             disabled={!isButtonEnabled() || loading}
