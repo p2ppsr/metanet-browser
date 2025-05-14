@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text,
@@ -8,7 +8,8 @@ import {
   ScrollView,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
@@ -26,13 +27,20 @@ const ConfigScreen = () => {
   // Access theme
   const { colors, isDark } = useTheme();
   const styles = useThemeStyles();
-  const { finalizeConfig } = useContext(WalletContext);
+  const { finalizeConfig, managers, setConfigStatus } = useContext(WalletContext);
   
   // State for configuration
   const [wabUrl, setWabUrl] = useState(DEFAULT_WAB_URL);
+  const [wabInfo, setWabInfo] = useState<{
+    supportedAuthMethods: string[];
+    faucetEnabled: boolean;
+    faucetAmount: number;
+  } | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
   const [phoneVerifier, setPhoneVerifier] = useState<PhoneVerifier>('Twilio');
   const [network, setNetwork] = useState<BsvNetwork>('mainnet');
   const [storageUrl, setStorageUrl] = useState(DEFAULT_STORAGE_URL);
+  const [backupConfig, setBackupConfig] = useState<WABConfig>();
   
   // Validation
   const isUrlValid = (url: string) => {
@@ -48,6 +56,69 @@ const ConfigScreen = () => {
     return isUrlValid(wabUrl) && isUrlValid(storageUrl);
   };
   
+  // Fetch wallet configuration info
+  const fetchWalletConfig = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const res = await fetch(`${wabUrl}/info`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch info: ${res.status}`);
+      }
+      const info = await res.json();
+      setWabInfo(info);
+      
+      // Auto-select the first supported authentication method if available
+      if (info.supportedAuthMethods && info.supportedAuthMethods.length > 0) {
+        const method = info.supportedAuthMethods[0].toLowerCase();
+        setPhoneVerifier(method.includes('twilio') ? 'Twilio' : 'Persona');
+      }
+    } catch (error: any) {
+      console.error('Error fetching wallet config:', error);
+      Alert.alert('Error', 'Could not fetch wallet configuration: ' + error.message);
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // Auto-fetch wallet configuration info when component mounts
+  useEffect(() => {
+    if (!wabInfo && !managers?.walletManager?.authenticated) {
+      fetchWalletConfig();
+    }
+  }, []);
+
+  // Force the manager to use the "presentation-key-and-password" flow
+  useEffect(() => {
+    if (managers?.walletManager) {
+      managers.walletManager.authenticationMode = 'presentation-key-and-password';
+    }
+  }, [managers?.walletManager]);
+
+  const layAwayCurrentConfig = () => {
+    setBackupConfig({
+      wabUrl,
+      wabInfo,
+      method: phoneVerifier.toLowerCase(),
+      network: network === 'mainnet' ? 'main' : 'test',
+      storageUrl
+    });
+    if (managers?.walletManager) {
+      delete managers.walletManager;
+    }
+    if (managers?.permissionsManager) {
+      delete managers.permissionsManager;
+    }
+    if (managers?.settingsManager) {
+      delete managers.settingsManager;
+    }
+  };
+
+  const resetCurrentConfig = useCallback(() => {
+    if (backupConfig) {
+      finalizeConfig(backupConfig);
+    }
+  }, [backupConfig, finalizeConfig]);
+
   // Handle save and continue
   const handleSaveConfig = () => {
     if (!isFormValid()) {
@@ -70,19 +141,22 @@ const ConfigScreen = () => {
     if (finalizeConfig) {
       const success = finalizeConfig(wabConfig);
       if (success) {
+        setConfigStatus('configured');
         console.log('Configuration saved successfully');
-        router.push('/auth/phone');
+        router.push('/');
       } else {
         Alert.alert('Configuration Error', 'Failed to save configuration. Please try again.');
       }
     } else {
       console.log('Configuration would be saved:', wabConfig);
-      router.push('/auth/phone');
+      router.push('/');
     }
   };
   
   // Handle cancellation - return to welcome screen
   const handleCancel = () => {
+    setConfigStatus('configured');
+    resetCurrentConfig();
     router.back();
   };
   
@@ -137,6 +211,12 @@ const ConfigScreen = () => {
                 Provides 2 of 3 backup and recovery functionality for your root key.
               </Text>
               
+              {isLoadingConfig && (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <ActivityIndicator size="large" color={colors.secondary} />
+                </View>
+              )}
+              
               <Text style={styles.inputLabel}>WAB URL</Text>
               <View style={styles.input}>
                 <TextInput
@@ -149,6 +229,14 @@ const ConfigScreen = () => {
                   keyboardType="url"
                 />
               </View>
+              
+              <TouchableOpacity 
+                style={[styles.button, { marginTop: 10 }]}
+                onPress={fetchWalletConfig}
+                disabled={isLoadingConfig}
+              >
+                <Text style={styles.buttonText}>Refresh Info</Text>
+              </TouchableOpacity>
               
               {/* Phone Verification Service */}
               <Text style={[styles.inputLabel, { marginTop: 15 }]}>
