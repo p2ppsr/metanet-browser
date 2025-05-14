@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -51,7 +51,8 @@ export default function OtpScreen() {
   }, []);
   
   // Handle OTP verification
-  const handleVerify = async () => {
+  const handleVerify = useCallback(async (otp: string) => {
+    console.log({ otp })
     if (otp.length !== 6) return; // Ensure OTP is complete
     
     setLoading(true);
@@ -73,10 +74,10 @@ export default function OtpScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [otp, managers, phoneNumber])
   
   // Handle resend OTP
-  const handleResend = async () => {
+  const handleResend = useCallback(async () => {
     if (!canResend) return;
     
     setLoading(true);
@@ -95,7 +96,7 @@ export default function OtpScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [canResend, managers, phoneNumber])
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -132,25 +133,35 @@ export default function OtpScreen() {
                       }
                     ]}
                     keyboardType="phone-pad"
-                    maxLength={1}
+                    maxLength={6}
                     value={otp[index] || ''}
                     onChangeText={(text) => {
-                      // Update the OTP value at this index
-                      if (text.length === 0) {
+                      let updatedOtp = otp;
+                      
+                      // Handle paste event
+                      if (text.length > 1) {
+                        updatedOtp = text.replace(/[^0-9]/g, '').slice(0, 6);
+                      } else if (text.length === 0) {
                         // Backspace - clear current digit
-                        setOtp(otp.slice(0, index));
+                        updatedOtp = otp.slice(0, index);
                       } else {
-                        // Add digit to OTP
-                        const newOtp = otp.slice(0, index) + text + otp.slice(index + 1);
-                        setOtp(newOtp);
+                        // Single digit input
+                        updatedOtp = otp.slice(0, index) + text + otp.slice(index + 1);
                         
                         // Auto-focus next input if this one is filled
                         if (index < 5 && text.length === 1) {
-                          // Move to next input using React Native refs
                           if (inputRefs.current[index + 1]) {
                             inputRefs.current[index + 1]?.focus();
                           }
                         }
+                      }
+                      
+                      // Update OTP state
+                      setOtp(updatedOtp);
+
+                      // Verify if complete
+                      if (updatedOtp.length === 6) {
+                        handleVerify(updatedOtp)
                       }
                     }}
                     autoFocus={index === 0}
@@ -159,24 +170,6 @@ export default function OtpScreen() {
               })}
             </View>
           </View>
-          
-          <TouchableOpacity 
-            style={[
-              styles.verifyButton, 
-              { backgroundColor: colors.primary },
-              otp.length !== 6 && {
-                backgroundColor: colors.inputBorder
-              }
-            ]} 
-            onPress={handleVerify}
-            disabled={otp.length !== 6 || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.buttonText} />
-            ) : (
-              <Text style={[styles.verifyButtonText, { color: colors.buttonText }]}>Verify</Text>
-            )}
-          </TouchableOpacity>
           
           <View style={styles.resendContainer}>
             <Text style={[styles.resendText, { color: colors.textSecondary }]}>Didn't receive the code?</Text>

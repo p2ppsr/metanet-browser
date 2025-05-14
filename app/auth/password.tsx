@@ -116,7 +116,7 @@ export default function PasswordScreen() {
               !isButtonEnabled() && styles.buttonDisabled
             ]} 
             onPress={handleSubmit}
-            disabled={!isButtonEnabled()}
+            disabled={!isButtonEnabled() || loading}
           >
             {loading ? (
               <ActivityIndicator color={colors.buttonText} />
