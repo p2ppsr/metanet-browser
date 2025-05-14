@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import ConfigModal from '@/components/ConfigModal';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,9 +63,35 @@ export default function LoginScreen() {
     }
   };
 
-  // Navigate to config screen
+  // Config modal state
+  const [showConfig, setShowConfig] = useState(false);
+
+  // Handle config modal
   const handleConfig = () => {
-    router.push('/config');
+    setShowConfig(true);
+  };
+
+  const handleConfigDismiss = () => {
+    setShowConfig(false);
+  };
+
+  const handleConfigured = async () => {
+    // After successful config, proceed with auth
+    try {
+      await auth(true);
+      const snap = await getItem('snap');
+      if (!snap) {
+        router.push('/auth/phone');
+        return;
+      }
+      const snapArr = Utils.toArray(snap, 'base64');
+      await managers?.walletManager?.loadSnapshot(snapArr);
+      
+      router.replace('/(tabs)/apps');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to authenticate. Please try again.');
+    }
   };
 
   return (
@@ -101,6 +128,12 @@ export default function LoginScreen() {
             <Text style={styles.configButtonText}>Configure Providers</Text>
           </View>
         </TouchableOpacity>
+
+        <ConfigModal
+          visible={showConfig}
+          onDismiss={handleConfigDismiss}
+          onConfigured={handleConfigured}
+        />
       </View>
     </SafeAreaView>
   );
