@@ -15,7 +15,7 @@ import { Utils } from '@bsv/sdk';
 export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
-  const { managers, selectedWabUrl, selectedStorageUrl, selectedAuthMethod, selectedNetwork, finalizeConfig } = useWallet();
+  const { managers, selectedWabUrl, selectedStorageUrl, selectedMethod, selectedNetwork, finalizeConfig } = useWallet();
   const { getItem, auth } = useLocalStorage();
   const [loading, setLoading] = React.useState(false);
 
@@ -31,12 +31,12 @@ export default function LoginScreen() {
         throw new Error(`Failed to fetch info: ${res.status}`)
       }
       const wabInfo = await res.json()
-      console.log({ wabInfo, selectedWabUrl, selectedAuthMethod, selectedNetwork, selectedStorageUrl })
+      console.log({ wabInfo, selectedWabUrl, selectedMethod, selectedNetwork, selectedStorageUrl })
       const success = finalizeConfig({
         wabUrl: selectedWabUrl,
         wabInfo,
-        method: selectedAuthMethod ?? wabInfo.supportedAuthMethods[0],
-        network: selectedNetwork === 'main' ? 'main' : 'test',
+        method: selectedMethod ?? wabInfo.supportedAuthMethods[0],
+        network: selectedNetwork,
         storageUrl: selectedStorageUrl
       })
       if (!success) {
