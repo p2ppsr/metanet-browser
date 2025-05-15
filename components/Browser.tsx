@@ -246,6 +246,9 @@ export default function Browser() {
         case 'getHeaderForHeight':
           response = await wallet?.getHeaderForHeight(msg?.args || {}, origin)
           break;
+        case 'discoverByAttributes':
+          response = await wallet?.discoverByAttributes(msg?.args || {}, origin)
+          break;
         case 'getNetwork':
           response = await wallet?.getNetwork({}, origin)
           break;
