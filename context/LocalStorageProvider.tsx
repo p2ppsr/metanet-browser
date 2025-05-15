@@ -50,6 +50,7 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
     const auth = useCallback(async (activelyRequestPermission: boolean = false) => {
         try {
+            return true // TODO remove before release
             if (authenticated) return true;
             if (!activelyRequestPermission) return false;
             const authResult = await LocalAuthentication.authenticateAsync({

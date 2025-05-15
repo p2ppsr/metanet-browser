@@ -26,7 +26,16 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
   // Access theme
   const { colors, isDark } = useTheme();
   const styles = useThemeStyles();
-  const { finalizeConfig, managers, setConfigStatus, selectedWabUrl, selectedStorageUrl, selectedAuthMethod, selectedNetwork } = useWallet();
+  const { 
+    finalizeConfig, 
+    managers, 
+    setConfigStatus, 
+    selectedWabUrl, 
+    selectedStorageUrl, 
+    selectedMethod, 
+    selectedNetwork,
+    setWalletBuilt
+  } = useWallet();
   
   // State for configuration
   const [wabUrl, setWabUrl] = useState<string>(selectedWabUrl);
@@ -36,8 +45,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
     faucetAmount: number;
   } | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-  const [authMethod, setAuthMethod] = useState<string>(selectedAuthMethod);
-  const [network, setNetwork] = useState<string>(selectedNetwork);
+  const [method, setMethod] = useState<WABConfig['method']>(selectedMethod);
+  const [network, setNetwork] = useState<WABConfig['network']>(selectedNetwork);
   const [storageUrl, setStorageUrl] = useState<string>(selectedStorageUrl);
   const [backupConfig, setBackupConfig] = useState<WABConfig>();
   
@@ -68,7 +77,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
       
       // Auto-select the first supported authentication method if available
       if (info.supportedAuthMethods && info.supportedAuthMethods.length > 0) {
-        setAuthMethod(info.supportedAuthMethods[0]);
+        setMethod(info.supportedAuthMethods[0]);
       }
     } catch (error: any) {
       console.error('Error fetching wallet config:', error);
@@ -93,11 +102,12 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
   }, [managers?.walletManager]);
 
   const layAwayCurrentConfig = () => {
+    setWalletBuilt(false);
     setBackupConfig({
       wabUrl,
       wabInfo,
-      method: authMethod.toLowerCase(),
-      network: network === 'mainnet' ? 'main' : 'test',
+      method,
+      network,
       storageUrl
     });
     if (managers?.walletManager) {
@@ -123,13 +133,15 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
       Alert.alert('Invalid Configuration', 'Please ensure both URLs are valid.');
       return;
     }
+
+    layAwayCurrentConfig();
     
     // Construct the WAB config
     const wabConfig: WABConfig = {
       wabUrl,
       wabInfo,
-      method: authMethod.toLowerCase(),
-      network: network === 'mainnet' ? 'main' : 'test',
+      method,
+      network,
       storageUrl
     };
     
@@ -142,6 +154,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
       onDismiss();
     } else {
       Alert.alert('Configuration Error', 'Failed to save configuration. Please try again.');
+      resetCurrentConfig();
     }
   };
   
@@ -153,7 +166,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
   };
   
   // Render a selectable chip
-  const renderChip = (label: string, labelSelected: string, onPress: () => void) => (
+  const renderChip = (label: string, labelSelected: string, onPress: Function) => (
     <TouchableOpacity
       style={[
         styles.row,
@@ -167,7 +180,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
           borderColor: labelSelected === label ? colors.secondary : colors.inputBorder,
         }
       ]}
-      onPress={onPress}
+      onPress={() => onPress(label)}
     >
       {labelSelected === label && (
         <Ionicons 
@@ -182,14 +195,6 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
       </Text>
     </TouchableOpacity>
   );
-
-  if (!visible) {
-    return <>
-      <Text style={[styles.text, { color: colors.textPrimary }]}>
-        {JSON.stringify({ selectedAuthMethod, wabInfo, wabUrl, storageUrl, network })}
-      </Text>
-    </>;
-  }
 
   return (
     <Modal
@@ -262,8 +267,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
                 Service which will be used to verify your phone number
               </Text>
               <View style={[styles.row, { flexWrap: 'wrap', marginVertical: 10 }]}>
-                {renderChip('Twilio', authMethod, () => setAuthMethod('Twilio'))}
-                {renderChip('Persona', authMethod, () => setAuthMethod('Persona'))}
+                {renderChip('Twilio', method, setMethod)}
+                {renderChip('Persona', method, setMethod)}
               </View>
             </View>
             
@@ -274,8 +279,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
               </Text>
               
               <View style={[styles.row, { flexWrap: 'wrap', marginVertical: 10 }]}>
-                {renderChip('mainnet', network, () => setNetwork('mainnet'))}
-                {renderChip('testnet', network, () => setNetwork('testnet'))}
+                {renderChip('main', network, setNetwork)}
+                {renderChip('test', network, setNetwork)}
               </View>
             </View>
             

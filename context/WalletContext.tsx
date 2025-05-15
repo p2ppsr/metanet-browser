@@ -54,7 +54,6 @@ export interface WalletContextValue {
   // Settings
   settings: WalletSettings;
   updateSettings: (newSettings: WalletSettings) => Promise<void>;
-  network: 'mainnet' | 'testnet';
   // Logout
   logout: () => void;
   adminOriginator: string;
@@ -75,8 +74,9 @@ export interface WalletContextValue {
   configStatus: ConfigStatus,
   selectedWabUrl: string,
   selectedStorageUrl: string,
-  selectedAuthMethod: string,
-  selectedNetwork: string
+  selectedMethod: string,
+  selectedNetwork: 'main' | 'test',
+  setWalletBuilt: (current: boolean) => void
 }
 
 export const WalletContext = createContext<WalletContextValue>({
@@ -104,8 +104,9 @@ export const WalletContext = createContext<WalletContextValue>({
   configStatus: 'initial',
   selectedWabUrl: '',
   selectedStorageUrl: '',
-  selectedAuthMethod: '',
-  selectedNetwork: 'mainnet'
+  selectedMethod: '',
+  selectedNetwork: 'main',
+  setWalletBuilt: (current: boolean) => { }
 })
 
 type PermissionType = 'identity' | 'protocol' | 'renewal' | 'basket';
@@ -480,7 +481,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // ---- WAB + network + storage configuration ----
   const [selectedWabUrl, setSelectedWabUrl] = useState<string>(DEFAULT_WAB_URL);
-  const [selectedAuthMethod, setSelectedAuthMethod] = useState<string>('');
+  const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [selectedNetwork, setSelectedNetwork] = useState<'main' | 'test'>(DEFAULT_CHAIN); // "test" or "main"
   const [selectedStorageUrl, setSelectedStorageUrl] = useState<string>(DEFAULT_STORAGE_URL);
 
@@ -495,27 +496,27 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     const { wabUrl, wabInfo, method, network, storageUrl } = wabConfig
     try {
       if (!wabUrl) {
-        toast.error("WAB Server URL is required");
+        console.error("WAB Server URL is required");
         return false
       }
 
       if (!wabInfo || !method) {
-        toast.error("Auth Method selection is required");
+        console.error("Auth Method selection is required");
         return false
       }
 
       if (!network) {
-        toast.error("Network selection is required");
+        console.error("Network selection is required");
         return false
       }
 
       if (!storageUrl) {
-        toast.error("Storage URL is required");
+        console.error("Storage URL is required");
         return false
       }
 
       setSelectedWabUrl(wabUrl)
-      setSelectedAuthMethod(method)
+      setSelectedMethod(method)
       setSelectedNetwork(network)
       setSelectedStorageUrl(storageUrl)
 
@@ -802,8 +803,9 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     configStatus,
     selectedWabUrl,
     selectedStorageUrl,
-    selectedAuthMethod,
-    selectedNetwork
+    selectedMethod,
+    selectedNetwork,
+    setWalletBuilt
   }), [
     managers,
     settings,
@@ -827,8 +829,9 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     configStatus,
     selectedWabUrl,
     selectedStorageUrl,
-    selectedAuthMethod,
-    selectedNetwork    
+    selectedMethod,
+    selectedNetwork,
+    setWalletBuilt,
   ]);
 
   return (

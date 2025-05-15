@@ -15,7 +15,7 @@ import { Utils } from '@bsv/sdk';
 export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
-  const { managers, finalizeConfig } = useWallet();
+  const { managers, selectedWabUrl, selectedStorageUrl, selectedAuthMethod, selectedNetwork, finalizeConfig } = useWallet();
   const { getItem, auth } = useLocalStorage();
   const [loading, setLoading] = React.useState(false);
 
@@ -26,17 +26,18 @@ export default function LoginScreen() {
       setLoading(true)
       
       // Fetch WAB info
-      const res = await fetch(`${DEFAULT_WAB_URL}/info`)
+      const res = await fetch(`${selectedWabUrl}/info`)
       if (!res.ok) {
         throw new Error(`Failed to fetch info: ${res.status}`)
       }
       const wabInfo = await res.json()
+      console.log({ wabInfo, selectedWabUrl, selectedAuthMethod, selectedNetwork, selectedStorageUrl })
       const success = finalizeConfig({
-        wabUrl: DEFAULT_WAB_URL,
+        wabUrl: selectedWabUrl,
         wabInfo,
-        method: wabInfo.supportedAuthMethods[0],
-        network: DEFAULT_CHAIN,
-        storageUrl: DEFAULT_STORAGE_URL
+        method: selectedAuthMethod ?? wabInfo.supportedAuthMethods[0],
+        network: selectedNetwork === 'main' ? 'main' : 'test',
+        storageUrl: selectedStorageUrl
       })
       if (!success) {
         Alert.alert('Error', 'Failed to finalize configuration. Please try again.');
