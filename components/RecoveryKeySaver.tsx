@@ -38,7 +38,7 @@ const RecoveryKeySaver = () => {
   const [affirmative2, setAffirmative2] = useState(false)
   const [affirmative3, setAffirmative3] = useState(false)
   
-  const { setRecoveryKeySaver } = useWallet()
+  const { managers, setRecoveryKeySaver } = useWallet()
   
   const isAllChecked = affirmative1 && affirmative2 && affirmative3
   
@@ -48,44 +48,19 @@ const RecoveryKeySaver = () => {
     return Promise.resolve(true)
   }, [])
   
-  // Create a ref to store the handler function
-  const handlerRef = useRef(dummyHandler)
-  
-  // Create a stable recovery key handler function
   useEffect(() => {
-    // Define the actual handler
-    handlerRef.current = (key: number[]): Promise<true> => {
-      return new Promise<true>((resolvePromise, rejectPromise) => {
-        try {
-          // Guard against undefined or invalid keys
-          if (!key || !Array.isArray(key)) {
-            // console.error('Invalid recovery key provided:', key)
-            rejectPromise(new Error('Invalid recovery key format'))
-            return
-          }
-          
+    setRecoveryKeySaver((): any => {
+      return (key: number[]): Promise<true> => {
+        return new Promise((resolve, reject) => {
           const keyAsStr = Utils.toBase64(key)
+          setResolve(() => { return resolve })
+          setReject(() => { return reject })
           setRecoveryKey(keyAsStr)
-          setResolve(() => resolvePromise)
-          setReject(() => rejectPromise)
           setOpen(true)
-        } catch (error) {
-          console.error('Error processing recovery key:', error)
-          rejectPromise(error)
-        }
-      })
-    }
-  }, [])
-  
-  // Register the handler with WalletContext exactly once on mount
-  useEffect(() => {
-    // Provide a stable reference that delegates to our ref
-    const stableHandler = (key: number[]): Promise<true> => {
-      return handlerRef.current(key)
-    }
-    
-    setRecoveryKeySaver(stableHandler)
-  }, [])
+        })
+      }
+    })
+  }, [managers])
   
   const handleClose = () => {
     setOpen(false)
