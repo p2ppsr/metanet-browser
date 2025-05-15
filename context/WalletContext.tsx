@@ -72,7 +72,11 @@ export interface WalletContextValue {
   recentApps: any[]
   finalizeConfig: (wabConfig: WABConfig) => boolean
   setConfigStatus: (status: ConfigStatus) => void
-  configStatus: ConfigStatus
+  configStatus: ConfigStatus,
+  selectedWabUrl: string,
+  selectedStorageUrl: string,
+  selectedAuthMethod: string,
+  selectedNetwork: string
 }
 
 export const WalletContext = createContext<WalletContextValue>({
@@ -97,7 +101,11 @@ export const WalletContext = createContext<WalletContextValue>({
   recentApps: [],
   finalizeConfig: () => false,
   setConfigStatus: () => { },
-  configStatus: 'initial'
+  configStatus: 'initial',
+  selectedWabUrl: '',
+  selectedStorageUrl: '',
+  selectedAuthMethod: '',
+  selectedNetwork: 'mainnet'
 })
 
 type PermissionType = 'identity' | 'protocol' | 'renewal' | 'basket';
@@ -471,14 +479,8 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   }, [isFocused, onFocusRequested])
 
   // ---- WAB + network + storage configuration ----
-  const [wabUrl, setWabUrl] = useState<string>(DEFAULT_WAB_URL);
-  const [wabInfo, setWabInfo] = useState<{
-    supportedAuthMethods: string[];
-    faucetEnabled: boolean;
-    faucetAmount: number;
-  } | null>(null);
-
-  const [selectedAuthMethod, setSelectedAuthMethod] = useState<string>("");
+  const [selectedWabUrl, setSelectedWabUrl] = useState<string>(DEFAULT_WAB_URL);
+  const [selectedAuthMethod, setSelectedAuthMethod] = useState<string>('');
   const [selectedNetwork, setSelectedNetwork] = useState<'main' | 'test'>(DEFAULT_CHAIN); // "test" or "main"
   const [selectedStorageUrl, setSelectedStorageUrl] = useState<string>(DEFAULT_STORAGE_URL);
 
@@ -487,50 +489,6 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   const [configStatus, setConfigStatus] = useState<ConfigStatus>('initial');
   // Used to trigger a re-render after snapshot load completes.
   const [snapshotLoaded, setSnapshotLoaded] = useState<boolean>(false);
-
-  // Fetch WAB info for first-time configuration
-  const fetchWabInfo = useCallback(async () => {
-    try {
-      const response = await fetch(`${wabUrl}/info`);
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-      }
-
-      const info = await response.json();
-      setWabInfo(info);
-
-      // If there's only one auth method, auto-select it
-      if (info.supportedAuthMethods && info.supportedAuthMethods.length === 1) {
-        setSelectedAuthMethod(info.supportedAuthMethods[0]);
-      }
-      return info;
-    } catch (error: any) {
-      console.error("Error fetching WAB info", error);
-      toast.error("Could not fetch WAB info: " + error.message);
-      return null;
-    }
-  }, [wabUrl]);
-
-  // snap
-  useEffect(() => {
-    // if there is no snapshot available and the configuration is initial
-    const snap = getItem('snap')
-    if (!snap && configStatus === 'initial') {
-      (async () => {
-        try {
-          const info = await fetchWabInfo();
-
-          if (info && info.supportedAuthMethods && info.supportedAuthMethods.length > 0) {
-            setSelectedAuthMethod(info.supportedAuthMethods[0]);
-            // Automatically apply default configuration
-            setConfigStatus('configured');
-          }
-        } catch (error: any) {
-          console.error("Error in initial WAB setup", error);
-        }
-      })();
-    }
-  }, [wabUrl, configStatus, fetchWabInfo]);
 
   // For new users: mark configuration complete when WalletConfig is submitted.
   const finalizeConfig = (wabConfig: WABConfig): boolean => {
@@ -556,8 +514,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         return false
       }
 
-      setWabUrl(wabUrl)
-      setWabInfo(wabInfo)
+      setSelectedWabUrl(wabUrl)
       setSelectedAuthMethod(method)
       setSelectedNetwork(network)
       setSelectedStorageUrl(storageUrl)
@@ -694,7 +651,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         });
 
         // Create a WAB Client with proper URL
-        const wabClient = new WABClient(wabUrl);
+        const wabClient = new WABClient(selectedWabUrl);
 
         // Create a phone interactor
         const phoneInteractor = new TwilioPhoneInteractor();
@@ -737,7 +694,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     configStatus,
     managers.walletManager,
     selectedNetwork,
-    wabUrl,
+    selectedWabUrl,
     buildWallet,
     loadWalletSnapshot,
     adminOriginator
@@ -842,12 +799,15 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     recentApps,
     finalizeConfig,
     setConfigStatus,
-    configStatus
+    configStatus,
+    selectedWabUrl,
+    selectedStorageUrl,
+    selectedAuthMethod,
+    selectedNetwork
   }), [
     managers,
     settings,
     updateSettings,
-    selectedNetwork,
     logout,
     adminOriginator,
     setPasswordRetriever,
@@ -865,6 +825,10 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     finalizeConfig,
     setConfigStatus,
     configStatus,
+    selectedWabUrl,
+    selectedStorageUrl,
+    selectedAuthMethod,
+    selectedNetwork    
   ]);
 
   return (

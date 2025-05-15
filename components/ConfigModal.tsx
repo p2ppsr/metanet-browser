@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text,
@@ -14,12 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
-import { WalletContext, WABConfig } from '@/context/WalletContext';
-import { DEFAULT_WAB_URL, DEFAULT_STORAGE_URL } from '@/context/config';
-
-// Define types for config
-type PhoneVerifier = 'Twilio' | 'Persona';
-type BsvNetwork = 'mainnet' | 'testnet';
+import { useWallet, WABConfig } from '@/context/WalletContext';
 
 interface ConfigModalProps {
   visible: boolean;
@@ -31,19 +26,19 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
   // Access theme
   const { colors, isDark } = useTheme();
   const styles = useThemeStyles();
-  const { finalizeConfig, managers, setConfigStatus } = useContext(WalletContext);
+  const { finalizeConfig, managers, setConfigStatus, selectedWabUrl, selectedStorageUrl, selectedAuthMethod, selectedNetwork } = useWallet();
   
   // State for configuration
-  const [wabUrl, setWabUrl] = useState(DEFAULT_WAB_URL);
+  const [wabUrl, setWabUrl] = useState<string>(selectedWabUrl);
   const [wabInfo, setWabInfo] = useState<{
     supportedAuthMethods: string[];
     faucetEnabled: boolean;
     faucetAmount: number;
   } | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-  const [phoneVerifier, setPhoneVerifier] = useState<PhoneVerifier>('Twilio');
-  const [network, setNetwork] = useState<BsvNetwork>('mainnet');
-  const [storageUrl, setStorageUrl] = useState(DEFAULT_STORAGE_URL);
+  const [authMethod, setAuthMethod] = useState<string>(selectedAuthMethod);
+  const [network, setNetwork] = useState<string>(selectedNetwork);
+  const [storageUrl, setStorageUrl] = useState<string>(selectedStorageUrl);
   const [backupConfig, setBackupConfig] = useState<WABConfig>();
   
   // Validation
@@ -73,8 +68,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
       
       // Auto-select the first supported authentication method if available
       if (info.supportedAuthMethods && info.supportedAuthMethods.length > 0) {
-        const method = info.supportedAuthMethods[0].toLowerCase();
-        setPhoneVerifier(method.includes('twilio') ? 'Twilio' : 'Persona');
+        setAuthMethod(info.supportedAuthMethods[0]);
       }
     } catch (error: any) {
       console.error('Error fetching wallet config:', error);
@@ -102,7 +96,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
     setBackupConfig({
       wabUrl,
       wabInfo,
-      method: phoneVerifier.toLowerCase(),
+      method: authMethod.toLowerCase(),
       network: network === 'mainnet' ? 'main' : 'test',
       storageUrl
     });
@@ -134,22 +128,20 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
     const wabConfig: WABConfig = {
       wabUrl,
       wabInfo,
-      method: phoneVerifier.toLowerCase(),
+      method: authMethod.toLowerCase(),
       network: network === 'mainnet' ? 'main' : 'test',
       storageUrl
     };
     
     // Save the configuration
-    if (finalizeConfig) {
-      const success = finalizeConfig(wabConfig);
-      if (success) {
-        setConfigStatus('configured');
-        console.log('Configuration saved successfully');
-        onConfigured();
-        onDismiss();
-      } else {
-        Alert.alert('Configuration Error', 'Failed to save configuration. Please try again.');
-      }
+    const success = finalizeConfig(wabConfig);
+    if (success) {
+      setConfigStatus('configured');
+      console.log('Configuration saved successfully');
+      onConfigured();
+      onDismiss();
+    } else {
+      Alert.alert('Configuration Error', 'Failed to save configuration. Please try again.');
     }
   };
   
@@ -161,7 +153,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
   };
   
   // Render a selectable chip
-  const renderChip = (label: string, selected: boolean, onPress: () => void) => (
+  const renderChip = (label: string, labelSelected: string, onPress: () => void) => (
     <TouchableOpacity
       style={[
         styles.row,
@@ -170,14 +162,14 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
           borderRadius: 20,
           marginRight: 10,
           marginBottom: 5,
-          backgroundColor: selected ? colors.secondary : colors.inputBackground,
+          backgroundColor: labelSelected === label ? colors.secondary : colors.inputBackground,
           borderWidth: 1,
-          borderColor: selected ? colors.secondary : colors.inputBorder,
+          borderColor: labelSelected === label ? colors.secondary : colors.inputBorder,
         }
       ]}
       onPress={onPress}
     >
-      {selected && (
+      {labelSelected === label && (
         <Ionicons 
           name="checkmark-circle" 
           size={18} 
@@ -185,11 +177,19 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
           style={{ marginRight: 6 }}
         />
       )}
-      <Text style={[styles.text, { color: selected ? (isDark ? colors.background : colors.buttonText) : colors.textPrimary }]}>
+      <Text style={[styles.text, { color: labelSelected === label ? (isDark ? colors.background : colors.buttonText) : colors.textPrimary }]}>
         {label}
       </Text>
     </TouchableOpacity>
   );
+
+  if (!visible) {
+    return <>
+      <Text style={[styles.text, { color: colors.textPrimary }]}>
+        {JSON.stringify({ selectedAuthMethod, wabInfo, wabUrl, storageUrl, network })}
+      </Text>
+    </>;
+  }
 
   return (
     <Modal
@@ -262,8 +262,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
                 Service which will be used to verify your phone number
               </Text>
               <View style={[styles.row, { flexWrap: 'wrap', marginVertical: 10 }]}>
-                {renderChip('Twilio', phoneVerifier === 'Twilio', () => setPhoneVerifier('Twilio'))}
-                {renderChip('Persona', phoneVerifier === 'Persona', () => setPhoneVerifier('Persona'))}
+                {renderChip('Twilio', authMethod, () => setAuthMethod('Twilio'))}
+                {renderChip('Persona', authMethod, () => setAuthMethod('Persona'))}
               </View>
             </View>
             
@@ -274,8 +274,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
               </Text>
               
               <View style={[styles.row, { flexWrap: 'wrap', marginVertical: 10 }]}>
-                {renderChip('mainnet', network === 'mainnet', () => setNetwork('mainnet'))}
-                {renderChip('testnet', network === 'testnet', () => setNetwork('testnet'))}
+                {renderChip('mainnet', network, () => setNetwork('mainnet'))}
+                {renderChip('testnet', network, () => setNetwork('testnet'))}
               </View>
             </View>
             
