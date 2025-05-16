@@ -163,12 +163,10 @@ export interface WABConfig {
 
 interface WalletContextProps {
   children: React.ReactNode;
-  onWalletReady: (wallet: WalletInterface) => Promise<(() => void) | undefined>;
 }
 
 export const WalletContextProvider: React.FC<WalletContextProps> = ({
   children = <></>,
-  onWalletReady
 }) => {
   const [managers, setManagers] = useState<ManagerState>({});
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -176,7 +174,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   const [recentApps, setRecentApps] = useState<any[]>([])
   const [walletBuilt, setWalletBuilt] = useState<boolean>(false)
 
-  const { getItem, setItem, deleteItem, auth } = useLocalStorage()
+  const { getSnap, deleteSnap, getItem, setItem, deleteItem, auth } = useLocalStorage()
 
   const { isFocused, onFocusRequested, onFocusRelinquished, setBasketAccessModalOpen, setCertificateAccessModalOpen, setProtocolAccessModalOpen, setSpendingAuthorizationModalOpen } = useContext(UserContext);
 
@@ -604,17 +602,16 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     const snap = await getSnap()
     if (snap) {
       try {
-        const snapArr = Utils.toArray(snap, 'base64');
-        await walletManager.loadSnapshot(snapArr);
+        console.log({ snap })
+        await walletManager.loadSnapshot(snap);
         await walletManager.waitForAuthentication({})
         // We'll handle setting snapshotLoaded in a separate effect watching authenticated state
       } catch (err: any) {
         console.error("Error loading snapshot", err);
-        deleteItem('snap'); // Clear invalid snapshot
+        deleteSnap(); // Clear invalid snapshot
         toast.error("Couldn't load saved data: " + err.message);
       }
     }
-    toast.error("Snapshots are not supported on mobile");
     return walletManager
   }, [getItem, deleteItem]);
 
@@ -718,12 +715,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   const logout = useCallback(() => {
     // Clear localStorage to prevent auto-login
-    getItem('snap').then(snap => {
-      console.log('snap', snap)
-      if (snap) {
-        console.log('deleting snap')
-        deleteItem('snap');
-      }
+    deleteSnap().then(() => {
       // Reset manager state
       setManagers({});
 
@@ -733,7 +725,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       setWalletBuilt(false);
       router.replace('/')
     })
-  }, [getItem, deleteItem]);
+  }, [deleteSnap]);
 
   const resolveAppDataFromDomain = async ({ appDomains }: { appDomains: string[] }) => {
     const dataPromises = appDomains.map(async (domain, index) => {

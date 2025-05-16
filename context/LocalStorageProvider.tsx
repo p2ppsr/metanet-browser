@@ -111,16 +111,16 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
             let bailout = 20
             while (slice && bailout > 0) {
                 slice = await getItem(`snap-${x}`)
-                if (slice) {
-                    snap.push(...Utils.toArray(slice, 'base64'))
-                    x++
-                }
+                if (slice === null) break;
+                snap.push(...Utils.toArray(slice, 'base64'))
+                x++
                 bailout--
             }
             if (bailout === 0) {
                 console.log('Avoid infinite loops, this data should not be more than 10KB');
                 return null
             }
+            if (snap.length === 0) return null
             return Utils.toArray(snap, 'base64')
         } catch (error) {
             console.log({ error });

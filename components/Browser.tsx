@@ -6,6 +6,7 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 import { WalletInterface } from '@bsv/sdk';
+import CustomSafeArea from '@/components/CustomSafeArea';
 
 const DEFAULT_URL = 'https://deggen.ngrok.app';
 
@@ -438,7 +439,7 @@ export default function Browser() {
   };
   
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <CustomSafeArea style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />      
       {/* URL input and navigation controls */}
       <View style={[styles.urlBarContainer, { backgroundColor: colors.inputBackground }]}>
@@ -515,9 +516,9 @@ export default function Browser() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         containerStyle={{ backgroundColor: colors.background }}
-        injectedJavaScript={injectedJavaScript}
+        // injectedJavaScript={injectedJavaScript}
       />
 
-    </SafeAreaView>
+    </CustomSafeArea>
   );
 }

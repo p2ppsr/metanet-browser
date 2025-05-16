@@ -17,11 +17,12 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 import { Utils } from '@bsv/sdk';
-import { setItem } from 'expo-secure-store';
+import { useLocalStorage } from '@/context/LocalStorageProvider';
 
 export default function PasswordScreen() {
   const params = useLocalSearchParams();
   const phoneNumber = params.phoneNumber as string;
+  const { setSnap } = useLocalStorage()
   
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,8 +54,8 @@ export default function PasswordScreen() {
       await managers!.walletManager!.providePassword(password);
       
       if (managers!.walletManager!.authenticated) {
-        const snapshot = Utils.toBase64(managers!.walletManager!.saveSnapshot())
-        await setItem('snap', snapshot)
+        const snapshot = managers!.walletManager!.saveSnapshot()
+        await setSnap(snapshot)
         router.replace('/(tabs)/apps');
       } else {
         Alert.alert('Error', 'Authentication failed, maybe password is incorrect?')

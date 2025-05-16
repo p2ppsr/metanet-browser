@@ -14,12 +14,6 @@ import BasketAccessModal from '@/components/BasketAccessModal';
 import CertificateAccessModal from '@/components/CertificateAccessModal';
 import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal';
 
-async function onWalletReady(wallet: WalletInterface): Promise<(() => void) | undefined> {
-    return () => {
-        console.log('onWalletReady', wallet);
-    }
-}
-
 const nativeHandlers: NativeHandlers = {
     isFocused: async () => false,
     onFocusRequested: async () => { },
@@ -53,7 +47,7 @@ export default function RootLayout() {
         appName="Metanet Mobile"
       >
         <ExchangeRateContextProvider>
-          <WalletContextProvider onWalletReady={onWalletReady}>
+          <WalletContextProvider>
             <ThemeProvider>
               <PasswordHandler />
               <RecoveryKeySaver />
