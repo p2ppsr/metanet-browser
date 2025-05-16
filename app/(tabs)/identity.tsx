@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Clipboard, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
@@ -11,13 +12,43 @@ export default function IdentityScreen() {
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
   const { managers, adminOriginator } = useWallet();
-  const [identityKey, setIdentityKey] = React.useState<string>('');
+  const [identityKey, setIdentityKey] = useState<string>('');
+  const [privilegedKey, setPrivilegedKey] = useState<string>('');
+  const [showPrivilegedKey, setShowPrivilegedKey] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedPrivileged, setCopiedPrivileged] = useState(false);
 
   const handleCopy = async () => {
     await Clipboard.setString(identityKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+  
+  const handleCopyPrivilegedKey = async () => {
+    await Clipboard.setString(privilegedKey);
+    setCopiedPrivileged(true);
+    setTimeout(() => setCopiedPrivileged(false), 2000);
+  };
+  
+  const handleRevealKey = async () => {
+    try {
+      // Check if the managers are available
+      if (!managers?.permissionsManager) {
+        Alert.alert('Error', 'Wallet manager not available');
+        return;
+      }
+      // Request password authentication
+      const { publicKey } = await managers.permissionsManager!.getPublicKey({
+        identityKey: true,
+        privileged: true,
+        privilegedReason: 'Reveal your privileged identity key alongside your everyday one.'
+      })
+      setPrivilegedKey(publicKey)
+      setShowPrivilegedKey(true)
+    } catch (error) {
+      console.error('Failed to reveal key:', error);
+      Alert.alert('Error', 'Failed to reveal key');
+    }
   };
 
   useEffect(() => {
@@ -31,28 +62,58 @@ export default function IdentityScreen() {
   }, [managers, adminOriginator])
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={themeStyles.container}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Identity</Text>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>
+      <View style={themeStyles.contentContainer}>
+        <Text style={[themeStyles.title, { color: colors.textPrimary }]}>Identity</Text>
+        <Text style={[themeStyles.textSecondary, { marginBottom: 20 }]}>
           Manage your digital identity and credentials.
         </Text>
-        <View style={styles.keyContainer}>
-          <Text style={[styles.keyText, { color: colors.textSecondary, backgroundColor: colors.paperBackground }]} numberOfLines={1} ellipsizeMode="middle">
-            {identityKey}
-          </Text>
-          <TouchableOpacity
-            style={[styles.copyButton, { backgroundColor: colors.paperBackground }]}
-            onPress={handleCopy}
-            disabled={copied}
-          >
-            <MaterialIcons
-              name={copied ? 'check' : 'content-copy'}
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+        <View style={styles.keySection}>
+          <Text style={styles.keyLabel}>Identity Key:</Text>
+          <View style={styles.keyContainer}>
+            <Text style={[styles.keyText, { backgroundColor: colors.paperBackground }]} numberOfLines={1} ellipsizeMode="middle">
+              {identityKey}
+            </Text>
+            <TouchableOpacity
+              style={[styles.copyButton, { backgroundColor: colors.paperBackground }]}
+              onPress={handleCopy}
+              disabled={copied}
+            >
+              <MaterialIcons
+                name={copied ? 'check' : 'content-copy'}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
+          
+          <Text style={[styles.keyLabel, { marginTop: 20 }]}>Privileged Identity Key:</Text>
+          {showPrivilegedKey ? (
+            <View style={styles.keyContainer}>
+              <Text style={[styles.keyText, { backgroundColor: colors.paperBackground }]} numberOfLines={1} ellipsizeMode="middle">
+                {privilegedKey}
+              </Text>
+              <TouchableOpacity
+                style={[styles.copyButton, { backgroundColor: colors.paperBackground }]}
+                onPress={handleCopyPrivilegedKey}
+                disabled={copiedPrivileged}
+              >
+                <MaterialIcons
+                  name={copiedPrivileged ? 'check' : 'content-copy'}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.revealButton, { backgroundColor: colors.primary }]}
+              onPress={handleRevealKey}
+            >
+              <Text style={{ color: colors.buttonText, fontSize: 16, fontWeight: '500' }}>Reveal Key</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -60,31 +121,19 @@ export default function IdentityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  keySection: {
+    width: '100%',
   },
-  contentContainer: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  description: {
+  keyLabel: {
     fontSize: 16,
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 20,
+    fontWeight: '500',
+    marginBottom: 8,
+    color: '#666',  // Will be overridden by theme color
   },
   keyContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginTop: 10,
   },
   keyText: {
     flex: 1,
@@ -93,6 +142,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
+    color: '#666',  // Will be overridden by theme color
   },
   copyButton: {
     marginLeft: 8,
@@ -101,4 +151,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  revealButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
 });

@@ -7,8 +7,9 @@ import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 import { WalletInterface } from '@bsv/sdk';
 import CustomSafeArea from '@/components/CustomSafeArea';
+import { RecommendedApps } from './RecommendedApps';
 
-const DEFAULT_URL = 'https://deggen.ngrok.app';
+const DEFAULT_URL = '';
 
 const styles = StyleSheet.create({
   container: {
@@ -99,6 +100,7 @@ export default function Browser() {
   const themeStyles = useThemeStyles();
   const [wallet, setWallet] = useState<WalletInterface | undefined>(undefined);
   const { managers } = useWallet();
+  const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
 
   useEffect(() => {
     if (managers?.walletManager?.authenticated) {
@@ -116,12 +118,6 @@ export default function Browser() {
   const [canGoBack, setCanGoBack] = useState<boolean>(false);
   const [canGoForward, setCanGoForward] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  
-  // Initialize XDM with the native app URL as the origin
-  // const xdm = useRef(new XDM('bsv-wallet://app'));
-
-  // State to track console logs from WebView
-  const [consoleLogs, setConsoleLogs] = useState<Array<{method: string, args: string[], timestamp: number}>>([]);
 
   // Handle WebView messages
   const handleMessage = useCallback(async (event: WebViewMessageEvent) => {
@@ -301,133 +297,133 @@ export default function Browser() {
   };
 
   // JavaScript to inject into the WebView to capture console logs
-  const injectedJavaScript = `
-    (function() {
-      if (window.isLogListenerInjected) return;
-      window.isLogListenerInjected = true;
+  // const injectedJavaScript = `
+  //   (function() {
+  //     if (window.isLogListenerInjected) return;
+  //     window.isLogListenerInjected = true;
       
-      // Create a logs container div that will be attached to the bottom of the page
-      const logsContainer = document.createElement('div');
-      logsContainer.id = 'console-logs-container';
-      logsContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; max-height: 30vh; background-color: rgba(0, 0, 0, 0.8); color: white; font-family: monospace; font-size: 12px; padding: 8px; overflow-y: auto; z-index: 9999; border-top: 1px solid #444;';
+  //     // Create a logs container div that will be attached to the bottom of the page
+  //     const logsContainer = document.createElement('div');
+  //     logsContainer.id = 'console-logs-container';
+  //     logsContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; max-height: 30vh; background-color: rgba(0, 0, 0, 0.8); color: white; font-family: monospace; font-size: 12px; padding: 8px; overflow-y: auto; z-index: 9999; border-top: 1px solid #444;';
       
-      // Function to add a log entry to the container
-      function addLogToContainer(method, args) {
-        const logEntry = document.createElement('div');
-        logEntry.style.cssText = 'margin: 2px 0; border-bottom: 1px solid #333; padding-bottom: 2px;';
+  //     // Function to add a log entry to the container
+  //     function addLogToContainer(method, args) {
+  //       const logEntry = document.createElement('div');
+  //       logEntry.style.cssText = 'margin: 2px 0; border-bottom: 1px solid #333; padding-bottom: 2px;';
         
-        // Add different styling based on log method
-        switch(method) {
-          case 'error':
-            logEntry.style.color = '#ff5252';
-            break;
-          case 'warn':
-            logEntry.style.color = '#ffab40';
-            break;
-          case 'info':
-            logEntry.style.color = '#2196f3';
-            break;
-          case 'debug':
-            logEntry.style.color = '#69f0ae';
-            break;
-          default:
-            logEntry.style.color = 'white';
-        }
+  //       // Add different styling based on log method
+  //       switch(method) {
+  //         case 'error':
+  //           logEntry.style.color = '#ff5252';
+  //           break;
+  //         case 'warn':
+  //           logEntry.style.color = '#ffab40';
+  //           break;
+  //         case 'info':
+  //           logEntry.style.color = '#2196f3';
+  //           break;
+  //         case 'debug':
+  //           logEntry.style.color = '#69f0ae';
+  //           break;
+  //         default:
+  //           logEntry.style.color = 'white';
+  //       }
         
-        // Create timestamp
-        const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-        const logContent = Array.from(args).map(arg => 
-          typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-        ).join(' ');
+  //       // Create timestamp
+  //       const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+  //       const logContent = Array.from(args).map(arg => 
+  //         typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+  //       ).join(' ');
         
-        logEntry.textContent = \`[\${timestamp}] [\${method.toUpperCase()}]: \${logContent}\`;
-        logsContainer.appendChild(logEntry);
+  //       logEntry.textContent = \`[\${timestamp}] [\${method.toUpperCase()}]: \${logContent}\`;
+  //       logsContainer.appendChild(logEntry);
         
-        // Auto-scroll to the bottom
-        logsContainer.scrollTop = logsContainer.scrollHeight;
+  //       // Auto-scroll to the bottom
+  //       logsContainer.scrollTop = logsContainer.scrollHeight;
         
-        // Limit the number of log entries to prevent memory issues
-        while (logsContainer.children.length > 100) {
-          logsContainer.removeChild(logsContainer.firstChild);
-        }
-      }
+  //       // Limit the number of log entries to prevent memory issues
+  //       while (logsContainer.children.length > 100) {
+  //         logsContainer.removeChild(logsContainer.firstChild);
+  //       }
+  //     }
       
-      // Add the logs container to the DOM when the page is loaded
-      if (document.body) {
-        document.body.appendChild(logsContainer);
-      } else {
-        document.addEventListener('DOMContentLoaded', function() {
-          document.body.appendChild(logsContainer);
-        });
-      }
+  //     // Add the logs container to the DOM when the page is loaded
+  //     if (document.body) {
+  //       document.body.appendChild(logsContainer);
+  //     } else {
+  //       document.addEventListener('DOMContentLoaded', function() {
+  //         document.body.appendChild(logsContainer);
+  //       });
+  //     }
       
-      // Store original console methods
-      const originalConsole = {
-        log: console.log,
-        warn: console.warn,
-        error: console.error,
-        info: console.info,
-        debug: console.debug
-      };
+  //     // Store original console methods
+  //     const originalConsole = {
+  //       log: console.log,
+  //       warn: console.warn,
+  //       error: console.error,
+  //       info: console.info,
+  //       debug: console.debug
+  //     };
       
-      // Override console methods to display logs in the container
-      console.log = function() {
-        originalConsole.log.apply(console, arguments);
-        addLogToContainer('log', arguments);
-      };
+  //     // Override console methods to display logs in the container
+  //     console.log = function() {
+  //       originalConsole.log.apply(console, arguments);
+  //       addLogToContainer('log', arguments);
+  //     };
       
-      console.warn = function() {
-        originalConsole.warn.apply(console, arguments);
-        addLogToContainer('warn', arguments);
-      };
+  //     console.warn = function() {
+  //       originalConsole.warn.apply(console, arguments);
+  //       addLogToContainer('warn', arguments);
+  //     };
       
-      console.error = function() {
-        originalConsole.error.apply(console, arguments);
-        addLogToContainer('error', arguments);
-      };
+  //     console.error = function() {
+  //       originalConsole.error.apply(console, arguments);
+  //       addLogToContainer('error', arguments);
+  //     };
       
-      console.info = function() {
-        originalConsole.info.apply(console, arguments);
-        addLogToContainer('info', arguments);
-      };
+  //     console.info = function() {
+  //       originalConsole.info.apply(console, arguments);
+  //       addLogToContainer('info', arguments);
+  //     };
       
-      console.debug = function() {
-        originalConsole.debug.apply(console, arguments);
-        addLogToContainer('debug', arguments);
-      };
+  //     console.debug = function() {
+  //       originalConsole.debug.apply(console, arguments);
+  //       addLogToContainer('debug', arguments);
+  //     };
       
-      // Also capture uncaught errors
-      window.addEventListener('error', function(e) {
-        addLogToContainer('error', ['Uncaught error:', e.message, 'at', e.filename, 'line', e.lineno]);
-        return true;
-      });
+  //     // Also capture uncaught errors
+  //     window.addEventListener('error', function(e) {
+  //       addLogToContainer('error', ['Uncaught error:', e.message, 'at', e.filename, 'line', e.lineno]);
+  //       return true;
+  //     });
       
-      // Create a button to toggle the visibility of the logs container
-      const toggleButton = document.createElement('button');
-      toggleButton.textContent = 'Toggle Logs';
-      toggleButton.style.cssText = 'position: fixed; bottom: 0; right: 0; background-color: #444; color: white; border: none; border-radius: 4px 0 0 0; padding: 4px 8px; font-size: 10px; z-index: 10000; cursor: pointer;';
-      toggleButton.addEventListener('click', function() {
-        if (logsContainer.style.display === 'none') {
-          logsContainer.style.display = 'block';
-          toggleButton.textContent = 'Hide Logs';
-        } else {
-          logsContainer.style.display = 'none';
-          toggleButton.textContent = 'Show Logs';
-        }
-      });
+  //     // Create a button to toggle the visibility of the logs container
+  //     const toggleButton = document.createElement('button');
+  //     toggleButton.textContent = 'Toggle Logs';
+  //     toggleButton.style.cssText = 'position: fixed; bottom: 0; right: 0; background-color: #444; color: white; border: none; border-radius: 4px 0 0 0; padding: 4px 8px; font-size: 10px; z-index: 10000; cursor: pointer;';
+  //     toggleButton.addEventListener('click', function() {
+  //       if (logsContainer.style.display === 'none') {
+  //         logsContainer.style.display = 'block';
+  //         toggleButton.textContent = 'Hide Logs';
+  //       } else {
+  //         logsContainer.style.display = 'none';
+  //         toggleButton.textContent = 'Show Logs';
+  //       }
+  //     });
       
-      // Add the toggle button to the DOM
-      if (document.body) {
-        document.body.appendChild(toggleButton);
-      } else {
-        document.addEventListener('DOMContentLoaded', function() {
-          document.body.appendChild(toggleButton);
-        });
-      }
+  //     // Add the toggle button to the DOM
+  //     if (document.body) {
+  //       document.body.appendChild(toggleButton);
+  //     } else {
+  //       document.addEventListener('DOMContentLoaded', function() {
+  //         document.body.appendChild(toggleButton);
+  //       });
+  //     }
       
-      true; // Note: this is needed to ensure the script is correctly injected
-    })();
-  `;
+  //     true; // Note: this is needed to ensure the script is correctly injected
+  //   })();
+  // `;
 
   // Handle URL submission
   const handleUrlSubmit = () => {
@@ -440,6 +436,22 @@ export default function Browser() {
     }
     
     setUrl(formattedUrl);
+  };
+
+  const navigate = (url: string) => {
+    let formattedUrl = url;
+
+    // Add http:// if no protocol specified
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      formattedUrl = 'https://' + url;
+    }
+    setInputUrl(formattedUrl);
+    setUrl(formattedUrl);
+  };
+
+  const goHome = () => {
+    setInputUrl('');
+    setUrl('');
   };
   
   // Handle navigation state change
@@ -456,6 +468,12 @@ export default function Browser() {
       <StatusBar style={isDark ? 'light' : 'dark'} />      
       {/* URL input and navigation controls */}
       <View style={[styles.urlBarContainer, { backgroundColor: colors.inputBackground }]}>
+        <TouchableOpacity 
+          style={[styles.navButton, { backgroundColor: colors.secondary }]}
+          onPress={goHome}
+        >
+          <Text style={[styles.navButtonText, { color: colors.buttonText }]}>⌂</Text>
+        </TouchableOpacity>
         <TouchableOpacity 
           style={[
             styles.navButton, 
@@ -507,12 +525,7 @@ export default function Browser() {
           placeholderTextColor={colors.textSecondary}
         />
         
-        <TouchableOpacity 
-          style={[styles.goButton, { backgroundColor: colors.primary }]}
-          onPress={handleUrlSubmit}
-        >
-          <Text style={[styles.goButtonText, { color: colors.buttonText }]}>Go</Text>
-        </TouchableOpacity>
+
       </View>
       
       {/* Loading indicator */}
@@ -520,7 +533,7 @@ export default function Browser() {
         {isLoading && <View style={[styles.loadingIndicator, { backgroundColor: colors.primary }]} />}
       </View>
       
-      <WebView
+      {url !== '' ? <WebView
         ref={webviewRef}
         source={{ uri: url }}
         originWhitelist={['*']}
@@ -529,8 +542,8 @@ export default function Browser() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         containerStyle={{ backgroundColor: colors.background }}
-        injectedJavaScript={injectedJavaScript}
-      />
+        // injectedJavaScript={injectedJavaScript}
+      /> : <RecommendedApps navigate={navigate} />}
 
     </CustomSafeArea>
   );
