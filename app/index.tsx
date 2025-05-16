@@ -16,7 +16,7 @@ export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
   const { managers, selectedWabUrl, selectedStorageUrl, selectedMethod, selectedNetwork, finalizeConfig } = useWallet();
-  const { getItem, auth } = useLocalStorage();
+  const { getSnap, auth } = useLocalStorage();
   const [loading, setLoading] = React.useState(false);
 
 
@@ -35,7 +35,7 @@ export default function LoginScreen() {
       const success = finalizeConfig({
         wabUrl: selectedWabUrl,
         wabInfo,
-        method: selectedMethod ?? wabInfo.supportedAuthMethods[0],
+        method: selectedMethod || wabInfo.supportedAuthMethods[0],
         network: selectedNetwork,
         storageUrl: selectedStorageUrl
       })
@@ -46,7 +46,7 @@ export default function LoginScreen() {
       
       // if there's a wallet snapshot, load that
       await auth(true)
-      const snap = await getItem('snap')
+      const snap = await getSnap()
       if (!snap) {
         router.push('/auth/phone');
         return
@@ -80,7 +80,7 @@ export default function LoginScreen() {
     // After successful config, proceed with auth
     try {
       await auth(true);
-      const snap = await getItem('snap');
+      const snap = await getSnap();
       if (!snap) {
         router.push('/auth/phone');
         return;

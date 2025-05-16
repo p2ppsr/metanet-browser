@@ -601,7 +601,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     if (!response) {
       return
     }
-    const snap = await getItem('snap')
+    const snap = await getSnap()
     if (snap) {
       try {
         const snapArr = Utils.toArray(snap, 'base64');
@@ -621,7 +621,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   // Watch for wallet authentication after snapshot is loaded
   useEffect(() => {
     (async () => {
-      const snap = await getItem('snap')
+      const snap = await getSnap()
       if (managers?.walletManager?.authenticated && snap) {
         setSnapshotLoaded(true);
       }
