@@ -51,7 +51,6 @@ export default function LoginScreen() {
         router.push('/auth/phone');
         return
       }
-      console.log({ snap: Utils.toBase64(snap) })
       await managers?.walletManager?.loadSnapshot(snap)
       
       router.replace('/(tabs)/apps')

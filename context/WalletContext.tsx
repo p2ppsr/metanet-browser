@@ -602,7 +602,6 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     const snap = await getSnap()
     if (snap) {
       try {
-        console.log({ snap })
         await walletManager.loadSnapshot(snap);
         await walletManager.waitForAuthentication({})
         // We'll handle setting snapshotLoaded in a separate effect watching authenticated state

@@ -267,8 +267,9 @@ export default function Browser() {
   // Send a message to the WebView
   const sendResponseToWebView = (id: string, result: any) => {
     try {
-      console.log("sendResponseToWebViewd", id, result);
+      console.log("sending... ", id, result);
       if (!webviewRef.current) return;
+      console.log("webviewRef.current");
       
       // Create a message in the format expected by XDM
       const message = {
@@ -280,7 +281,19 @@ export default function Browser() {
       };
       
       // Send the message to the WebView using injectJavaScript
-      webviewRef.current?.postMessage(JSON.stringify(message));
+      function getInjectableJSMessage(message: any = {}) {
+        const messageString = JSON.stringify(message)
+        return `
+          (function() {
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify(${messageString})
+            }));
+          })();
+        `;
+      }
+      webviewRef.current?.injectJavaScript(
+        getInjectableJSMessage(message)
+      );
       console.info({ message });
     } catch (error) {
       console.error('Error sending message to WebView:', error);
@@ -516,7 +529,7 @@ export default function Browser() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         containerStyle={{ backgroundColor: colors.background }}
-        // injectedJavaScript={injectedJavaScript}
+        injectedJavaScript={injectedJavaScript}
       />
 
     </CustomSafeArea>
