@@ -17,28 +17,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
-
-// Common country codes with country names and dial codes
-const countryCodes = [
-  { name: 'United States', code: 'US', dialCode: '+1' },
-  { name: 'United Kingdom', code: 'GB', dialCode: '+44' },
-  { name: 'India', code: 'IN', dialCode: '+91' },
-  { name: 'Canada', code: 'CA', dialCode: '+1' },
-  { name: 'Australia', code: 'AU', dialCode: '+61' },
-  { name: 'Germany', code: 'DE', dialCode: '+49' },
-  { name: 'China', code: 'CN', dialCode: '+86' },
-  { name: 'Japan', code: 'JP', dialCode: '+81' },
-  { name: 'Brazil', code: 'BR', dialCode: '+55' },
-  { name: 'France', code: 'FR', dialCode: '+33' },
-  { name: 'Mexico', code: 'MX', dialCode: '+52' },
-  { name: 'Russia', code: 'RU', dialCode: '+7' },
-  { name: 'Spain', code: 'ES', dialCode: '+34' },
-  { name: 'South Korea', code: 'KR', dialCode: '+82' },
-];
+import { countryCodes } from '@/utils/countryCodes';
 
 export default function PhoneScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
+  const [selectedCountry, setSelectedCountry] = useState(countryCodes[222]);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const { managers } = useWallet();
