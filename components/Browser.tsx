@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/theme/ThemeContext';
@@ -7,9 +7,6 @@ import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 import { WalletInterface } from '@bsv/sdk';
 import CustomSafeArea from '@/components/CustomSafeArea';
-import { RecommendedApps } from './RecommendedApps';
-
-const DEFAULT_URL = '';
 
 const styles = StyleSheet.create({
   container: {
@@ -94,7 +91,7 @@ const styles = StyleSheet.create({
   }
 });
 
-export default function Browser() {
+export default function Browser({ startingUrl, setStartingUrl }: { startingUrl: string, setStartingUrl: (url: string) => void }) {
   // Theme integration
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
@@ -112,9 +109,9 @@ export default function Browser() {
   const webviewRef = useRef<WebView>(null);
   
   // URL and navigation state
-  const [url, setUrl] = useState<string>(DEFAULT_URL);
-  const [currentUrl, setCurrentUrl] = useState<string>(DEFAULT_URL);
-  const [inputUrl, setInputUrl] = useState<string>(DEFAULT_URL);
+  const [url, setUrl] = useState<string>(startingUrl);
+  const [currentUrl, setCurrentUrl] = useState<string>(startingUrl);
+  const [inputUrl, setInputUrl] = useState<string>(startingUrl);
   const [canGoBack, setCanGoBack] = useState<boolean>(false);
   const [canGoForward, setCanGoForward] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -438,22 +435,6 @@ export default function Browser() {
     setUrl(formattedUrl);
   };
 
-  const navigate = (url: string) => {
-    let formattedUrl = url;
-
-    // Add http:// if no protocol specified
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      formattedUrl = 'https://' + url;
-    }
-    setInputUrl(formattedUrl);
-    setUrl(formattedUrl);
-  };
-
-  const goHome = () => {
-    setInputUrl('');
-    setUrl('');
-  };
-  
   // Handle navigation state change
   const handleNavigationStateChange = (navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack);
@@ -464,13 +445,13 @@ export default function Browser() {
   };
   
   return (
-    <CustomSafeArea style={[styles.container, { backgroundColor: colors.background }]}>
+    <>
       <StatusBar style={isDark ? 'light' : 'dark'} />      
       {/* URL input and navigation controls */}
       <View style={[styles.urlBarContainer, { backgroundColor: colors.inputBackground }]}>
         <TouchableOpacity 
           style={[styles.navButton, { backgroundColor: colors.secondary }]}
-          onPress={goHome}
+          onPress={() => setStartingUrl('')}
         >
           <Text style={[styles.navButtonText, { color: colors.buttonText }]}>⌂</Text>
         </TouchableOpacity>
@@ -524,8 +505,6 @@ export default function Browser() {
           selectTextOnFocus
           placeholderTextColor={colors.textSecondary}
         />
-        
-
       </View>
       
       {/* Loading indicator */}
@@ -533,7 +512,7 @@ export default function Browser() {
         {isLoading && <View style={[styles.loadingIndicator, { backgroundColor: colors.primary }]} />}
       </View>
       
-      {url !== '' ? <WebView
+      <WebView
         ref={webviewRef}
         source={{ uri: url }}
         originWhitelist={['*']}
@@ -543,8 +522,7 @@ export default function Browser() {
         domStorageEnabled={true}
         containerStyle={{ backgroundColor: colors.background }}
         // injectedJavaScript={injectedJavaScript}
-      /> : <RecommendedApps navigate={navigate} />}
-
-    </CustomSafeArea>
+      />
+    </>
   );
 }

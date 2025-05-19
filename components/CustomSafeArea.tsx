@@ -57,7 +57,7 @@ export default function CustomSafeArea({
         { 
           backgroundColor: colors.background,
           paddingTop: appliedTopInset,
-          paddingBottom: appliedBottomInset,
+          // paddingBottom: appliedBottomInset,
           paddingLeft: insets.left,
           paddingRight: insets.right,
         },

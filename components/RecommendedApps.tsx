@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, TextInput } from 'react-native';
+import Fuse from 'fuse.js';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 
@@ -13,12 +14,13 @@ const defaultApps: App[] = [
     { domain: 'https://p2pmnee.atx.systems', appName: 'P2PMNEE', appIconImageUrl: 'https://p2pmnee.atx.systems/p2m.png' }
 ];
 
-export const RecommendedApps = ({ navigate }: { navigate: (url: string) => void }) => {
+export const RecommendedApps = ({ setStartingUrl }: { setStartingUrl: (url: string) => void }) => {
   const { colors } = useTheme();
   const { recentApps } = useWallet();
-
+  const [searchQuery, setSearchQuery] = useState('');
+  
   // Filter out duplicates by domain, clean app names, and limit to 20 items
-  const uniqueApps = [...defaultApps, ...recentApps].reduce((acc: App[], current) => {
+  const allApps = [...defaultApps, ...recentApps].reduce((acc: App[], current) => {
     // Check if we already have an app with this domain
     const domainExists = acc.find(app => app.domain === current.domain);
     if (!domainExists) {
@@ -33,13 +35,28 @@ export const RecommendedApps = ({ navigate }: { navigate: (url: string) => void 
     return acc;
   }, []);
   
-  // Limit to 20 items
-  const apps = uniqueApps.slice(0, 20);
+  // Set up Fuse for fuzzy search
+  const fuse = useMemo(() => {
+    const options = {
+      keys: ['appName', 'domain'],
+      threshold: 0.4, // Lower threshold means more strict matching
+      includeScore: true
+    };
+    return new Fuse(allApps, options);
+  }, [allApps]);
+  
+  // Filter apps based on search query
+  const apps = useMemo(() => {
+    if (!searchQuery.trim()) return allApps;
+    
+    const results = fuse.search(searchQuery);
+    return results.map(result => result.item);
+  }, [fuse, searchQuery, allApps]);
 
   const renderAppItem = ({ item }: { item: App }) => (
     <TouchableOpacity 
       style={componentStyles.appItem} 
-      onPress={() => navigate(item.domain)}
+      onPress={() => setStartingUrl(item.domain)}
     >
       {item.appIconImageUrl ? (
         <Image 
@@ -59,6 +76,20 @@ export const RecommendedApps = ({ navigate }: { navigate: (url: string) => void 
   return (
     <View style={[componentStyles.container, { backgroundColor: colors.paperBackground }]}>
       <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>Applications</Text>
+      
+      <View style={componentStyles.searchContainer}>
+        <TextInput
+          style={[componentStyles.searchInput, { 
+            color: colors.textPrimary,
+            backgroundColor: colors.inputBackground || colors.background,
+            borderColor: colors.inputBorder
+          }]}
+          placeholder="Search apps..."
+          placeholderTextColor={colors.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
       <FlatList
         data={apps}
         renderItem={renderAppItem}
@@ -66,7 +97,6 @@ export const RecommendedApps = ({ navigate }: { navigate: (url: string) => void 
         numColumns={3}
         key="grid"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={componentStyles.gridContainer}
       />
     </View>
   );
@@ -75,17 +105,23 @@ export const RecommendedApps = ({ navigate }: { navigate: (url: string) => void 
 const componentStyles = StyleSheet.create({
   container: {
     flex: 1,
-    marginVertical: 16,
-    borderRadius: 12,
     padding: 16,
+    borderRadius: 12,
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 14,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
-  },
-  gridContainer: {
-    paddingVertical: 8,
   },
   appItem: {
     alignItems: 'center',
