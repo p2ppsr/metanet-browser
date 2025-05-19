@@ -37,6 +37,7 @@ const AppLogo: React.FC<AppLogoProps> = ({ size = 150, color = '#2196F3', rotate
   const centerX = size / 2;
   const centerY = size / 2;
   const radius = size * 0.4;
+  const dot = size * (8 / 150);
   const vertices = [];
   
   // Create 8 vertices positioned in a circle
@@ -122,8 +123,11 @@ const AppLogo: React.FC<AppLogoProps> = ({ size = 150, color = '#2196F3', rotate
           style={[
             styles.vertex,
             {
-              left: vertex.x - 4,
-              top: vertex.y - 4,
+              width: dot,
+              height: dot,
+              borderRadius: dot / 2,
+              left: vertex.x - dot / 2,
+              top: vertex.y - dot / 2,
               backgroundColor: logoColor
             }
           ]}
@@ -150,9 +154,6 @@ const styles = StyleSheet.create({
   },
   vertex: {
     position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   centerDot: {
     position: 'absolute',

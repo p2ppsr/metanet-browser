@@ -4,6 +4,7 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import CustomSafeArea from '@/components/CustomSafeArea';
 import { RecommendedApps } from '@/components/RecommendedApps';
 import Browser from '@/components/Browser';
+import Balance from '@/components/Balance';
 
 const styles = StyleSheet.create({
   container: {
@@ -18,7 +19,10 @@ export default function Apps() {
   
   return (
     <CustomSafeArea style={[styles.container, { backgroundColor: colors.background }]}> 
-      {startingUrl === '' ? <RecommendedApps setStartingUrl={setStartingUrl} /> : <Browser startingUrl={startingUrl} setStartingUrl={setStartingUrl} />}
+      {startingUrl === '' ? <>
+      <Balance />
+      <RecommendedApps setStartingUrl={setStartingUrl} />
+    </> : <Browser startingUrl={startingUrl} setStartingUrl={setStartingUrl} />}
     </CustomSafeArea>
   );
 }
