@@ -139,7 +139,7 @@ const SpendingAuthorizationModal = () => {
                                         </Text>
                                         <View style={styles.amountContainer}>
                                             <Text style={[styles.value, themeStyles.text]}>
-                                                <AmountDisplay>{item.amount}</AmountDisplay>
+                                                <AmountDisplay>{item.satoshis}</AmountDisplay>
                                             </Text>
                                         </View>
                                     </View>
@@ -152,7 +152,7 @@ const SpendingAuthorizationModal = () => {
                             <Text style={[styles.label, themeStyles.text, { color: colors.buttonText }]}>Total:</Text>
                             <View style={styles.amountContainer}>
                                 <Text style={[styles.value, themeStyles.text, { color: colors.buttonText, fontWeight: 'bold' }]}>
-                                    <AmountDisplay>{transactionAmount}</AmountDisplay>
+                                    <AmountDisplay>{authorizationAmount}</AmountDisplay>
                                 </Text>
                             </View>
                         </View>
@@ -194,7 +194,7 @@ const SpendingAuthorizationModal = () => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={themeStyles.button}
-                                onPress={() => handleGrant({ singular: true })}
+                                onPress={() => handleGrant({ singular: true, amount: authorizationAmount })}
                             >
                                 <Text style={themeStyles.buttonText}>Spend</Text>
                             </TouchableOpacity>
