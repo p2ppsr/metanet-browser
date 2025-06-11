@@ -31,6 +31,7 @@ import { useWallet } from '@/context/WalletContext';
 import { WalletInterface } from '@bsv/sdk';
 import { RecommendedApps } from '@/components/RecommendedApps';
 import Balance from '@/components/Balance';
+import { router } from 'expo-router'
 
 // ---------- Constants ----------
 const kNEW_TAB_URL = 'new-tab-page';
@@ -79,14 +80,14 @@ export default function Browser() {
     if (managers?.walletManager?.authenticated) setWallet(managers.walletManager);
   }, [managers]);
 
-useEffect(() => {
-  const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
-  const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
-  return () => {
-    showSub.remove();
-    hideSub.remove();
-  };
-}, []);
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   /* ---------- helper: create a new tab ---------- */
   function createTab(url: string): Tab {
@@ -94,7 +95,7 @@ useEffect(() => {
       id: nextTabId.current++,
       url,
       title: 'New Tab',
-      webviewRef: React.createRef<WebView>(),
+      webviewRef: React.createRef<WebView>() as React.RefObject<WebView<any>>,
       canGoBack: false,
       canGoForward: false,
       isLoading: true,
@@ -378,9 +379,7 @@ useEffect(() => {
 
         {/* ---------- WebView or New‑Tab placeholder ---------- */}
         {activeTab.url === kNEW_TAB_URL ? (
-          // <View style={styles.newTabPlaceholder}>
-            <RecommendedApps setStartingUrl={(url) => updateActiveTab({ url })} />
-          // </View>
+          <RecommendedApps setStartingUrl={(url) => updateActiveTab({ url })} />
         ) : (
           <WebView
             ref={activeTab.webviewRef}
@@ -537,11 +536,21 @@ useEffect(() => {
               <View style={styles.handleBar} />
             </Pressable>
             <Balance />
-            {['Identity', 'Trust Network', 'Settings', 'Security', 'Bookmarks'].map(label => (
-              <Pressable key={label} style={styles.drawerItem}>
-                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>{label}</Text>
+            <Pressable onPress={() => router.push('/identity')} style={styles.drawerItem}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Identity</Text>
               </Pressable>
-            ))}
+              <Pressable onPress={() => router.push('/trust')} style={styles.drawerItem}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Trust Network</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push('/settings')} style={styles.drawerItem}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Settings</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push('/security')} style={styles.drawerItem}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Security</Text>
+              </Pressable>
+              <Pressable onPress={() => updateActiveTab({ url: 'new-tab-page' })} style={styles.drawerItem}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Bookmarks</Text>
+              </Pressable>
           </Animated.View>
         </Modal>
       </SafeAreaView>
