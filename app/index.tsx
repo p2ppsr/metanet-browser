@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView , Alert } from 'react-native';
 import ConfigModal from '@/components/ConfigModal';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,8 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import AppLogo from '@/components/AppLogo';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
-import { DEFAULT_WAB_URL, DEFAULT_CHAIN, DEFAULT_STORAGE_URL } from '@/context/config';
-import { Alert } from 'react-native';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 import { Utils } from '@bsv/sdk';
 
@@ -53,7 +51,7 @@ export default function LoginScreen() {
       }
       await managers?.walletManager?.loadSnapshot(snap)
       
-      router.replace('/(tabs)/apps')
+      router.replace('/browser')
       return
     } catch (error) {
       console.error(error)
@@ -87,7 +85,7 @@ export default function LoginScreen() {
       const snapArr = Utils.toArray(snap, 'base64');
       await managers?.walletManager?.loadSnapshot(snapArr);
       
-      router.replace('/(tabs)/apps');
+      router.replace('/browser');
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to authenticate. Please try again.');
@@ -102,9 +100,9 @@ export default function LoginScreen() {
           <AppLogo />
         </View>
         
-        <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>Metanet Mobile</Text>
+        <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>Metanet</Text>
         <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
-          Secure BSV Blockchain Wallet
+          Browser with identity and payments built in
         </Text>
         
         <TouchableOpacity 

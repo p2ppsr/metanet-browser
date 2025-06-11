@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import { useTheme } from '@/context/theme/ThemeContext';
 import CustomSafeArea from '@/components/CustomSafeArea';
 import { RecommendedApps } from '@/components/RecommendedApps';
-import Browser from '@/components/Browser';
+import Browser from '@/app/browser';
 import Balance from '@/components/Balance';
 
 const styles = StyleSheet.create({
