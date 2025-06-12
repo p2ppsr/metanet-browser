@@ -288,13 +288,19 @@ export default function Browser() {
     setTabs(tabs => {
       const filtered = tabs.filter(t => t.id !== id);
       if (filtered.length === 0) filtered.push(createTab(kNEW_TAB_URL));
-      if (!filtered.find(t => t.id === activeTabId))
-        setActiveTabId(filtered[filtered.length - 1].id);
+      // If we closed the active tab, switch to the last tab in the list
+      if (id === activeTabId && !filtered.find(t => t.id === activeTabId)) {
+        const newActiveId = filtered.length > 0 ? filtered[filtered.length - 1].id : 0;
+        if (newActiveId !== 0) {
+            setActiveTabId(newActiveId);
+        }
+      }
       return filtered;
     });
   }
 
   function newTab(initialUrl = kNEW_TAB_URL) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const t = createTab(initialUrl);
     setTabs(prev => [...prev, t]);
     setActiveTabId(t.id);
@@ -837,7 +843,10 @@ export default function Browser() {
               <TabsView
                 tabs={tabs}
                 activeId={activeTabId}
-                setActive={setActiveTabId}
+                setActive={id => {
+                  setActiveTabId(id);
+                  setShowTabsView(false);
+                }}
                 addTab={newTab}
                 closeTab={closeTab}
                 onDismiss={() => setShowTabsView(false)}
@@ -1030,77 +1039,78 @@ const TabsView = ({
   const screen = Dimensions.get('window');
   const ITEM_W = screen.width * 0.42;
   const ITEM_H = screen.height * 0.28;
+  const insets = useSafeAreaInsets();
 
   const renderItem = ({ item }: { item: Tab }) => (
-    <Swipeable
-      onSwipeableLeftOpen={() => closeTab(item.id)}
-      overshootLeft={false}
+    <Pressable
+      style={[
+        styles.tabPreview,
+        {
+          width: ITEM_W,
+          height: ITEM_H,
+          borderColor: item.id === activeId ? colors.primary : colors.inputBorder,
+          borderWidth: item.id === activeId ? 2 : StyleSheet.hairlineWidth,
+          backgroundColor: colors.background,
+        },
+      ]}
+      onPress={() => setActive(item.id)}
     >
-      <Pressable
-        style={[
-          styles.tabPreview,
-          {
-            width: ITEM_W,
-            height: ITEM_H,
-            borderColor: colors.inputBorder,
-            borderWidth: StyleSheet.hairlineWidth,
-            backgroundColor: colors.background,
-          },
-        ]}
-        onPress={() => {
-          setActive(item.id);
-          onDismiss();
-        }}
-      >
-        <WebView
-          ref={item.webviewRef}
-          source={{ uri: item.url }}
-          style={{ flex: 1 }}
-          pointerEvents="none"
-        />
-        <View style={styles.tabTitleBar}>
+      <View style={{ flex: 1, overflow: 'hidden' }}>
+        {item.url === kNEW_TAB_URL ? (
+          <View style={styles.tabPreviewEmpty}>
+            <Text style={{ fontSize: 16, color: colors.textSecondary }}>New Tab</Text>
+          </View>
+        ) : (
+          <WebView
+            source={{ uri: item.url }}
+            style={{ flex: 1 }}
+            scrollEnabled={false}
+            pointerEvents="none"
+          />
+        )}
+        <View style={[styles.tabTitleBar, { backgroundColor: colors.paperBackground }]}>
           <Text
             numberOfLines={1}
-            style={{ color: colors.textPrimary, fontSize: 12 }}
+            style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}
           >
             {item.title}
           </Text>
         </View>
-      </Pressable>
-    </Swipeable>
+      </View>
+      <TouchableOpacity
+        style={styles.tabCloseButton}
+        onPress={() => closeTab(item.id)}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Text style={{ color: colors.textSecondary }}>✕</Text>
+      </TouchableOpacity>
+    </Pressable>
   );
 
   return (
-      <View style={styles.tabsViewContainer}>
-        {/* 1. Backdrop behind */}
-        <View
-          style={StyleSheet.absoluteFillObject}
-          pointerEvents="box-none"
-        />
+    <View style={styles.tabsViewContainer}>
+      <TouchableWithoutFeedback onPress={onDismiss}>
+        <View style={StyleSheet.absoluteFill} />
+      </TouchableWithoutFeedback>
 
-        {/* 2. Your grid of tab previews */}
-        <FlatList
-          data={tabs}
-          renderItem={renderItem}
-          keyExtractor={t => String(t.id)}
-          numColumns={2}
-          contentContainerStyle={{ padding: 12 }}
-        />
-
-        {/* 3. The “tap outside to dismiss” catch-all */}
-        <TouchableWithoutFeedback onPress={onDismiss}>
-          <View
-            style={StyleSheet.absoluteFillObject}
-          />
-        </TouchableWithoutFeedback>
-
-        {/* 4. New-tab button */}
-        <TouchableOpacity style={styles.newTabBtn} onPress={addTab}>
+      <FlatList
+        data={tabs}
+        renderItem={renderItem}
+        keyExtractor={t => String(t.id)}
+        numColumns={2}
+        contentContainerStyle={{ padding: 12, paddingBottom: 100 + insets.bottom }}
+      />
+      
+      <View style={[styles.tabsViewFooter, { paddingBottom: insets.bottom + 10 }]}>
+        <TouchableOpacity style={styles.newTabBtn} onPress={() => addTab()}>
           <Text style={styles.newTabIcon}>＋</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.doneButton} onPress={onDismiss}>
+          <Text style={styles.doneButtonText}>Done</Text>
+        </TouchableOpacity>
       </View>
-  )
-
+    </View>
+  );
 };
 
 /* ---- drawer item ---- */
@@ -1231,36 +1241,71 @@ const styles = StyleSheet.create({
   /* tabs view */
   tabsViewContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000aa'
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    zIndex: 100,
   },
   tabPreview: {
-    margin: 8,
+    margin: '4%',
     borderRadius: 10,
-    overflow: 'hidden',
-    zIndex: 5
+    overflow: 'visible', // for close button
+  },
+  tabPreviewEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tabTitleBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    backgroundColor: '#0006',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  tabCloseButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#555',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#777',
+  },
+  tabsViewFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   newTabBtn: {
-    position: 'absolute',
-    right: 24,
-    bottom: 40,
     width: 56,
     height: 56,
     borderRadius: 28,
     backgroundColor: '#4c4c4c',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10
   },
   newTabIcon: { fontSize: 32, color: '#fff', lineHeight: 32 },
+  doneButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 26,
+  },
+  doneButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+
 
   /* info drawer */
   infoDrawer: {
@@ -1327,5 +1372,6 @@ const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 20,
   },
 });
