@@ -416,7 +416,7 @@ export default function Browser() {
             {/* TextInput (expands full width while editing) */}
             <TextInput
               ref={addressInputRef}
-              value={addressText}
+              value={addressText === 'new-tab-page' ? '' : addressText}
               onChangeText={setAddressText}
               onFocus={() => {
                 addressEditing.current = true;
@@ -548,7 +548,11 @@ export default function Browser() {
               <Pressable onPress={() => router.push('/security')} style={styles.drawerItem}>
                 <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Security</Text>
               </Pressable>
-              <Pressable onPress={() => updateActiveTab({ url: 'new-tab-page' })} style={styles.drawerItem}>
+              <Pressable onPress={() => {
+                updateActiveTab({ url: 'new-tab-page' })
+                setAddressText('new-tab-page')
+                setShowInfoDrawer(false)
+              }} style={styles.drawerItem}>
                 <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Bookmarks</Text>
               </Pressable>
           </Animated.View>
