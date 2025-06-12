@@ -536,24 +536,48 @@ export default function Browser() {
               <View style={styles.handleBar} />
             </Pressable>
             <Balance />
-            <Pressable onPress={() => router.push('/identity')} style={styles.drawerItem}>
+            <Pressable onPress={() => {
+              router.push('/identity')
+              setShowInfoDrawer(false)
+            }} style={styles.drawerItem}>
                 <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Identity</Text>
               </Pressable>
-              <Pressable onPress={() => router.push('/trust')} style={styles.drawerItem}>
+              <Pressable onPress={() => {
+                router.push('/trust')
+                setShowInfoDrawer(false)
+              }} style={styles.drawerItem}>
                 <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Trust Network</Text>
               </Pressable>
-              <Pressable onPress={() => router.push('/settings')} style={styles.drawerItem}>
+              <Pressable onPress={() => {
+                router.push('/settings')
+                setShowInfoDrawer(false)
+              }} style={styles.drawerItem}>
                 <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Settings</Text>
               </Pressable>
-              <Pressable onPress={() => router.push('/security')} style={styles.drawerItem}>
+              <Pressable onPress={() => {
+                router.push('/security')
+                setShowInfoDrawer(false)
+              }} style={styles.drawerItem}>
                 <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Security</Text>
+              </Pressable>
+              <Pressable onPress={() => {
+                // TODO
+                setShowInfoDrawer(false)
+              }} style={styles.drawerItem}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Add Bookmark</Text>
+              </Pressable>
+              <Pressable onPress={() => {
+                // TODO: Logic for adding to the device homescreen in React Native
+                setShowInfoDrawer(false)
+              }} style={styles.drawerItem}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Add to Device Homescreen</Text>
               </Pressable>
               <Pressable onPress={() => {
                 updateActiveTab({ url: 'new-tab-page' })
                 setAddressText('new-tab-page')
                 setShowInfoDrawer(false)
               }} style={styles.drawerItem}>
-                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Bookmarks</Text>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Back to Homepage</Text>
               </Pressable>
           </Animated.View>
         </Modal>
