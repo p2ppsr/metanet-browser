@@ -46,6 +46,9 @@ import { RecommendedApps } from '@/components/RecommendedApps';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 import Balance from '@/components/Balance';
 
+import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking';
+import { useWebAppManifest } from '@/hooks/useWebAppManifest';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
 /* -------------------------------------------------------------------------- */
@@ -54,6 +57,8 @@ const kNEW_TAB_URL = 'new-tab-page';
 const kGOOGLE_PREFIX = 'https://www.google.com/search?q=';
 const BOOKMARKS_KEY = 'bookmarks';
 const HISTORY_KEY = 'history';
+const PENDING_URL_KEY = 'pendingDeepLinkUrl';
+
 
 type HistoryEntry = { title: string; url: string; timestamp: number };
 type Bookmark = { title: string; url: string; added: number };
@@ -208,7 +213,9 @@ export default function Browser() {
   const starDrawerAnim = useRef(new Animated.Value(0)).current;
 
   const addressInputRef = useRef<TextInput>(null);
-
+  const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
+  const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();
+  
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () =>
@@ -222,6 +229,77 @@ export default function Browser() {
       hideSub.remove();
     };
   }, []);
+
+  // Add your deep linking useEffect
+useEffect(() => {
+  const checkPendingUrl = async () => {
+    try {
+      const pendingUrl = await getPendingUrl();
+      if (pendingUrl) {
+        console.log('Loading pending URL from deep link:', pendingUrl);
+        updateActiveTab({ url: pendingUrl });
+        setAddressText(pendingUrl);
+        await clearPendingUrl();
+      }
+    } catch (error) {
+      console.error('Error checking pending URL:', error);
+    }
+  };
+  
+  checkPendingUrl();
+  const timer = setTimeout(checkPendingUrl, 500);
+  return () => clearTimeout(timer);
+}, []);
+
+// Manifest checking useEffect 
+useEffect(() => {
+  let isCancelled = false;
+  
+  const handleManifest = async () => {
+    if (activeTab.url === kNEW_TAB_URL || !activeTab.url.startsWith('http') || activeTab.isLoading) {
+      return;
+    }
+
+    if (isCancelled) return;
+
+    console.log('Checking manifest for:', activeTab.url);
+    
+    try {
+      const manifestData = await fetchManifest(activeTab.url);
+      
+      if (isCancelled) return;
+      
+      if (manifestData) {
+        console.log('Found manifest for', activeTab.url, manifestData);
+        
+        if (manifestData.babbage?.protocolPermissions) {
+          console.log('Found Babbage protocol permissions:', manifestData.babbage.protocolPermissions);
+        }
+        
+        const url = new URL(activeTab.url);
+        if (shouldRedirectToStartUrl(manifestData, activeTab.url) && url.pathname === '/') {
+          const startUrl = getStartUrl(manifestData, activeTab.url);
+          console.log('Redirecting to start_url:', startUrl);
+          updateActiveTab({ url: startUrl });
+          setAddressText(startUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Error in manifest handling:', error);
+    }
+  };
+
+  const timeoutId = setTimeout(() => {
+    if (!activeTab.isLoading && activeTab.url !== kNEW_TAB_URL && activeTab.url.startsWith('http')) {
+      handleManifest();
+    }
+  }, 1000);
+
+  return () => {
+    isCancelled = true;
+    clearTimeout(timeoutId);
+  };
+}, [activeTab.url, activeTab.isLoading]);
 
   /* -------------------------------------------------------------------------- */
   /*                                 UTILITIES                                  */
