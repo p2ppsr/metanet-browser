@@ -148,8 +148,11 @@ export default function Browser() {
   /* -------------------------- ui / animation state -------------------------- */
   const addressEditing = useRef(false)
   const [addressText, setAddressText] = useState(kNEW_TAB_URL)
-  const [addressFocused, setAddressFocused] = useState(false)
-  const [keyboardVisible, setKeyboardVisible] = useState(false)
+  const [addressFocused, setAddressFocused] = useState(false);
+  const [addressBarHeight, setAddressBarHeight] = useState(0);
+
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<
@@ -165,17 +168,24 @@ export default function Browser() {
 
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', () =>
-      setKeyboardVisible(true)
-    )
-    const hideSub = Keyboard.addListener('keyboardDidHide', () =>
-      setKeyboardVisible(false)
-    )
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardVisible(true);
+      const height = event.endCoordinates.height;
+      setKeyboardHeight(height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+      setKeyboardHeight(0);
+      addressInputRef.current?.blur();
+    });
     return () => {
-      showSub.remove()
-      hideSub.remove()
-    }
-  }, [])
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   /* -------------------------------------------------------------------------- */
   /*                                 UTILITIES                                  */
@@ -210,7 +220,6 @@ export default function Browser() {
 
     updateActiveTab({ url: entry })
     addressEditing.current = false
-    Keyboard.dismiss()
   }
 
   /* -------------------------------------------------------------------------- */
@@ -242,6 +251,19 @@ export default function Browser() {
       tabStore.newTab()
     }
   }, [])
+
+  const dismissKeyboard = () => {
+    addressInputRef.current?.blur();
+    Keyboard.dismiss();
+  };
+
+  const responderProps =
+    addressFocused && keyboardVisible
+      ? {
+        onStartShouldSetResponder: () => true,
+        onResponderRelease: dismissKeyboard,
+      }
+      : {};
 
   /* -------------------------------------------------------------------------- */
   /*                           WEBVIEW MESSAGE HANDLER                          */
@@ -344,7 +366,7 @@ export default function Browser() {
         title: navState.title || navState.url,
         url: navState.url,
         timestamp: Date.now()
-      }).catch(() => {})
+      }).catch(() => { })
     }
   }
 
@@ -566,7 +588,7 @@ export default function Browser() {
   /* -------------------------------------------------------------------------- */
 
   const showAddressBar = !keyboardVisible || addressFocused
-  const showBottomBar = !keyboardVisible && !addressFocused
+  const showBottomBar = !(keyboardVisible && addressFocused)
 
   const addressDisplay = addressFocused
     ? addressText
@@ -574,33 +596,38 @@ export default function Browser() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {addressFocused && (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.backdrop} />
-        </TouchableWithoutFeedback>
-      )}
-
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.select({ ios: 'padding', android: undefined })}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={addressFocused
+          ? (Platform.OS === 'ios' ? 'padding' : 'height')
+          : undefined
+        }
+      >
+        <SafeAreaView
+          style={[
+            styles.container,
+            {
+              backgroundColor: colors.inputBackground,
+              paddingBottom: addressFocused && keyboardVisible
+                ? 0
+                : insets.bottom
+            }
+          ]}
         >
-          <SafeAreaView
-            style={[
-              styles.container,
-              { backgroundColor: colors.inputBackground }
-            ]}
-          >
-            <StatusBar style={isDark ? 'light' : 'dark'} />
+          <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <Text style={{ color: 'red', fontSize: 20 }}>update 8</Text>
+          <Text style={{ color: 'red', fontSize: 20 }}>update 8</Text>
 
-            {activeTab.url === kNEW_TAB_URL ? (
-              <RecommendedApps
-                includeBookmarks={bookmarkStore.bookmarks}
-                setStartingUrl={url => updateActiveTab({ url })}
-              />
-            ) : (
+          {activeTab.url === kNEW_TAB_URL ? (
+            <RecommendedApps
+              includeBookmarks={bookmarkStore.bookmarks}
+              setStartingUrl={url => updateActiveTab({ url })}
+            />
+          ) : (
+            <View
+              style={{ flex: 1 }}
+              {...responderProps}
+            >
               <WebView
                 ref={activeTab.webviewRef}
                 source={{ uri: activeTab.url }}
@@ -614,300 +641,301 @@ export default function Browser() {
                 containerStyle={{ backgroundColor: colors.background }}
                 style={{ flex: 1 }}
               />
+            </View>
+          )}
+          <View
+            onLayout={(e) => setAddressBarHeight(e.nativeEvent.layout.height)}
+            style={[
+              styles.addressBar,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+                paddingTop: addressFocused && keyboardVisible ? 8 : 12,
+                paddingBottom: addressFocused && keyboardVisible ? 0 : 12,
+                zIndex: 10,
+                elevation: 10
+              }
+            ]}
+          >
+            {!addressFocused && (
+              <TouchableOpacity onPress={() => toggleInfoDrawer(true)}>
+                <Text style={styles.addressButton}>ℹ︎</Text>
+              </TouchableOpacity>
             )}
 
-            {showAddressBar && (
-              <View
-                style={[
-                  styles.addressBar,
-                  {
-                    backgroundColor: colors.inputBackground,
-                    borderColor: colors.inputBorder,
-                    paddingTop: 12
-                  }
-                ]}
-              >
-                {!addressFocused && (
-                  <TouchableOpacity onPress={() => toggleInfoDrawer(true)}>
-                    <Text style={styles.addressButton}>ℹ︎</Text>
-                  </TouchableOpacity>
-                )}
-
-                {!addressFocused &&
-                  !activeTab.isLoading &&
-                  activeTab.url.startsWith('https') && (
-                    <Text
-                      style={[styles.padlock, { color: colors.textSecondary }]}
-                    >
-                      🔒
-                    </Text>
-                  )}
-
-                <TextInput
-                  ref={addressInputRef}
-                  editable
-                  value={
-                    addressDisplay === 'new-tab-page' ? '' : addressDisplay
-                  }
-                  onChangeText={onChangeAddressText}
-                  onFocus={() => {
-                    addressEditing.current = true
-                    setAddressFocused(true)
-                    setTimeout(() => {
-                      addressInputRef.current?.setNativeProps({
-                        selection: { start: 0, end: addressText.length }
-                      })
-                    }, 0)
-                  }}
-                  onBlur={() => {
-                    addressEditing.current = false
-                    setAddressFocused(false)
-                    setAddressSuggestions([])
-                  }}
-                  onSubmitEditing={onAddressSubmit}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  returnKeyType="go"
-                  style={[
-                    styles.addressInput,
-                    {
-                      flex: 1,
-                      backgroundColor: colors.background,
-                      color: colors.textPrimary,
-                      textAlign: addressFocused ? 'left' : 'center'
-                    }
-                  ]}
-                  placeholder="Search or enter site name"
-                  placeholderTextColor={colors.textSecondary}
-                />
-
-                <TouchableOpacity
-                  onPress={
-                    addressFocused ? () => setAddressText('') : navReloadOrStop
-                  }
+            {!addressFocused &&
+              !activeTab.isLoading &&
+              activeTab.url.startsWith('https') && (
+                <Text
+                  style={[styles.padlock, { color: colors.textSecondary }]}
                 >
-                  <Text style={styles.addressButton}>
-                    {addressFocused ? '✕' : activeTab.isLoading ? '✕' : '↻'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+                  🔒
+                </Text>
+              )}
 
-            {addressFocused && addressSuggestions.length > 0 && (
-              <View
-                style={[
-                  styles.suggestionBox,
-                  { backgroundColor: colors.paperBackground }
-                ]}
-              >
-                {addressSuggestions.map(
-                  (entry: HistoryEntry | Bookmark, i: number) => (
-                    <TouchableOpacity
-                      key={entry.url}
-                      onPress={() => {
-                        setAddressText(entry.url)
-                        onAddressSubmit()
-                      }}
-                      style={styles.suggestionItem}
-                    >
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.suggestionTitle,
-                          { color: colors.textPrimary }
-                        ]}
-                      >
-                        {entry.title}
-                      </Text>
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.suggestionUrl,
-                          { color: colors.textSecondary }
-                        ]}
-                      >
-                        {entry.url}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                )}
-              </View>
-            )}
+            <TextInput
+              ref={addressInputRef}
+              editable
+              value={
+                addressDisplay === 'new-tab-page' ? '' : addressDisplay
+              }
+              onChangeText={onChangeAddressText}
+              onFocus={() => {
+                addressEditing.current = true
+                setAddressFocused(true)
+                setTimeout(() => {
+                  addressInputRef.current?.setNativeProps({
+                    selection: { start: 0, end: addressText.length }
+                  })
+                }, 0)
+              }}
+              onBlur={() => {
+                addressEditing.current = false
+                setAddressFocused(false)
+                setAddressSuggestions([])
+              }}
+              onSubmitEditing={onAddressSubmit}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="go"
+              style={[
+                styles.addressInput,
+                {
+                  flex: 1,
+                  backgroundColor: colors.background,
+                  color: colors.textPrimary,
+                  textAlign: addressFocused ? 'left' : 'center'
+                }
+              ]}
+              placeholder="Search or enter site name"
+              placeholderTextColor={colors.textSecondary}
+            />
 
-            {showTabsView && (
-              <TabsView
-                tabs={tabStore.tabs}
-                activeId={tabStore.activeTabId}
-                setActive={tabStore.setActiveTab}
-                addTab={tabStore.addTab}
-                closeTab={tabStore.removeTab}
-                onDismiss={() => setShowTabsView(false)}
-                colors={colors}
-              />
-            )}
-
-            {showStarDrawer && <StarDrawer />}
-
-            {showBottomBar && (
-              <View
-                style={[
-                  styles.bottomBar,
-                  {
-                    backgroundColor: colors.inputBackground,
-                    paddingBottom: insets.bottom
-                  }
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.toolbarButton}
-                  onPress={navBack}
-                  disabled={!activeTab.canGoBack}
-                >
-                  <Text
-                    style={[
-                      styles.toolbarIcon,
-                      !activeTab.canGoBack && { opacity: 0.3 }
-                    ]}
-                  >
-                    ←
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.toolbarButton}
-                  onPress={navFwd}
-                  disabled={!activeTab.canGoForward}
-                >
-                  <Text
-                    style={[
-                      styles.toolbarIcon,
-                      !activeTab.canGoForward && { opacity: 0.3 }
-                    ]}
-                  >
-                    →
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.toolbarButton}
-                  onPress={shareCurrent}
-                  disabled={activeTab.url === kNEW_TAB_URL}
-                >
-                  <Text
-                    style={[
-                      styles.toolbarIcon,
-                      activeTab.url === kNEW_TAB_URL && { opacity: 0.3 }
-                    ]}
-                  >
-                    ⇪
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.toolbarButton}
-                  onPress={() => toggleStarDrawer(true)}
-                >
-                  <Text style={styles.toolbarIcon}>★</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.toolbarButton}
-                  onPress={() => setShowTabsView(true)}
-                >
-                  <Text style={styles.toolbarIcon}>▒</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            <Modal
-              isVisible={showInfoDrawer}
-              onBackdropPress={() => toggleInfoDrawer(false)}
-              swipeDirection="down"
-              onSwipeComplete={() => toggleInfoDrawer(false)}
-              style={{ margin: 0, justifyContent: 'flex-end' }}
+            <TouchableOpacity
+              onPress={
+                addressFocused ? () => setAddressText('') : navReloadOrStop
+              }
             >
-              <Animated.View
-                style={[
-                  styles.infoDrawer,
-                  {
-                    backgroundColor: colors.background,
-                    height: drawerHeight,
-                    transform: [
-                      {
-                        translateY: drawerAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [drawerHeight, 0]
-                        })
-                      }
-                    ]
-                  }
-                ]}
-              >
-                {infoDrawerRoute === 'root' && (
-                  <>
-                    <Pressable
-                      style={styles.drawerHandle}
-                      onPress={() => toggleInfoDrawer(false)}
-                    >
-                      <View style={styles.handleBar} />
-                    </Pressable>
-                    <Balance />
-                    <DrawerItem
-                      label="Identity"
-                      onPress={() => setInfoDrawerRoute('identity')}
-                    />
-                    <DrawerItem
-                      label="Trust Network"
-                      onPress={() => setInfoDrawerRoute('trust')}
-                    />
-                    <DrawerItem
-                      label="Settings"
-                      onPress={() => setInfoDrawerRoute('settings')}
-                    />
-                    <DrawerItem
-                      label="Security"
-                      onPress={() => setInfoDrawerRoute('security')}
-                    />
-                    <DrawerItem
-                      label="Add Bookmark"
-                      onPress={() => {
-                        addBookmark(
-                          activeTab.title || 'Untitled',
-                          activeTab.url
-                        )
-                        toggleInfoDrawer(false)
-                      }}
-                    />
-                    <DrawerItem
-                      label="Add to Device Homescreen"
-                      onPress={async () => {
-                        await addToHomeScreen()
-                        toggleInfoDrawer(false)
-                      }}
-                    />
-                    <DrawerItem
-                      label="Back to Homepage"
-                      onPress={() => {
-                        updateActiveTab({ url: kNEW_TAB_URL })
-                        setAddressText(kNEW_TAB_URL)
-                        toggleInfoDrawer(false)
-                      }}
-                    />
-                  </>
-                )}
+              <Text style={styles.addressButton}>
+                {addressFocused ? '✕' : activeTab.isLoading ? '✕' : '↻'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-                {infoDrawerRoute !== 'root' && (
-                  <SubDrawerView
-                    route={infoDrawerRoute}
-                    onBack={() => setInfoDrawerRoute('root')}
+          {addressFocused && addressSuggestions.length > 0 && (
+            <View
+              style={[
+                styles.suggestionBox,
+                { backgroundColor: colors.paperBackground }
+              ]}
+            >
+              {addressSuggestions.map(
+                (entry: HistoryEntry | Bookmark, i: number) => (
+                  <TouchableOpacity
+                    key={entry.url}
+                    onPress={() => {
+                      setAddressText(entry.url)
+                      onAddressSubmit()
+                    }}
+                    style={styles.suggestionItem}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.suggestionTitle,
+                        { color: colors.textPrimary }
+                      ]}
+                    >
+                      {entry.title}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.suggestionUrl,
+                        { color: colors.textSecondary }
+                      ]}
+                    >
+                      {entry.url}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
+            </View>
+          )}
+
+          {showTabsView && (
+            <TabsView
+              tabs={tabStore.tabs}
+              activeId={tabStore.activeTabId}
+              setActive={tabStore.setActiveTab}
+              addTab={tabStore.addTab}
+              closeTab={tabStore.removeTab}
+              onDismiss={() => setShowTabsView(false)}
+              colors={colors}
+            />
+          )}
+
+          {showStarDrawer && <StarDrawer />}
+
+          {showBottomBar && (
+            <View
+              style={[
+                styles.bottomBar,
+                {
+                  backgroundColor: colors.inputBackground,
+                  paddingBottom: 0
+                }
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={navBack}
+                disabled={!activeTab.canGoBack}
+              >
+                <Text
+                  style={[
+                    styles.toolbarIcon,
+                    !activeTab.canGoBack && { opacity: 0.3 }
+                  ]}
+                >
+                  ←
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={navFwd}
+                disabled={!activeTab.canGoForward}
+              >
+                <Text
+                  style={[
+                    styles.toolbarIcon,
+                    !activeTab.canGoForward && { opacity: 0.3 }
+                  ]}
+                >
+                  →
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={shareCurrent}
+                disabled={activeTab.url === kNEW_TAB_URL}
+              >
+                <Text
+                  style={[
+                    styles.toolbarIcon,
+                    activeTab.url === kNEW_TAB_URL && { opacity: 0.3 }
+                  ]}
+                >
+                  ⇪
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={() => toggleStarDrawer(true)}
+              >
+                <Text style={styles.toolbarIcon}>★</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={() => setShowTabsView(true)}
+              >
+                <Text style={styles.toolbarIcon}>▒</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <Modal
+            isVisible={showInfoDrawer}
+            onBackdropPress={() => toggleInfoDrawer(false)}
+            swipeDirection="down"
+            onSwipeComplete={() => toggleInfoDrawer(false)}
+            style={{ margin: 0, justifyContent: 'flex-end' }}
+          >
+            <Animated.View
+              style={[
+                styles.infoDrawer,
+                {
+                  backgroundColor: colors.background,
+                  height: drawerHeight,
+                  transform: [
+                    {
+                      translateY: drawerAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [drawerHeight, 0]
+                      })
+                    }
+                  ]
+                }
+              ]}
+            >
+              {infoDrawerRoute === 'root' && (
+                <>
+                  <Pressable
+                    style={styles.drawerHandle}
+                    onPress={() => toggleInfoDrawer(false)}
+                  >
+                    <View style={styles.handleBar} />
+                  </Pressable>
+                  <Balance />
+                  <DrawerItem
+                    label="Identity"
+                    onPress={() => setInfoDrawerRoute('identity')}
                   />
-                )}
-              </Animated.View>
-            </Modal>
-          </SafeAreaView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </GestureHandlerRootView>
+                  <DrawerItem
+                    label="Trust Network"
+                    onPress={() => setInfoDrawerRoute('trust')}
+                  />
+                  <DrawerItem
+                    label="Settings"
+                    onPress={() => setInfoDrawerRoute('settings')}
+                  />
+                  <DrawerItem
+                    label="Security"
+                    onPress={() => setInfoDrawerRoute('security')}
+                  />
+                  <DrawerItem
+                    label="Add Bookmark"
+                    onPress={() => {
+                      addBookmark(
+                        activeTab.title || 'Untitled',
+                        activeTab.url
+                      )
+                      toggleInfoDrawer(false)
+                    }}
+                  />
+                  <DrawerItem
+                    label="Add to Device Homescreen"
+                    onPress={async () => {
+                      await addToHomeScreen()
+                      toggleInfoDrawer(false)
+                    }}
+                  />
+                  <DrawerItem
+                    label="Back to Homepage"
+                    onPress={() => {
+                      updateActiveTab({ url: kNEW_TAB_URL })
+                      setAddressText(kNEW_TAB_URL)
+                      toggleInfoDrawer(false)
+                    }}
+                  />
+                </>
+              )}
+
+              {infoDrawerRoute !== 'root' && (
+                <SubDrawerView
+                  route={infoDrawerRoute}
+                  onBack={() => setInfoDrawerRoute('root')}
+                />
+              )}
+            </Animated.View>
+          </Modal>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </GestureHandlerRootView >
   )
 }
 
@@ -1102,7 +1130,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth
+    paddingBottom: 12
   },
   addressInput: {
     paddingHorizontal: 8,

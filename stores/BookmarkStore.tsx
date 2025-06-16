@@ -5,12 +5,16 @@ import { defaultBookmarks } from '@/shared/constants'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import tabStore from './TabStore'
 import { isValidUrl } from '@/utils/generalHelpers'
+import { Platform } from 'react-native'
 
 export class BookmarkStore {
   bookmarks: Bookmark[] = defaultBookmarks
 
   constructor() {
     makeAutoObservable(this)
+    if (typeof window === 'undefined' || Platform.OS == null) {
+      return
+    }
     this.loadBookmarks()
   }
 
