@@ -167,9 +167,6 @@ export default function Browser() {
 
   const addressInputRef = useRef<TextInput>(null)
 
-  const AnimatedPan = Animated.createAnimatedComponent(PanGestureHandler)
-  const gestureTranslation = useRef(new Animated.Value(0)).current
-
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -402,15 +399,23 @@ export default function Browser() {
   /* -------------------------------------------------------------------------- */
   const windowHeight = Dimensions.get('window').height
   const drawerFullHeight = windowHeight * 0.75
-  const translateY = gestureTranslation.interpolate({ inputRange: [0, drawerFullHeight], outputRange: [0, drawerFullHeight], extrapolate: 'clamp' })
+  const translateY = useRef(new Animated.Value(drawerFullHeight)).current
 
   const openStarDrawer = () => {
-    Animated.spring(gestureTranslation, { toValue: 0, useNativeDriver: true }).start()
+    Animated.spring(translateY, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8
+    }).start()
   }
+
   const closeStarDrawer = () => {
-    Animated.spring(gestureTranslation, {
+    Animated.spring(translateY, {
       toValue: drawerFullHeight,
-      useNativeDriver: true
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8
     }).start(() => {
       InteractionManager.runAfterInteractions(() => {
         setShowStarDrawer(false)
@@ -418,25 +423,43 @@ export default function Browser() {
     })
   }
 
-  const onPanGestureEvent = Animated.event([
-    { nativeEvent: { translationY: gestureTranslation } }
-  ], { useNativeDriver: true })
+  const onPanGestureEvent = Animated.event(
+    [{ nativeEvent: { translationY: translateY } }],
+    {
+      useNativeDriver: true
+    }
+  )
 
   const onPanHandlerStateChange = (event: any) => {
     if (event.nativeEvent.oldState === GestureState.ACTIVE) {
       const { translationY, velocityY } = event.nativeEvent
-      if (translationY > drawerFullHeight / 3 || velocityY > 800) {
-        closeStarDrawer()
-      } else {
-        openStarDrawer()
-      }
+
+      const shouldClose = translationY > drawerFullHeight / 3 || velocityY > 800
+      const targetValue = shouldClose ? drawerFullHeight : 0
+
+      Animated.spring(translateY, {
+        toValue: targetValue,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+        velocity: velocityY / 500
+      }).start(() => {
+        if (shouldClose) {
+          setShowStarDrawer(false)
+        }
+      })
     }
   }
 
   useEffect(() => {
     if (showStarDrawer) {
-      gestureTranslation.setValue(drawerFullHeight)
-      openStarDrawer()
+      translateY.setValue(drawerFullHeight)
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8
+      }).start()
     }
   }, [showStarDrawer])
 
@@ -811,17 +834,19 @@ export default function Browser() {
                     backgroundColor: colors.background,
                     height: drawerFullHeight,
                     top: windowHeight - drawerFullHeight,
-                    transform: [{ translateY }],
+                    transform: [{ translateY }]
                   }]}
               >
-                <AnimatedPan
+                <PanGestureHandler
                   onGestureEvent={onPanGestureEvent}
                   onHandlerStateChange={onPanHandlerStateChange}
+                  activeOffsetY={10}
+                  failOffsetX={[-20, 20]}
                 >
-                  <View style={styles.drawerHandleArea}>
+                  <Animated.View style={styles.drawerHandleArea}>
                     <View style={styles.handleBar} />
-                  </View>
-                </AnimatedPan>
+                  </Animated.View>
+                </PanGestureHandler>
                 <View style={{ flex: 1 }}>
                   <StarDrawer />
                 </View>
@@ -1238,7 +1263,7 @@ const styles = StyleSheet.create({
   },
   starTabLabel: { fontSize: 15, fontWeight: '600' },
   drawerHandleArea: {
-    height: 32,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
