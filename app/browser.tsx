@@ -166,6 +166,10 @@ export default function Browser() {
   const starDrawerAnim = useRef(new Animated.Value(0)).current
 
   const addressInputRef = useRef<TextInput>(null)
+
+  const AnimatedPan = Animated.createAnimatedComponent(PanGestureHandler)
+  const gestureTranslation = useRef(new Animated.Value(0)).current
+
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -398,13 +402,7 @@ export default function Browser() {
   /* -------------------------------------------------------------------------- */
   const windowHeight = Dimensions.get('window').height
   const drawerFullHeight = windowHeight * 0.75
-  
-  const AnimatedPan = Animated.createAnimatedComponent(PanGestureHandler)
-  const gestureTranslation = useRef(new Animated.Value(drawerFullHeight)).current
-
   const translateY = gestureTranslation.interpolate({ inputRange: [0, drawerFullHeight], outputRange: [0, drawerFullHeight], extrapolate: 'clamp' })
-
-
 
   const openStarDrawer = () => {
     Animated.spring(gestureTranslation, { toValue: 0, useNativeDriver: true }).start()
@@ -425,28 +423,15 @@ export default function Browser() {
   ], { useNativeDriver: true })
 
   const onPanHandlerStateChange = (event: any) => {
-    const { state, translationY, velocityY } = event.nativeEvent
-
-    if (state === GestureState.BEGAN) {
-      // start of a new drag: stash the current
-      gestureTranslation.setOffset(gestureTranslation.__getValue())
-      gestureTranslation.setValue(0)
-    }
-
-    if (state === GestureState.END || state === GestureState.CANCELLED) {
-      // commit the offset so flattenOffset will work
-      gestureTranslation.flattenOffset()
-
-      const shouldClose = translationY > drawerFullHeight / 3 || velocityY > 800
-      Animated.spring(gestureTranslation, {
-        toValue: shouldClose ? drawerFullHeight : 0,
-        useNativeDriver: true
-      }).start(() => {
-        if (shouldClose) setShowStarDrawer(false)
-      })
+    if (event.nativeEvent.oldState === GestureState.ACTIVE) {
+      const { translationY, velocityY } = event.nativeEvent
+      if (translationY > drawerFullHeight / 3 || velocityY > 800) {
+        closeStarDrawer()
+      } else {
+        openStarDrawer()
+      }
     }
   }
-
 
   useEffect(() => {
     if (showStarDrawer) {
