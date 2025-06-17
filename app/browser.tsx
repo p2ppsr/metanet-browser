@@ -15,7 +15,8 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
-  LayoutAnimation
+  LayoutAnimation,
+  InteractionManager
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -25,7 +26,7 @@ import {
   WebViewNavigation
 } from 'react-native-webview'
 import Modal from 'react-native-modal'
-import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler'
+import { GestureHandlerRootView, Swipeable, PanGestureHandler, State as GestureState } from 'react-native-gesture-handler'
 import { TabView, SceneMap } from 'react-native-tab-view'
 import Fuse from 'fuse.js'
 import * as Linking from 'expo-linking'
@@ -165,7 +166,6 @@ export default function Browser() {
   const starDrawerAnim = useRef(new Animated.Value(0)).current
 
   const addressInputRef = useRef<TextInput>(null)
-
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -396,6 +396,64 @@ export default function Browser() {
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
   /* -------------------------------------------------------------------------- */
+  const windowHeight = Dimensions.get('window').height
+  const drawerFullHeight = windowHeight * 0.75
+  
+  const AnimatedPan = Animated.createAnimatedComponent(PanGestureHandler)
+  const gestureTranslation = useRef(new Animated.Value(drawerFullHeight)).current
+
+  const translateY = gestureTranslation.interpolate({ inputRange: [0, drawerFullHeight], outputRange: [0, drawerFullHeight], extrapolate: 'clamp' })
+
+
+
+  const openStarDrawer = () => {
+    Animated.spring(gestureTranslation, { toValue: 0, useNativeDriver: true }).start()
+  }
+  const closeStarDrawer = () => {
+    Animated.spring(gestureTranslation, {
+      toValue: drawerFullHeight,
+      useNativeDriver: true
+    }).start(() => {
+      InteractionManager.runAfterInteractions(() => {
+        setShowStarDrawer(false)
+      })
+    })
+  }
+
+  const onPanGestureEvent = Animated.event([
+    { nativeEvent: { translationY: gestureTranslation } }
+  ], { useNativeDriver: true })
+
+  const onPanHandlerStateChange = (event: any) => {
+    const { state, translationY, velocityY } = event.nativeEvent
+
+    if (state === GestureState.BEGAN) {
+      // start of a new drag: stash the current
+      gestureTranslation.setOffset(gestureTranslation.__getValue())
+      gestureTranslation.setValue(0)
+    }
+
+    if (state === GestureState.END || state === GestureState.CANCELLED) {
+      // commit the offset so flattenOffset will work
+      gestureTranslation.flattenOffset()
+
+      const shouldClose = translationY > drawerFullHeight / 3 || velocityY > 800
+      Animated.spring(gestureTranslation, {
+        toValue: shouldClose ? drawerFullHeight : 0,
+        useNativeDriver: true
+      }).start(() => {
+        if (shouldClose) setShowStarDrawer(false)
+      })
+    }
+  }
+
+
+  useEffect(() => {
+    if (showStarDrawer) {
+      gestureTranslation.setValue(drawerFullHeight)
+      openStarDrawer()
+    }
+  }, [showStarDrawer])
 
   const toggleStarDrawer = (open: boolean) => {
     setShowStarDrawer(open)
@@ -434,24 +492,8 @@ export default function Browser() {
         />
       )
     })
-
     return (
-      <Animated.View
-        style={[
-          styles.starDrawer,
-          {
-            backgroundColor: colors.background,
-            transform: [
-              {
-                translateY: starDrawerAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [Dimensions.get('window').height, 0]
-                })
-              }
-            ]
-          }
-        ]}
-      >
+      <View style={{ flex: 1 }}>
         <TabView
           navigationState={{ index, routes }}
           onIndexChange={setIndex}
@@ -483,9 +525,8 @@ export default function Browser() {
             </View>
           )}
         />
-
         {renderClearConfirm()}
-      </Animated.View>
+      </View>
     )
   }
 
@@ -775,8 +816,33 @@ export default function Browser() {
             />
           )}
 
-          {showStarDrawer && <StarDrawer />}
-
+          {showStarDrawer && (
+            <View style={StyleSheet.absoluteFill}>
+              <Pressable style={styles.backdrop} onPress={closeStarDrawer} />
+              <Animated.View
+                style={[
+                  styles.starDrawer,
+                  {
+                    backgroundColor: colors.background,
+                    height: drawerFullHeight,
+                    top: windowHeight - drawerFullHeight,
+                    transform: [{ translateY }],
+                  }]}
+              >
+                <AnimatedPan
+                  onGestureEvent={onPanGestureEvent}
+                  onHandlerStateChange={onPanHandlerStateChange}
+                >
+                  <View style={styles.drawerHandleArea}>
+                    <View style={styles.handleBar} />
+                  </View>
+                </AnimatedPan>
+                <View style={{ flex: 1 }}>
+                  <StarDrawer />
+                </View>
+              </Animated.View>
+            </View>
+          )}
           {showBottomBar && (
             <View
               style={[
@@ -1167,13 +1233,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
-    top: '30%',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     overflow: 'hidden',
+    zIndex: 20,
     elevation: 12
   },
+
   starTabBar: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth
@@ -1186,6 +1252,11 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent'
   },
   starTabLabel: { fontSize: 15, fontWeight: '600' },
+  drawerHandleArea: {
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   /* tabs view */
   tabsViewContainer: {
