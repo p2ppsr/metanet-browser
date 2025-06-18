@@ -479,11 +479,15 @@ export default function Browser() {
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
   /* -------------------------------------------------------------------------- */
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isDrawerAnimating, setIsDrawerAnimating] = useState(false);
   const windowHeight = Dimensions.get('window').height
   const drawerFullHeight = windowHeight * 0.75
   const translateY = useRef(new Animated.Value(drawerFullHeight)).current
 
   const closeStarDrawer = useCallback(() => {
+    if (isDrawerAnimating) return
+    setIsDrawerAnimating(true)
     Animated.spring(translateY, {
       toValue: drawerFullHeight,
       useNativeDriver: true,
@@ -491,8 +495,9 @@ export default function Browser() {
       friction: 8
     }).start(() => {
       setShowStarDrawer(false)
+      setIsDrawerAnimating(false)
     })
-  }, [drawerFullHeight, translateY])
+  }, [isDrawerAnimating, drawerFullHeight, translateY])
 
   const onPanGestureEvent = useRef(
     Animated.event([{ nativeEvent: { translationY: translateY } }], {
@@ -503,6 +508,9 @@ export default function Browser() {
   const onPanHandlerStateChange = useCallback(
     (event: any) => {
       if (event.nativeEvent.oldState === GestureState.ACTIVE) {
+        if (isDrawerAnimating) return
+        setIsDrawerAnimating(true)
+
         const { translationY, velocityY } = event.nativeEvent
 
         const shouldClose =
@@ -519,6 +527,7 @@ export default function Browser() {
           if (shouldClose) {
             setShowStarDrawer(false)
           }
+          setIsDrawerAnimating(false)
         })
       }
     },
@@ -529,13 +538,16 @@ export default function Browser() {
     console.log('[Browser] showStarDrawer changed:', showStarDrawer);
 
     if (showStarDrawer) {
+      setIsDrawerAnimating(true)
       translateY.setValue(drawerFullHeight)
       Animated.spring(translateY, {
         toValue: 0,
         useNativeDriver: true,
         tension: 100,
         friction: 8
-      }).start()
+      }).start(() => {
+        setIsDrawerAnimating(false)
+      })
     }
   }, [showStarDrawer])
 
@@ -549,7 +561,6 @@ export default function Browser() {
   }, [starDrawerAnim])
 
   // State for clear confirm modal (move this above scene components)
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleSetStartingUrl = useCallback((url: string) => {
     updateActiveTab({ url })
