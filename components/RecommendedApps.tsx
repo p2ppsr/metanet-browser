@@ -71,6 +71,12 @@ export const RecommendedApps = ({
   setStartingUrl: (url: string) => void;
   includeBookmarks?: { title: string; url: string }[];
 }) => {
+  React.useEffect(() => {
+    console.log('[RecommendedApps] MOUNT');
+    return () => {
+      console.log('[RecommendedApps] UNMOUNTED');
+    };
+  }, []);
   const { colors } = useTheme();
   const { recentApps } = useWallet();
   const [searchQuery, setSearchQuery] = useState('');
@@ -158,6 +164,12 @@ export const RecommendedApps = ({
           placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
+          onFocus={() => {
+            console.log('[RecommendedApps] Search input focused');
+          }}
+          onBlur={() => {
+            console.log('[RecommendedApps] Search input blurred');
+          }}
         />
       </View>
 
@@ -167,6 +179,7 @@ export const RecommendedApps = ({
         keyExtractor={item => item.domain}
         numColumns={3}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       />
     </View>
   );
