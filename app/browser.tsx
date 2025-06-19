@@ -16,7 +16,6 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   LayoutAnimation,
-  InteractionManager,
   ScrollView
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
