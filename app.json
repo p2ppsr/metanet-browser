@@ -24,7 +24,15 @@
           "backgroundColor": "#000000"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#ffffff",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -37,6 +45,13 @@
     },
     "android": {
       "package": "org.bsvblockchain.metanet",
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.INTERNET",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -53,6 +68,38 @@
             "BROWSABLE",
             "DEFAULT"
           ]
+        },
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "metanet"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "queries": [
+        {
+          "intent": {
+            "action": "android.intent.action.VIEW",
+            "category": "android.intent.category.BROWSABLE",
+            "data": {
+              "scheme": "https"
+            }
+          }
+        },
+        {
+          "intent": {
+            "action": "android.intent.action.VIEW",
+            "category": "android.intent.category.BROWSABLE",
+            "data": {
+              "scheme": "http"
+            }
+          }
         }
       ]
     },
@@ -73,9 +120,26 @@
               "https"
             ]
           }
+        ],
+        "LSApplicationQueriesSchemes": [
+          "https",
+          "http"
         ]
       },
-      "appleTeamId": "D45YYR72YY"
+      "appleTeamId": "D45YYR72YY",
+      "entitlements": {
+        "aps-environment": "development",
+        "com.apple.developer.associated-domains": [
+          "applinks:*"
+        ]
+      }
+    },
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#000000",
+      "iosDisplayInForeground": true,
+      "androidMode": "default",
+      "androidCollapsedTitle": "#{unread_notifications} new interactions"
     }
   }
 }

@@ -14,7 +14,8 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
-    ".expo/types/identity.tsx"
+    ".expo/types/identity.tsx",
+    "types/**/*"
   ],
   "exclude": [
     "node_modules"

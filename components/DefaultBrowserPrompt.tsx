@@ -13,18 +13,17 @@ export default function DefaultBrowserPrompt() {
 
   const checkAndShowPrompt = async () => {
     if (hasChecked) return;
+    
     setHasChecked(true);
 
     try {
-      // Check if prompt shown 
       const hasShown = await AsyncStorage.getItem(DEFAULT_BROWSER_PROMPT_KEY);
       if (hasShown) return;
 
-      // Wait a bit
+      // Show prompt after app loads
       setTimeout(() => {
         showDefaultBrowserPrompt();
       }, 2000);
-      
     } catch (error) {
       console.error('Error checking default browser prompt:', error);
     }
@@ -38,11 +37,11 @@ export default function DefaultBrowserPrompt() {
         {
           text: 'Not Now',
           style: 'cancel',
-          onPress: () => markPromptShown(),
+          onPress: markPromptShown,
         },
         {
           text: 'Set as Default',
-          onPress: () => openDefaultBrowserSettings(),
+          onPress: openDefaultBrowserSettings,
         },
       ]
     );
@@ -51,17 +50,32 @@ export default function DefaultBrowserPrompt() {
   const openDefaultBrowserSettings = async () => {
     try {
       if (Platform.OS === 'android') {
-        // On Android, try opening the default apps settings
-        const url = 'android.settings.MANAGE_DEFAULT_APPS_SETTINGS';
-        const canOpen = await Linking.canOpenURL(url);
-        if (canOpen) {
-          await Linking.openURL(url);
-        } else {
-          // Fallback to general settings
+        // Try opening Android default apps settings
+        const androidUrls = [
+          'android.settings.MANAGE_DEFAULT_APPS_SETTINGS',
+          'android.settings.APPLICATION_SETTINGS',
+          'android.settings.SETTINGS'
+        ];
+
+        let opened = false;
+        for (const url of androidUrls) {
+          try {
+            const canOpen = await Linking.canOpenURL(url);
+            if (canOpen) {
+              await Linking.openURL(url);
+              opened = true;
+              break;
+            }
+          } catch (urlError) {
+            // Next URL
+          }
+        }
+
+        if (!opened) {
           await Linking.openSettings();
         }
       } else if (Platform.OS === 'ios') {
-        // On iOS, try to direct users to Settings app
+        // Show iOS instructions
         Alert.alert(
           'Set Default Browser',
           'To set Metanet as your default browser:\n\n1. Go to Settings\n2. Scroll down to Metanet\n3. Tap "Default Browser App"\n4. Select Metanet',
@@ -77,11 +91,14 @@ export default function DefaultBrowserPrompt() {
           ]
         );
       }
-      
+
       await markPromptShown();
     } catch (error) {
       console.error('Error opening settings:', error);
-      Alert.alert('Error', 'Could not open settings. Please manually set Metanet as your default browser in your device settings.');
+      Alert.alert(
+        'Error', 
+        'Could not open settings. Please manually set Metanet as your default browser in your device settings.'
+      );
       await markPromptShown();
     }
   };

@@ -14,6 +14,7 @@ import CertificateAccessModal from '@/components/CertificateAccessModal';
 import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal';
 import { useDeepLinking } from '@/hooks/useDeepLinking';
 import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt';
+import * as Notifications from 'expo-notifications';
 
 const nativeHandlers: NativeHandlers = {
   isFocused: async () => false,
@@ -35,9 +36,20 @@ const nativeHandlers: NativeHandlers = {
       return false;
     }
   }
-}
+};
 
-// ADD THIS COMPONENT:
+// Configure global notification behavior
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+// Deep link handler component
 function DeepLinkHandler() {
   useDeepLinking();
   return null;
@@ -54,10 +66,8 @@ export default function RootLayout() {
         <ExchangeRateContextProvider>
           <WalletContextProvider>
             <ThemeProvider>
-              {/* ADD THESE TWO COMPONENTS: */}
               <DeepLinkHandler />
               <DefaultBrowserPrompt />
-              
               <PasswordHandler />
               <RecoveryKeySaver />
               <ProtocolAccessModal />
@@ -66,7 +76,7 @@ export default function RootLayout() {
               <SpendingAuthorizationModal />
               <Stack
                 screenOptions={{
-                  animation: 'slide_from_right', // Default animation for most screens
+                  animation: 'slide_from_right',
                   headerShown: false
                 }}
               >
