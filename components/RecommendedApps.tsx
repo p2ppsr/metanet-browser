@@ -199,14 +199,15 @@ const componentStyles = StyleSheet.create({
   appItem: {
     alignItems: 'center',
     marginBottom: 16,
-    flex: 1,
-    margin: 4,
+    width: '30%',
+    marginHorizontal: '1.5%',
   },
   appIcon: {
     width: 50,
     height: 50,
     borderRadius: 10,
     marginBottom: 8,
+    alignItems: 'center',
   },
   placeholderIcon: {
     width: 50,
@@ -216,5 +217,9 @@ const componentStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  appTitle: { fontSize: 14, textAlign: 'center' },
+  appTitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    flexWrap: 'wrap',
+  },
 });
