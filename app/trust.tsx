@@ -103,6 +103,7 @@ export default function TrustScreen() {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>Trusted Origins</Text>
+        <Text style={[styles.desc, { color: colors.textSecondary }]}>Manage your trust relationships and certifier network.</Text>
         <TextInput
           style={[styles.searchInput, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholder="Search trusted origins…"
@@ -157,7 +158,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: { padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 12 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 4 },
+  desc: { fontSize: 12, marginBottom: 12 },
   searchInput: { height: 40, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, fontSize: 14 },
   card: { flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderRadius: 8 },
   icon: { width: 32, height: 32, borderRadius: 6, marginRight: 12 },
