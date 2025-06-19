@@ -87,13 +87,6 @@ function StarDrawer({
   index: number;
   setIndex: (index: number) => void;
 }) {
-  console.log('[StarDrawer] Render');
-
-  useEffect(() => {
-    console.log('[StarDrawer] MOUNT');
-    return () => console.log('[StarDrawer] UNMOUNT');  
-  }, [])
-
   const routes = useMemo(() => [
     { key: 'bookmarks', title: 'Bookmarks' },
     { key: 'history', title: 'History' }
@@ -240,7 +233,7 @@ export default function Browser() {
   const [showStarDrawer, setShowStarDrawer] = useState(false)
   const [starTabIndex, setStarTabIndex] = useState(0);
   const starDrawerAnim = useRef(new Animated.Value(0)).current
-  
+
 
   const addressInputRef = useRef<TextInput>(null)
 
@@ -250,17 +243,14 @@ export default function Browser() {
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const showSub = Keyboard.addListener(showEvent, (event) => {
-      console.log('[Browser] Keyboard show event:', showEvent);
       setKeyboardVisible(true);
       const height = event.endCoordinates.height;
       setKeyboardHeight(height);
     });
     const hideSub = Keyboard.addListener(hideEvent, () => {
-      console.log('[Browser] Keyboard hide event:', hideEvent);
       setKeyboardVisible(false);
       setKeyboardHeight(0);
       if (addressInputRef.current) {
-        console.log('[Browser] Blurring address input from keyboard hide event');
       }
       addressInputRef.current?.blur();
     });
@@ -486,17 +476,29 @@ export default function Browser() {
   const translateY = useRef(new Animated.Value(drawerFullHeight)).current
 
   const closeStarDrawer = useCallback(() => {
-    if (isDrawerAnimating) return
-    setIsDrawerAnimating(true)
-    Animated.spring(translateY, {
-      toValue: drawerFullHeight,
-      useNativeDriver: true,
-      tension: 100,
-      friction: 8
-    }).start(() => {
-      setShowStarDrawer(false)
-      setIsDrawerAnimating(false)
-    })
+    const runCloseDrawer = () => {
+      Keyboard.dismiss();
+      setIsDrawerAnimating(true);
+
+      Animated.spring(translateY, {
+        toValue: drawerFullHeight,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8
+      }).start();
+
+      setTimeout(() => {
+        setShowStarDrawer(false);
+        setIsDrawerAnimating(false);
+      }, 300);
+    };
+    if (isDrawerAnimating) {
+      translateY.stopAnimation(() => {
+        runCloseDrawer();
+      });
+      return;
+    }
+    runCloseDrawer();
   }, [isDrawerAnimating, drawerFullHeight, translateY])
 
   const onPanGestureEvent = useRef(
@@ -523,20 +525,23 @@ export default function Browser() {
           tension: 100,
           friction: 8,
           velocity: velocityY / 500
-        }).start(() => {
-          if (shouldClose) {
-            setShowStarDrawer(false)
-          }
-          setIsDrawerAnimating(false)
-        })
+        }).start();
+
+        if (shouldClose) {
+          Keyboard.dismiss();
+          setTimeout(() => {
+            setShowStarDrawer(false);
+            setIsDrawerAnimating(false);
+          }, 150);
+        } else {
+          setIsDrawerAnimating(false);
+        }
       }
     },
-    [drawerFullHeight, translateY]
+    [drawerFullHeight, translateY, isDrawerAnimating]
   )
 
   useEffect(() => {
-    console.log('[Browser] showStarDrawer changed:', showStarDrawer);
-
     if (showStarDrawer) {
       setIsDrawerAnimating(true)
       translateY.setValue(drawerFullHeight)
@@ -568,7 +573,6 @@ export default function Browser() {
   }, [updateActiveTab])
 
   const BookmarksScene = useMemo(() => {
-    console.log('[BookmarksScene] Render');
     return () => (
       <RecommendedApps
         includeBookmarks={bookmarkStore.bookmarks}
@@ -578,18 +582,18 @@ export default function Browser() {
   }, [bookmarkStore.bookmarks, handleSetStartingUrl])
 
   const HistoryScene = React.useCallback(() => {
-    console.log('[HistoryScene] Render');
     return (
-    <HistoryList
-      history={history}
-      onSelect={u => {
-        updateActiveTab({ url: u })
-        toggleStarDrawer(false)
-      }}
-      onDelete={removeHistoryItem}
-      onClear={() => setShowClearConfirm(true)}
-    />
-  )}, [history, updateActiveTab, toggleStarDrawer, removeHistoryItem, setShowClearConfirm]);
+      <HistoryList
+        history={history}
+        onSelect={u => {
+          updateActiveTab({ url: u })
+          toggleStarDrawer(false)
+        }}
+        onDelete={removeHistoryItem}
+        onClear={() => setShowClearConfirm(true)}
+      />
+    )
+  }, [history, updateActiveTab, toggleStarDrawer, removeHistoryItem, setShowClearConfirm]);
 
 
 
@@ -727,8 +731,6 @@ export default function Browser() {
           ]}
         >
           <StatusBar style={isDark ? 'light' : 'dark'} />
-
-          <Text style={{ color: 'red', fontSize: 20 }}>update 8</Text>
 
           {activeTab.url === kNEW_TAB_URL ? (
             <RecommendedApps
@@ -887,7 +889,7 @@ export default function Browser() {
             />
           )}
 
-          {showStarDrawer && (
+          {(showStarDrawer || isDrawerAnimating) && (
             <View style={StyleSheet.absoluteFill}>
               <Pressable style={styles.backdrop} onPress={closeStarDrawer} />
               <Animated.View
