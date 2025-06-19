@@ -30,7 +30,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 20 }}>
-          <Text style={styles.title}>Settings</Text>
+          <Text style={[styles.title, { textAlign:'left', alignSelf:'flex-start' }]}>Settings</Text>
           
           {/* Theme Section */}
           <View style={styles.card}>

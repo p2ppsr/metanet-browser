@@ -407,11 +407,11 @@ function Browser() {
   const toggleStarDrawer = (open: boolean) => {
     if (open) {
       setShowStarDrawer(true)
-      Animated.timing(starDrawerAnim, {
+    Animated.timing(starDrawerAnim, {
         toValue: 1,
-        duration: 250,
-        useNativeDriver: true
-      }).start()
+      duration: 250,
+      useNativeDriver: true
+    }).start()
     } else {
       Animated.timing(starDrawerAnim, {
         toValue: 0,
@@ -457,56 +457,56 @@ function Browser() {
         <TouchableWithoutFeedback onPress={() => toggleStarDrawer(false)}>
           <View style={styles.backdrop} />
         </TouchableWithoutFeedback>
-        <Animated.View
-          style={[
-            styles.starDrawer,
-            {
-              backgroundColor: colors.background,
-              transform: [
-                {
-                  translateY: starDrawerAnim.interpolate({
-                    inputRange: [0, 1],
+      <Animated.View
+        style={[
+          styles.starDrawer,
+          {
+            backgroundColor: colors.background,
+            transform: [
+              {
+                translateY: starDrawerAnim.interpolate({
+                  inputRange: [0, 1],
                     outputRange: [screenHeight, 0]
-                  })
-                }
-              ]
-            }
-          ]}
-        >
-          <TabView
-            navigationState={{ index, routes }}
-            onIndexChange={setIndex}
-            renderScene={renderScene}
-            renderTabBar={props => (
-              <View style={styles.starTabBar}>
-                {props.navigationState.routes.map((r, i) => (
-                  <TouchableOpacity
-                    key={r.key}
+                })
+              }
+            ]
+          }
+        ]}
+      >
+        <TabView
+          navigationState={{ index, routes }}
+          onIndexChange={setIndex}
+          renderScene={renderScene}
+          renderTabBar={props => (
+            <View style={styles.starTabBar}>
+              {props.navigationState.routes.map((r, i) => (
+                <TouchableOpacity
+                  key={r.key}
+                  style={[
+                    styles.starTab,
+                    i === index && { borderBottomColor: colors.primary }
+                  ]}
+                  onPress={() => setIndex(i)}
+                >
+                  <Text
                     style={[
-                      styles.starTab,
-                      i === index && { borderBottomColor: colors.primary }
+                      styles.starTabLabel,
+                      {
+                        color:
+                          i === index ? colors.primary : colors.textSecondary
+                      }
                     ]}
-                    onPress={() => setIndex(i)}
                   >
-                    <Text
-                      style={[
-                        styles.starTabLabel,
-                        {
-                          color:
-                            i === index ? colors.primary : colors.textSecondary
-                        }
-                      ]}
-                    >
-                      {r.title}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          />
+                    {r.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        />
 
-          {renderClearConfirm()}
-        </Animated.View>
+        {renderClearConfirm()}
+      </Animated.View>
       </>
     )
   }

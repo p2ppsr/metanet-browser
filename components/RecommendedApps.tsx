@@ -143,9 +143,9 @@ export const RecommendedApps = ({
   return (
     <View style={[componentStyles.container, { backgroundColor: colors.paperBackground }]}>
       {!hideHeader && (
-        <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>
-          Bookmarks
-        </Text>
+      <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>
+        Bookmarks
+      </Text>
       )}
 
       <View style={componentStyles.searchContainer}>
