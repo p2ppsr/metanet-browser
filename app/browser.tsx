@@ -405,15 +405,24 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
 
   const toggleStarDrawer = (open: boolean) => {
-    setShowStarDrawer(open)
-    Animated.timing(starDrawerAnim, {
-      toValue: open ? 1 : 0,
-      duration: 250,
-      useNativeDriver: true
-    }).start()
+    if (open) {
+      setShowStarDrawer(true)
+      Animated.timing(starDrawerAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true
+      }).start()
+    } else {
+      Animated.timing(starDrawerAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true
+      }).start(() => setShowStarDrawer(false))
+    }
   }
 
   const StarDrawer = () => {
+    const screenHeight = Dimensions.get('window').height
     const [index, setIndex] = useState(0)
     const routes = [
       { key: 'bookmarks', title: 'Bookmarks' },
@@ -423,6 +432,7 @@ function Browser() {
       bookmarks: () => (
         <RecommendedApps
           includeBookmarks={bookmarkStore.bookmarks}
+          hideHeader
           setStartingUrl={u => {
             updateActiveTab({ url: u })
             toggleStarDrawer(false)
@@ -443,56 +453,61 @@ function Browser() {
     })
 
     return (
-      <Animated.View
-        style={[
-          styles.starDrawer,
-          {
-            backgroundColor: colors.background,
-            transform: [
-              {
-                translateY: starDrawerAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [Dimensions.get('window').height, 0]
-                })
-              }
-            ]
-          }
-        ]}
-      >
-        <TabView
-          navigationState={{ index, routes }}
-          onIndexChange={setIndex}
-          renderScene={renderScene}
-          renderTabBar={props => (
-            <View style={styles.starTabBar}>
-              {props.navigationState.routes.map((r, i) => (
-                <TouchableOpacity
-                  key={r.key}
-                  style={[
-                    styles.starTab,
-                    i === index && { borderBottomColor: colors.primary }
-                  ]}
-                  onPress={() => setIndex(i)}
-                >
-                  <Text
+      <> 
+        <TouchableWithoutFeedback onPress={() => toggleStarDrawer(false)}>
+          <View style={styles.backdrop} />
+        </TouchableWithoutFeedback>
+        <Animated.View
+          style={[
+            styles.starDrawer,
+            {
+              backgroundColor: colors.background,
+              transform: [
+                {
+                  translateY: starDrawerAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [screenHeight, 0]
+                  })
+                }
+              ]
+            }
+          ]}
+        >
+          <TabView
+            navigationState={{ index, routes }}
+            onIndexChange={setIndex}
+            renderScene={renderScene}
+            renderTabBar={props => (
+              <View style={styles.starTabBar}>
+                {props.navigationState.routes.map((r, i) => (
+                  <TouchableOpacity
+                    key={r.key}
                     style={[
-                      styles.starTabLabel,
-                      {
-                        color:
-                          i === index ? colors.primary : colors.textSecondary
-                      }
+                      styles.starTab,
+                      i === index && { borderBottomColor: colors.primary }
                     ]}
+                    onPress={() => setIndex(i)}
                   >
-                    {r.title}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        />
+                    <Text
+                      style={[
+                        styles.starTabLabel,
+                        {
+                          color:
+                            i === index ? colors.primary : colors.textSecondary
+                        }
+                      ]}
+                    >
+                      {r.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          />
 
-        {renderClearConfirm()}
-      </Animated.View>
+          {renderClearConfirm()}
+        </Animated.View>
+      </>
     )
   }
 
@@ -625,7 +640,8 @@ function Browser() {
 
           {activeTab.url === kNEW_TAB_URL ? (
             <RecommendedApps
-              includeBookmarks={bookmarkStore.bookmarks}
+              includeBookmarks={[]}
+              hideHeader
               setStartingUrl={url => updateActiveTab({ url })}
             />
           ) : (
