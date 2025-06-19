@@ -16,7 +16,8 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   LayoutAnimation,
-  InteractionManager
+  InteractionManager,
+  ScrollView
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -30,6 +31,7 @@ import { GestureHandlerRootView, Swipeable, PanGestureHandler, State as GestureS
 import { TabView, SceneMap } from 'react-native-tab-view'
 import Fuse from 'fuse.js'
 import * as Linking from 'expo-linking'
+import { Ionicons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/theme/ThemeContext'
 import { useWallet } from '@/context/WalletContext'
@@ -42,6 +44,10 @@ import { HistoryList } from '@/components/HistoryList'
 import { isValidUrl } from '@/utils/generalHelpers'
 import tabStore from '@/stores/TabStore'
 import bookmarkStore from '@/stores/BookmarkStore'
+import SettingsScreen from './settings'
+import IdentityScreen from './identity'
+import SecurityScreen from './security'
+import TrustScreen from './trust'
 
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
@@ -686,7 +692,7 @@ export default function Browser() {
 
   const drawerHeight =
     infoDrawerRoute === 'root'
-      ? 260 + insets.bottom
+      ? Dimensions.get('window').height * 0.5
       : Dimensions.get('window').height * 0.9
 
   /* -------------------------------------------------------------------------- */
@@ -772,19 +778,20 @@ export default function Browser() {
             ]}
           >
             {!addressFocused && (
-              <TouchableOpacity onPress={() => toggleInfoDrawer(true)}>
-                <Text style={styles.addressButton}>ℹ︎</Text>
+              <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
+                <Ionicons name="person-circle-outline" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
 
             {!addressFocused &&
               !activeTab.isLoading &&
               activeTab.url.startsWith('https') && (
-                <Text
-                  style={[styles.padlock, { color: colors.textSecondary }]}
-                >
-                  🔒
-                </Text>
+                <Ionicons
+                  name="lock-closed"
+                  size={16}
+                  color={colors.textSecondary}
+                  style={styles.padlock}
+                />
               )}
 
             <TextInput
@@ -829,10 +836,13 @@ export default function Browser() {
               onPress={
                 addressFocused ? () => setAddressText('') : navReloadOrStop
               }
+              style={styles.addressBarIcon}
             >
-              <Text style={styles.addressButton}>
-                {addressFocused ? '✕' : activeTab.isLoading ? '✕' : '↻'}
-              </Text>
+              <Ionicons 
+                name={addressFocused || activeTab.isLoading ? 'close-circle' : 'refresh'}
+                size={22}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           </View>
 
@@ -934,14 +944,11 @@ export default function Browser() {
                 onPress={navBack}
                 disabled={!activeTab.canGoBack}
               >
-                <Text
-                  style={[
-                    styles.toolbarIcon,
-                    !activeTab.canGoBack && { opacity: 0.3 }
-                  ]}
-                >
-                  ←
-                </Text>
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color={activeTab.canGoBack ? colors.textPrimary : colors.textSecondary}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -949,14 +956,11 @@ export default function Browser() {
                 onPress={navFwd}
                 disabled={!activeTab.canGoForward}
               >
-                <Text
-                  style={[
-                    styles.toolbarIcon,
-                    !activeTab.canGoForward && { opacity: 0.3 }
-                  ]}
-                >
-                  →
-                </Text>
+                <Ionicons
+                  name="arrow-forward"
+                  size={24}
+                  color={activeTab.canGoForward ? colors.textPrimary : colors.textSecondary}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -964,28 +968,25 @@ export default function Browser() {
                 onPress={shareCurrent}
                 disabled={activeTab.url === kNEW_TAB_URL}
               >
-                <Text
-                  style={[
-                    styles.toolbarIcon,
-                    activeTab.url === kNEW_TAB_URL && { opacity: 0.3 }
-                  ]}
-                >
-                  ⇪
-                </Text>
+                <Ionicons
+                  name="share-outline"
+                  size={24}
+                  color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.toolbarButton}
                 onPress={() => toggleStarDrawer(true)}
               >
-                <Text style={styles.toolbarIcon}>★</Text>
+                <Ionicons name="star-outline" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.toolbarButton}
                 onPress={() => setShowTabsView(true)}
               >
-                <Text style={styles.toolbarIcon}>▒</Text>
+                <Ionicons name="copy-outline" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
           )}
@@ -1015,7 +1016,7 @@ export default function Browser() {
               ]}
             >
               {infoDrawerRoute === 'root' && (
-                <>
+                <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
                   <Pressable
                     style={styles.drawerHandle}
                     onPress={() => toggleInfoDrawer(false)}
@@ -1025,22 +1026,28 @@ export default function Browser() {
                   <Balance />
                   <DrawerItem
                     label="Identity"
+                    icon="person-circle-outline"
                     onPress={() => setInfoDrawerRoute('identity')}
                   />
                   <DrawerItem
+                    label="Security"
+                    icon="lock-closed-outline"
+                    onPress={() => setInfoDrawerRoute('security')}
+                  />
+                  <DrawerItem
                     label="Trust Network"
+                    icon="shield-checkmark-outline"
                     onPress={() => setInfoDrawerRoute('trust')}
                   />
                   <DrawerItem
                     label="Settings"
+                    icon="settings-outline"
                     onPress={() => setInfoDrawerRoute('settings')}
                   />
-                  <DrawerItem
-                    label="Security"
-                    onPress={() => setInfoDrawerRoute('security')}
-                  />
+                  <View style={styles.divider} />
                   <DrawerItem
                     label="Add Bookmark"
+                    icon="star-outline"
                     onPress={() => {
                       addBookmark(
                         activeTab.title || 'Untitled',
@@ -1051,6 +1058,7 @@ export default function Browser() {
                   />
                   <DrawerItem
                     label="Add to Device Homescreen"
+                    icon="home-outline"
                     onPress={async () => {
                       await addToHomeScreen()
                       toggleInfoDrawer(false)
@@ -1058,13 +1066,14 @@ export default function Browser() {
                   />
                   <DrawerItem
                     label="Back to Homepage"
+                    icon="apps-outline"
                     onPress={() => {
                       updateActiveTab({ url: kNEW_TAB_URL })
                       setAddressText(kNEW_TAB_URL)
                       toggleInfoDrawer(false)
                     }}
                   />
-                </>
+                </ScrollView>
               )}
 
               {infoDrawerRoute !== 'root' && (
@@ -1217,18 +1226,22 @@ const TabsView = ({
 
 const DrawerItem = ({
   label,
+  icon,
   onPress
 }: {
   label: string
+  icon: keyof typeof Ionicons.glyphMap
   onPress: () => void
 }) => {
   const { colors } = useTheme()
   return (
-    <Pressable style={styles.drawerItem} onPress={onPress}>
+    <TouchableOpacity style={styles.drawerItem} onPress={onPress}>
+      <Ionicons name={icon} size={22} color={colors.textSecondary} style={styles.drawerIcon} />
       <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
         {label}
       </Text>
-    </Pressable>
+      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
   )
 }
 
@@ -1240,6 +1253,14 @@ const SubDrawerView = ({
   onBack: () => void
 }) => {
   const { colors } = useTheme()
+
+  const screens = {
+    identity: <IdentityScreen />,
+    settings: <SettingsScreen />,
+    security: <SecurityScreen />,
+    trust: <TrustScreen />,
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.subDrawerHeader}>
@@ -1254,9 +1275,7 @@ const SubDrawerView = ({
         <View style={{ width: 60 }} />
       </View>
       <View style={styles.subDrawerContent}>
-        <Text style={{ color: colors.textSecondary }}>
-          {route} screen content goes here.
-        </Text>
+        {screens[route]}
       </View>
     </View>
   )
@@ -1280,8 +1299,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     fontSize: 15
   },
-  addressButton: { fontSize: 18, marginHorizontal: 6, color: '#fff' },
-  padlock: { marginRight: 4, fontSize: 14 },
+  addressBarIcon: { paddingHorizontal: 6 },
+  padlock: { marginRight: 4 },
   bottomBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -1289,7 +1308,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth
   },
   toolbarButton: { padding: 6 },
-  toolbarIcon: { fontSize: 20, color: '#fff' },
+  toolbarIcon: { fontSize: 20 },
 
   /* suggestions */
   suggestionBox: {
@@ -1406,8 +1425,25 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: '#999'
   },
-  drawerItem: { paddingVertical: 14, paddingHorizontal: 24 },
-  drawerLabel: { fontSize: 17 },
+  drawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24
+  },
+  drawerIcon: {
+    marginRight: 16,
+  },
+  drawerLabel: {
+    flex: 1,
+    fontSize: 17
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#ccc',
+    marginVertical: 8,
+    marginHorizontal: 24,
+  },
 
   /* sub-drawer */
   subDrawerHeader: {
