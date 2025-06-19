@@ -164,6 +164,7 @@ export default function OtpScreen() {
                         handleVerify(updatedOtp)
                       }
                     }}
+                    editable={!loading}
                     autoFocus={index === 0}
                   />
                 );
@@ -171,6 +172,8 @@ export default function OtpScreen() {
             </View>
           </View>
           
+          {loading && <ActivityIndicator style={{ marginBottom: 20 }} />}
+
           <View style={styles.resendContainer}>
             <Text style={[styles.resendText, { color: colors.textSecondary }]}>Didn't receive the code?</Text>
             {canResend ? (

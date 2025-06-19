@@ -1,11 +1,5 @@
-/* eslint‑disable react/no‑unstable‑nested‑components */
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-} from 'react';
+/* eslint-disable react/no-unstable-nested-components */
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
   Animated,
   Dimensions,
@@ -22,29 +16,41 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   LayoutAnimation,
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+  ScrollView
+} from 'react-native'
+import { StatusBar } from 'expo-status-bar'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   WebView,
   WebViewMessageEvent,
-  WebViewNavigation,
-} from 'react-native-webview';
-import Modal from 'react-native-modal';
-import {
-  GestureHandlerRootView,
-  Swipeable
-} from 'react-native-gesture-handler';
-import { TabView, SceneMap } from 'react-native-tab-view';
-import Fuse from 'fuse.js';
-import * as Linking from 'expo-linking';
+  WebViewNavigation
+} from 'react-native-webview'
+import Modal from 'react-native-modal'
+import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler'
+import { TabView, SceneMap } from 'react-native-tab-view'
+import Fuse from 'fuse.js'
+import * as Linking from 'expo-linking'
+import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme } from '@/context/theme/ThemeContext';
-import { useWallet } from '@/context/WalletContext';
-import { WalletInterface } from '@bsv/sdk';
-import { RecommendedApps } from '@/components/RecommendedApps';
-import { useLocalStorage } from '@/context/LocalStorageProvider';
-import Balance from '@/components/Balance';
+import { useTheme } from '@/context/theme/ThemeContext'
+import { useWallet } from '@/context/WalletContext'
+import { WalletInterface } from '@bsv/sdk'
+import { RecommendedApps } from '@/components/RecommendedApps'
+import { useLocalStorage } from '@/context/LocalStorageProvider'
+import Balance from '@/components/Balance'
+import type { Bookmark, HistoryEntry, Tab } from '@/shared/types/browser'
+import { HistoryList } from '@/components/HistoryList'
+import { isValidUrl } from '@/utils/generalHelpers'
+import tabStore from '@/stores/TabStore'
+import bookmarkStore from '@/stores/BookmarkStore'
+import SettingsScreen from './settings'
+import IdentityScreen from './identity'
+import SecurityScreen from './security'
+import TrustScreen from './trust'
+
+/* -------------------------------------------------------------------------- */
+/*                                   HELPERS                                   */
+/* -------------------------------------------------------------------------- */
 
 import NotificationPermissionModal from '@/components/NotificationPermissionModal';
 import NotificationSettingsModal from '@/components/NotificationSettingsModal';
@@ -58,24 +64,10 @@ import * as Notifications from 'expo-notifications';
 /*                                   CONSTS                                   */
 /* -------------------------------------------------------------------------- */
 
-const kNEW_TAB_URL = 'new-tab-page';
+const kNEW_TAB_URL = 'about:blank'
 const kGOOGLE_PREFIX = 'https://www.google.com/search?q=';
-const BOOKMARKS_KEY = 'bookmarks';
 const HISTORY_KEY = 'history';
 
-
-type HistoryEntry = { title: string; url: string; timestamp: number };
-type Bookmark = { title: string; url: string; added: number };
-
-type Tab = {
-  id: number;
-  url: string;
-  title: string;
-  webviewRef: React.RefObject<WebView<any>>;
-  canGoBack: boolean;
-  canGoForward: boolean;
-  isLoading: boolean;
-};
 
 function getInjectableJSMessage(message: any = {}) {
   const messageString = JSON.stringify(message)
@@ -85,7 +77,7 @@ function getInjectableJSMessage(message: any = {}) {
         data: JSON.stringify(${messageString})
       }));
     })();
-  `;
+  `
 }
 
 /* -------------------------------------------------------------------------- */
@@ -94,127 +86,96 @@ function getInjectableJSMessage(message: any = {}) {
 
 export default function Browser() {
   /* --------------------------- theme / basic hooks -------------------------- */
-  const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme()
+  const insets = useSafeAreaInsets()
 
   /* ----------------------------- wallet context ----------------------------- */
-  const { managers } = useWallet();
-  const [wallet, setWallet] = useState<WalletInterface | undefined>();
+  const { managers } = useWallet()
+  const [wallet, setWallet] = useState<WalletInterface | undefined>()
   useEffect(() => {
     if (managers?.walletManager?.authenticated)
-      setWallet(managers.walletManager);
-  }, [managers]);
+      setWallet(managers.walletManager)
+  }, [managers])
 
   /* ---------------------------- storage helpers ----------------------------- */
-  const {
-    getItem,
-    setItem
-  } = useLocalStorage();
+  const { getItem, setItem } = useLocalStorage()
 
   /* -------------------------------- history -------------------------------- */
   const loadHistory = useCallback(async (): Promise<HistoryEntry[]> => {
-    const raw = await getItem(HISTORY_KEY);
-    return raw ? (JSON.parse(raw) as HistoryEntry[]) : [];
-  }, [getItem]);
+    const raw = await getItem(HISTORY_KEY)
+    const data = raw ? (JSON.parse(raw) as HistoryEntry[]) : []
+    return data.map(h => ({
+      ...h,
+      url: isValidUrl(h.url) ? h.url : kNEW_TAB_URL
+    }))
+  }, [getItem])
 
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([])
   useEffect(() => {
-    loadHistory().then(setHistory);
-  }, [loadHistory]);
+    loadHistory().then(setHistory)
+  }, [loadHistory])
 
   const saveHistory = useCallback(
     async (list: HistoryEntry[]) => {
-      setHistory(list);
-      await setItem(HISTORY_KEY, JSON.stringify(list));
+      setHistory(list)
+      await setItem(HISTORY_KEY, JSON.stringify(list))
     },
-    [setItem],
-  );
+    [setItem]
+  )
 
   const pushHistory = useCallback(
     async (entry: HistoryEntry) => {
-      // Avoid consecutive duplicates
       if (
         history.length &&
         history[0].url.replace(/\/$/, '') === entry.url.replace(/\/$/, '')
       )
-        return;
-      const next = [entry, ...history].slice(0, 500); // keep last 500
-      await saveHistory(next);
+        return
+      const next = [entry, ...history].slice(0, 500)
+      await saveHistory(next)
     },
-    [history, saveHistory],
-  );
+    [history, saveHistory]
+  )
 
   const removeHistoryItem = useCallback(
     async (url: string) => {
-      const next = history.filter(h => h.url !== url);
-      await saveHistory(next);
+      const next = history.filter(h => h.url !== url)
+      await saveHistory(next)
     },
-    [history, saveHistory],
-  );
+    [history, saveHistory]
+  )
 
   const clearHistory = useCallback(async () => {
-    await saveHistory([]);
-  }, [saveHistory]);
+    await saveHistory([])
+  }, [saveHistory])
 
   /* -------------------------------- bookmarks ------------------------------- */
-  const loadBookmarks = useCallback(async (): Promise<Bookmark[]> => {
-    const raw = await getItem(BOOKMARKS_KEY);
-    return raw ? (JSON.parse(raw) as Bookmark[]) : [];
-  }, [getItem]);
+  const addBookmark = useCallback((title: string, url: string) => {
+    bookmarkStore.addBookmark(title, url)
+  }, [])
 
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  useEffect(() => {
-    loadBookmarks().then(setBookmarks);
-  }, [loadBookmarks]);
-
-  const saveBookmarks = useCallback(
-    async (list: Bookmark[]) => {
-      setBookmarks(list);
-      await setItem(BOOKMARKS_KEY, JSON.stringify(list));
-    },
-    [setItem],
-  );
-
-  const addBookmark = useCallback(
-    async (title: string, url: string) => {
-      if (url === kNEW_TAB_URL) return;
-      if (bookmarks.find(b => b.url === url)) return; // avoid duplicates
-      const next = [{ title, url, added: Date.now() }, ...bookmarks];
-      await saveBookmarks(next);
-    },
-    [bookmarks, saveBookmarks],
-  );
-
-  const removeBookmark = useCallback(
-    async (url: string) => {
-      const next = bookmarks.filter(b => b.url !== url);
-      await saveBookmarks(next);
-    },
-    [bookmarks, saveBookmarks],
-  );
+  const removeBookmark = useCallback((url: string) => {
+    bookmarkStore.removeBookmark(url)
+  }, [])
 
   /* ---------------------------------- tabs --------------------------------- */
-  const nextTabId = useRef(1);
-  const [tabs, setTabs] = useState<Tab[]>(() => [createTab(kNEW_TAB_URL)]);
-  const [activeTabId, setActiveTabId] = useState(1);
-  const activeTab = useMemo(
-    () => tabs.find(t => t.id === activeTabId)!,
-    [tabs, activeTabId],
-  );
+  const activeTab = tabStore.activeTab!
 
   /* -------------------------- ui / animation state -------------------------- */
-  const addressEditing = useRef(false);
-  const [addressText, setAddressText] = useState(kNEW_TAB_URL);
+  const addressEditing = useRef(false)
+  const [addressText, setAddressText] = useState(kNEW_TAB_URL)
   const [addressFocused, setAddressFocused] = useState(false);
+  const [addressBarHeight, setAddressBarHeight] = useState(0);
+
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false);
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'>('root');
   const drawerAnim = useRef(new Animated.Value(0)).current; // 0 = collapsed
 
-  const [showTabsView, setShowTabsView] = useState(false);
-  const [showStarDrawer, setShowStarDrawer] = useState(false);
-  const starDrawerAnim = useRef(new Animated.Value(0)).current;
+  const [showTabsView, setShowTabsView] = useState(false)
+  const [showStarDrawer, setShowStarDrawer] = useState(false)
+  const starDrawerAnim = useRef(new Animated.Value(0)).current
 
   const addressInputRef = useRef<TextInput>(null);
   const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
@@ -237,12 +198,19 @@ export default function Browser() {
 
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', () =>
-      setKeyboardVisible(true),
-    );
-    const hideSub = Keyboard.addListener('keyboardDidHide', () =>
-      setKeyboardVisible(false),
-    );
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardVisible(true);
+      const height = event.endCoordinates.height;
+      setKeyboardHeight(height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+      setKeyboardHeight(0);
+      addressInputRef.current?.blur();
+    });
     return () => {
       showSub.remove();
       hideSub.remove();
@@ -324,85 +292,79 @@ export default function Browser() {
   /*                                 UTILITIES                                  */
   /* -------------------------------------------------------------------------- */
 
-  function createTab(url: string): Tab {
-    return {
-      id: nextTabId.current++,
-      url,
-      title: 'New Tab',
-      webviewRef: React.createRef<WebView>() as React.RefObject<WebView<any>>,
-      canGoBack: false,
-      canGoForward: false,
-      isLoading: true,
-    };
-  }
-
   const domainForUrl = (u: string): string => {
     try {
-      if (u === kNEW_TAB_URL) return '';
-      const { hostname } = new URL(u);
-      return hostname;
+      if (u === kNEW_TAB_URL) return ''
+      const { hostname } = new URL(u)
+      return hostname
     } catch {
-      return u;
+      return u
     }
-  };
+  }
 
   /* -------------------------------------------------------------------------- */
   /*                              ADDRESS HANDLING                              */
   /* -------------------------------------------------------------------------- */
 
   const onAddressSubmit = () => {
-    let entry = addressText.trim();
-    const isProbablyUrl = /^([a-z]+:\/\/|www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(
-      entry,
-    );
+    let entry = addressText.trim()
+    const isProbablyUrl =
+      /^([a-z]+:\/\/|www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(entry)
 
-    if (entry === '') entry = kNEW_TAB_URL;
-    else if (!isProbablyUrl) entry = kGOOGLE_PREFIX + encodeURIComponent(entry);
-    else if (!/^[a-z]+:\/\//i.test(entry)) entry = 'https://' + entry;
+    if (entry === '') entry = kNEW_TAB_URL
+    else if (!isProbablyUrl) entry = kGOOGLE_PREFIX + encodeURIComponent(entry)
+    else if (!/^[a-z]+:\/\//i.test(entry)) entry = 'https://' + entry
 
-    updateActiveTab({ url: entry });
-    addressEditing.current = false;
-    Keyboard.dismiss();
-  };
+    if (!isValidUrl(entry)) {
+      entry = kNEW_TAB_URL
+    }
+
+    updateActiveTab({ url: entry })
+    addressEditing.current = false
+  }
 
   /* -------------------------------------------------------------------------- */
   /*                               TAB NAVIGATION                               */
   /* -------------------------------------------------------------------------- */
 
-  const navBack = () => activeTab.webviewRef.current?.goBack();
-  const navFwd = () => activeTab.webviewRef.current?.goForward();
+  const navBack = () => activeTab.webviewRef.current?.goBack()
+  const navFwd = () => activeTab.webviewRef.current?.goForward()
   const navReloadOrStop = () =>
     activeTab.isLoading
       ? activeTab.webviewRef.current?.stopLoading()
-      : activeTab.webviewRef.current?.reload();
+      : activeTab.webviewRef.current?.reload()
 
   function updateActiveTab(patch: Partial<Tab>) {
-    setTabs(tabs => tabs.map(t => (t.id === activeTabId ? { ...t, ...patch } : t)));
+    const newUrl = patch.url
+    if (newUrl && !isValidUrl(newUrl)) {
+      patch.url = kNEW_TAB_URL
+    }
+    tabStore.updateTab(tabStore.activeTabId, patch)
   }
 
   function closeTab(id: number) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTabs(tabs => {
-      const filtered = tabs.filter(t => t.id !== id);
-      if (filtered.length === 0) filtered.push(createTab(kNEW_TAB_URL));
-      // If we closed the active tab, switch to the last tab in the list
-      if (id === activeTabId && !filtered.find(t => t.id === activeTabId)) {
-        const newActiveId = filtered.length > 0 ? filtered[filtered.length - 1].id : 0;
-        if (newActiveId !== 0) {
-          setActiveTabId(newActiveId);
-        }
-      }
-      return filtered;
-    });
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    tabStore.closeTab(id)
   }
 
-  function newTab(initialUrl = kNEW_TAB_URL) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const t = createTab(initialUrl);
-    setTabs(prev => [...prev, t]);
-    setActiveTabId(t.id);
-    setShowTabsView(false);
-  }
+  useEffect(() => {
+    if (tabStore.tabs.length === 0) {
+      tabStore.newTab()
+    }
+  }, [])
+
+  const dismissKeyboard = () => {
+    addressInputRef.current?.blur();
+    Keyboard.dismiss();
+  };
+
+  const responderProps =
+    addressFocused && keyboardVisible
+      ? {
+        onStartShouldSetResponder: () => true,
+        onResponderRelease: dismissKeyboard,
+      }
+      : {};
 
   /* -------------------------------------------------------------------------- */
   /*                           NOTIFICATION HANDLERS                            */
@@ -592,7 +554,7 @@ export default function Browser() {
 `;
 
   // === 2. RN ⇄ WebView message bridge ========================================
-  
+
   const handleMessage = useCallback(
     async (event: WebViewMessageEvent) => {
       const sendResponseToWebView = (id: string, result: any) => {
@@ -603,12 +565,12 @@ export default function Browser() {
           result,
           status: 'ok'
         };
-  
+
         activeTab.webviewRef.current?.injectJavaScript(
           getInjectableJSMessage(message)
         );
       };
-  
+
       let msg;
       try {
         msg = JSON.parse(event.nativeEvent.data);
@@ -616,7 +578,7 @@ export default function Browser() {
         console.error('Failed to parse WebView message:', error);
         return;
       }
-  
+
       // Handle console logs from WebView
       if (msg.type === 'CONSOLE') {
         const logPrefix = '[WebView]';
@@ -639,11 +601,11 @@ export default function Browser() {
         }
         return;
       }
-  
+
       // Handle notification permission request
       if (msg.type === 'REQUEST_NOTIFICATION_PERMISSION') {
         const permission = await handleNotificationPermissionRequest(activeTab.url);
-  
+
         activeTab.webviewRef.current?.injectJavaScript(`
             window.Notification.permission = '${permission}';
             window.dispatchEvent(new MessageEvent('message', {
@@ -655,12 +617,12 @@ export default function Browser() {
           `);
         return;
       }
-  
+
       // Handle push subscription for remote notifications
       if (msg.type === 'PUSH_SUBSCRIBE') {
         try {
           const subscription = await createPushSubscription(activeTab.url, msg.options?.applicationServerKey);
-  
+
           activeTab.webviewRef.current?.injectJavaScript(`
               window.dispatchEvent(new MessageEvent('message', {
                 data: JSON.stringify({
@@ -683,11 +645,11 @@ export default function Browser() {
         }
         return;
       }
-  
+
       // Handle get existing push subscription
       if (msg.type === 'GET_PUSH_SUBSCRIPTION') {
         const subscription = getSubscription(activeTab.url);
-  
+
         activeTab.webviewRef.current?.injectJavaScript(`
             window.dispatchEvent(new MessageEvent('message', {
               data: JSON.stringify({
@@ -698,7 +660,7 @@ export default function Browser() {
           `);
         return;
       }
-  
+
       // Handle immediate local notifications
       if (msg.type === 'SHOW_NOTIFICATION') {
         try {
@@ -727,11 +689,11 @@ export default function Browser() {
         }
         return;
       }
-  
+
       // Handle wallet API calls
       const origin = activeTab.url.replace(/^https?:\/\//, '').split('/')[0];
       let response: any;
-      
+
       try {
         switch (msg.call) {
           case 'getPublicKey':
@@ -776,86 +738,71 @@ export default function Browser() {
   );
 
   /* -------------------------------------------------------------------------- */
-  /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
+  /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
   /* -------------------------------------------------------------------------- */
 
   const handleNavStateChange = (navState: WebViewNavigation) => {
-    updateActiveTab({
-      canGoBack: navState.canGoBack,
-      canGoForward: navState.canGoForward,
-      isLoading: navState.loading,
-      url: navState.url,
-      title: navState.title || navState.url,
-    });
+    tabStore.handleNavigationStateChange(tabStore.activeTabId, navState)
+    if (!addressEditing.current) setAddressText(navState.url)
 
-    if (!addressEditing.current) setAddressText(navState.url);
-
-    // record history once the page finished loading
     if (!navState.loading && navState.url !== kNEW_TAB_URL) {
       pushHistory({
         title: navState.title || navState.url,
         url: navState.url,
-        timestamp: Date.now(),
-      }).catch(() => { });
+        timestamp: Date.now()
+      }).catch(() => { })
     }
-  };
+  }
 
   /* -------------------------------------------------------------------------- */
-  /*                          SHARE / HOMESCREEN SHORTCUT                       */
+  /*                          SHARE / HOMESCREEN SHORTCUT                       */
   /* -------------------------------------------------------------------------- */
 
   const shareCurrent = async () => {
     try {
-      await Share.share({ message: activeTab.url });
+      await Share.share({ message: activeTab.url })
     } catch (err) {
-      console.warn('Share cancelled/failed', err);
+      console.warn('Share cancelled/failed', err)
     }
-  };
+  }
 
   const addToHomeScreen = async () => {
     try {
       if (Platform.OS === 'android') {
-        // await createShortcut({
-        //   id: domainForUrl(activeTab.url),
-        //   shortLabel: activeTab.title,
-        //   longLabel: activeTab.title,
-        //   url: activeTab.url,
-        // });
       } else {
-        // Fallback: open native "Add to Home Screen" sheet in Safari
-        await Linking.openURL('prefs:root=Safari');
+        await Linking.openURL('prefs:root=Safari')
       }
     } catch (e) {
-      console.warn('Add to homescreen failed', e);
+      console.warn('Add to homescreen failed', e)
     }
-  };
+  }
 
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
   /* -------------------------------------------------------------------------- */
 
   const toggleStarDrawer = (open: boolean) => {
-    setShowStarDrawer(open);
+    setShowStarDrawer(open)
     Animated.timing(starDrawerAnim, {
       toValue: open ? 1 : 0,
       duration: 250,
-      useNativeDriver: true,
-    }).start();
-  };
+      useNativeDriver: true
+    }).start()
+  }
 
   const StarDrawer = () => {
-    const [index, setIndex] = useState(0);
+    const [index, setIndex] = useState(0)
     const routes = [
       { key: 'bookmarks', title: 'Bookmarks' },
-      { key: 'history', title: 'History' },
-    ];
+      { key: 'history', title: 'History' }
+    ]
     const renderScene = SceneMap({
       bookmarks: () => (
         <RecommendedApps
-          includeBookmarks={bookmarks}
-          setStartingUrl={(u: string) => {
-            updateActiveTab({ url: u });
-            toggleStarDrawer(false);
+          includeBookmarks={bookmarkStore.bookmarks}
+          setStartingUrl={u => {
+            updateActiveTab({ url: u })
+            toggleStarDrawer(false)
           }}
         />
       ),
@@ -863,14 +810,14 @@ export default function Browser() {
         <HistoryList
           history={history}
           onSelect={u => {
-            updateActiveTab({ url: u });
-            toggleStarDrawer(false);
+            updateActiveTab({ url: u })
+            toggleStarDrawer(false)
           }}
           onDelete={removeHistoryItem}
           onClear={() => setShowClearConfirm(true)}
         />
-      ),
-    });
+      )
+    })
 
     return (
       <Animated.View
@@ -882,11 +829,11 @@ export default function Browser() {
               {
                 translateY: starDrawerAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [Dimensions.get('window').height, 0],
-                }),
-              },
-            ],
-          },
+                  outputRange: [Dimensions.get('window').height, 0]
+                })
+              }
+            ]
+          }
         ]}
       >
         <TabView
@@ -900,14 +847,17 @@ export default function Browser() {
                   key={r.key}
                   style={[
                     styles.starTab,
-                    i === index && { borderBottomColor: colors.primary },
+                    i === index && { borderBottomColor: colors.primary }
                   ]}
                   onPress={() => setIndex(i)}
                 >
                   <Text
                     style={[
                       styles.starTabLabel,
-                      { color: i === index ? colors.primary : colors.textSecondary },
+                      {
+                        color:
+                          i === index ? colors.primary : colors.textSecondary
+                      }
                     ]}
                   >
                     {r.title}
@@ -918,14 +868,13 @@ export default function Browser() {
           )}
         />
 
-        {/* ------ Clear history confirmation ------ */}
         {renderClearConfirm()}
       </Animated.View>
-    );
-  };
+    )
+  }
 
   /* ---------------------------- clear history modal ------------------------- */
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const renderClearConfirm = () => (
     <Modal
@@ -951,8 +900,8 @@ export default function Browser() {
           <TouchableOpacity
             style={[styles.confirmBtn, { backgroundColor: '#ff3b30' }]}
             onPress={() => {
-              clearHistory();
-              setShowClearConfirm(false);
+              clearHistory()
+              setShowClearConfirm(false)
             }}
           >
             <Text style={{ color: '#fff' }}>Clear</Text>
@@ -960,7 +909,7 @@ export default function Browser() {
         </View>
       </View>
     </Modal>
-  );
+  )
 
   /* -------------------------------------------------------------------------- */
   /*                         ADDRESS BAR AUTOCOMPLETE                           */
@@ -969,89 +918,102 @@ export default function Browser() {
   const fuseRef = useRef(
     new Fuse<HistoryEntry | Bookmark>([], {
       keys: ['title', 'url'],
-      threshold: 0.4,
-    }),
-  );
+      threshold: 0.4
+    })
+  )
   useEffect(() => {
-    fuseRef.current.setCollection([...history, ...bookmarks]);
-  }, [history, bookmarks]);
+    fuseRef.current.setCollection([...history, ...bookmarkStore.bookmarks])
+  }, [history, bookmarkStore.bookmarks])
 
   const [addressSuggestions, setAddressSuggestions] = useState<
     (HistoryEntry | Bookmark)[]
-  >([]);
+  >([])
 
   const onChangeAddressText = (txt: string) => {
-    setAddressText(txt);
+    setAddressText(txt)
     if (txt.trim().length === 0) {
-      setAddressSuggestions([]);
-      return;
+      setAddressSuggestions([])
+      return
     }
-    const res = fuseRef.current.search(txt).slice(0, 5).map(r => r.item);
-    setAddressSuggestions(res);
-  };
+    const res = fuseRef.current
+      .search(txt)
+      .slice(0, 5)
+      .map(r => r.item)
+    setAddressSuggestions(res)
+  }
 
   /* -------------------------------------------------------------------------- */
   /*                              INFO DRAWER NAV                               */
   /* -------------------------------------------------------------------------- */
-  const toggleInfoDrawer = (open: boolean, route: typeof infoDrawerRoute = 'root') => {
-    setInfoDrawerRoute(route);
-    setShowInfoDrawer(open);
-  };
+
+  const toggleInfoDrawer = (
+    open: boolean,
+    route: typeof infoDrawerRoute = 'root'
+  ) => {
+    setInfoDrawerRoute(route)
+    setShowInfoDrawer(open)
+  }
 
   useEffect(() => {
     Animated.timing(drawerAnim, {
       toValue: showInfoDrawer ? 1 : 0,
       duration: 260,
-      useNativeDriver: true,
-    }).start();
-  }, [showInfoDrawer, drawerAnim]);
+      useNativeDriver: true
+    }).start()
+  }, [showInfoDrawer, drawerAnim])
 
   const drawerHeight =
     infoDrawerRoute === 'root'
-      ? 400 + insets.bottom
-      : Dimensions.get('window').height * 0.9;
+      ? Dimensions.get('window').height * 0.5
+      : Dimensions.get('window').height * 0.9
 
   /* -------------------------------------------------------------------------- */
   /*                                  RENDER                                    */
   /* -------------------------------------------------------------------------- */
 
-  const showAddressBar = !keyboardVisible || addressFocused;
-  const showBottomBar = !keyboardVisible && !addressFocused;
+  const showAddressBar = !keyboardVisible || addressFocused
+  const showBottomBar = !(keyboardVisible && addressFocused)
 
   const addressDisplay = addressFocused
     ? addressText
-    : domainForUrl(addressText);
+    : domainForUrl(addressText)
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* ----------------- dim bg when address focused ------------------ */}
-      {addressFocused && (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.backdrop} />
-        </TouchableWithoutFeedback>
-      )}
-
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.select({ ios: 'padding', android: undefined })}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={addressFocused
+          ? (Platform.OS === 'ios' ? 'padding' : 'height')
+          : undefined
+        }
+      >
+        <SafeAreaView
+          style={[
+            styles.container,
+            {
+              backgroundColor: colors.inputBackground,
+              paddingBottom: addressFocused && keyboardVisible
+                ? 0
+                : insets.bottom
+            }
+          ]}
         >
-          <SafeAreaView
-            style={[styles.container, { backgroundColor: colors.inputBackground }]}
-          >
-            <StatusBar style={isDark ? 'light' : 'dark'} />
+          <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {/* ------------------ main viewport ------------------ */}
-            {activeTab.url === kNEW_TAB_URL ? (
-              <RecommendedApps
-                includeBookmarks={bookmarks}
-                setStartingUrl={url => updateActiveTab({ url })}
-              />
-            ) : (
+          {activeTab.url === kNEW_TAB_URL ? (
+            <RecommendedApps
+              includeBookmarks={bookmarkStore.bookmarks}
+              setStartingUrl={url => updateActiveTab({ url })}
+            />
+          ) : (
+            <View
+              style={{ flex: 1 }}
+              {...responderProps}
+            >
               <WebView
                 ref={activeTab.webviewRef}
                 source={{ uri: activeTab.url }}
-                originWhitelist={['*']}
+                originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
                 injectedJavaScript={injectedJavaScript}
                 onNavigationStateChange={handleNavStateChange}
@@ -1061,357 +1023,329 @@ export default function Browser() {
                 containerStyle={{ backgroundColor: colors.background }}
                 style={{ flex: 1 }}
               />
+            </View>
+          )}
+          <View
+            onLayout={(e) => setAddressBarHeight(e.nativeEvent.layout.height)}
+            style={[
+              styles.addressBar,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+                paddingTop: addressFocused && keyboardVisible ? 8 : 12,
+                paddingBottom: addressFocused && keyboardVisible ? 0 : 12,
+                zIndex: 10,
+                elevation: 10
+              }
+            ]}
+          >
+            {!addressFocused && (
+              <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
+                <Ionicons name="person-circle-outline" size={22} color={colors.textSecondary} />
+              </TouchableOpacity>
             )}
 
-            {/* ---------------- address bar ---------------- */}
-            {showAddressBar && (
-              <View
-                style={[
-                  styles.addressBar,
-                  {
-                    backgroundColor: colors.inputBackground,
-                    borderColor: colors.inputBorder,
-                    paddingTop: 12,
-                  },
-                ]}
-              >
-                {/* info icon or back btn (drawer internal) */}
-                {!addressFocused && (
-                  <TouchableOpacity onPress={() => toggleInfoDrawer(true)}>
-                    <Text style={styles.addressButton}>ℹ︎</Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* padlock + domain */}
-                {!addressFocused && !activeTab.isLoading && activeTab.url.startsWith('https') && (
-                  <Text style={[styles.padlock, { color: colors.textSecondary }]}>
-                    🔒
-                  </Text>
-                )}
-
-                {/* input */}
-                <TextInput
-                  ref={addressInputRef}
-                  editable
-                  value={addressDisplay === 'new-tab-page' ? '' : addressDisplay}
-                  onChangeText={onChangeAddressText}
-                  onFocus={() => {
-                    addressEditing.current = true;
-                    setAddressFocused(true);
-                    setTimeout(() => {
-                      addressInputRef.current?.setNativeProps({
-                        selection: { start: 0, end: addressText.length },
-                      });
-                    }, 0);
-                  }}
-                  onBlur={() => {
-                    addressEditing.current = false;
-                    setAddressFocused(false);
-                    setAddressSuggestions([]);
-                  }}
-                  onSubmitEditing={onAddressSubmit}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  returnKeyType="go"
-                  style={[
-                    styles.addressInput,
-                    {
-                      flex: 1,
-                      backgroundColor: colors.background,
-                      color: colors.textPrimary,
-                      textAlign: addressFocused ? 'left' : 'center',
-                    },
-                  ]}
-                  placeholder="Search or enter site name"
-                  placeholderTextColor={colors.textSecondary}
+            {!addressFocused &&
+              !activeTab.isLoading &&
+              activeTab.url.startsWith('https') && (
+                <Ionicons
+                  name="lock-closed"
+                  size={16}
+                  color={colors.textSecondary}
+                  style={styles.padlock}
                 />
+              )}
 
-                {/* reload / stop / clear btn */}
-                <TouchableOpacity
-                  onPress={
-                    addressFocused
-                      ? () => setAddressText('')
-                      : navReloadOrStop
-                  }
-                >
-                  <Text style={styles.addressButton}>
-                    {addressFocused ? '✕' : activeTab.isLoading ? '✕' : '↻'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            <TextInput
+              ref={addressInputRef}
+              editable
+              value={
+                addressDisplay === 'new-tab-page' ? '' : addressDisplay
+              }
+              onChangeText={onChangeAddressText}
+              onFocus={() => {
+                addressEditing.current = true
+                setAddressFocused(true)
+                setTimeout(() => {
+                  addressInputRef.current?.setNativeProps({
+                    selection: { start: 0, end: addressText.length }
+                  })
+                }, 0)
+              }}
+              onBlur={() => {
+                addressEditing.current = false
+                setAddressFocused(false)
+                setAddressSuggestions([])
+              }}
+              onSubmitEditing={onAddressSubmit}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="go"
+              style={[
+                styles.addressInput,
+                {
+                  flex: 1,
+                  backgroundColor: colors.background,
+                  color: colors.textPrimary,
+                  textAlign: addressFocused ? 'left' : 'center'
+                }
+              ]}
+              placeholder="Search or enter site name"
+              placeholderTextColor={colors.textSecondary}
+            />
 
-            {/* ---- autocomplete suggestions ---- */}
-            {addressFocused && addressSuggestions.length > 0 && (
-              <View
-                style={[
-                  styles.suggestionBox,
-                  { backgroundColor: colors.paperBackground },
-                ]}
-              >
-                {addressSuggestions.map(s => (
+            <TouchableOpacity
+              onPress={
+                addressFocused ? () => setAddressText('') : navReloadOrStop
+              }
+              style={styles.addressBarIcon}
+            >
+              <Ionicons
+                name={addressFocused || activeTab.isLoading ? 'close-circle' : 'refresh'}
+                size={22}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {addressFocused && addressSuggestions.length > 0 && (
+            <View
+              style={[
+                styles.suggestionBox,
+                { backgroundColor: colors.paperBackground }
+              ]}
+            >
+              {addressSuggestions.map(
+                (entry: HistoryEntry | Bookmark, i: number) => (
                   <TouchableOpacity
-                    key={s.url}
-                    style={styles.suggestionItem}
+                    key={entry.url}
                     onPress={() => {
-                      setAddressText(s.url);
-                      onAddressSubmit();
+                      setAddressText(entry.url)
+                      onAddressSubmit()
                     }}
+                    style={styles.suggestionItem}
                   >
                     <Text
                       numberOfLines={1}
-                      style={[styles.suggestionTitle, { color: colors.textPrimary }]}
+                      style={[
+                        styles.suggestionTitle,
+                        { color: colors.textPrimary }
+                      ]}
                     >
-                      {'title' in s ? s.title : s.url}
+                      {entry.title}
                     </Text>
                     <Text
                       numberOfLines={1}
-                      style={[styles.suggestionUrl, { color: colors.textSecondary }]}
+                      style={[
+                        styles.suggestionUrl,
+                        { color: colors.textSecondary }
+                      ]}
                     >
-                      {s.url}
+                      {entry.url}
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-            )}
+                )
+              )}
+            </View>
+          )}
 
-            {/* ---------------- bottom toolbar ---------------- */}
-            {showBottomBar && (
-              <View
-                style={[
-                  styles.bottomBar,
-                  {
-                    backgroundColor: colors.inputBackground,
-                    paddingBottom: insets.bottom,
-                  },
-                ]}
-              >
-                <ToolbarButton
-                  icon="←"
-                  onPress={navBack}
-                  disabled={!activeTab.canGoBack}
-                />
-                <ToolbarButton
-                  icon="→"
-                  onPress={navFwd}
-                  disabled={!activeTab.canGoForward}
-                />
-                <ToolbarButton
-                  icon="⇪"
-                  onPress={shareCurrent}
-                  disabled={activeTab.url === kNEW_TAB_URL}
-                />
-                <ToolbarButton
-                  icon="★"
-                  onPress={() => toggleStarDrawer(true)}
-                />
-                <ToolbarButton
-                  icon="▒"
-                  onPress={() => setShowTabsView(true)}
-                />
-              </View>
-            )}
+          {showTabsView && (
+            <TabsView
+              tabs={tabStore.tabs}
+              activeId={tabStore.activeTabId}
+              setActive={tabStore.setActiveTab}
+              addTab={tabStore.addTab}
+              closeTab={tabStore.removeTab}
+              onDismiss={() => setShowTabsView(false)}
+              colors={colors}
+            />
+          )}
 
-            {/* ---------------- full‑screen tabs view ---------------- */}
-            {showTabsView && (
-              <TabsView
-                tabs={tabs}
-                activeId={activeTabId}
-                setActive={id => {
-                  setActiveTabId(id);
-                  setShowTabsView(false);
-                }}
-                addTab={newTab}
-                closeTab={closeTab}
-                onDismiss={() => setShowTabsView(false)}
-                colors={colors}
-              />
-            )}
+          {showStarDrawer && <StarDrawer />}
 
-            {/* ---------------- star (bookmark/history) drawer -------------- */}
-            {showStarDrawer && <StarDrawer />}
-
-            {/* ---------------- info drawer ---------------- */}
-            <Modal
-              isVisible={showInfoDrawer}
-              onBackdropPress={() => toggleInfoDrawer(false)}
-              swipeDirection="down"
-              onSwipeComplete={() => toggleInfoDrawer(false)}
-              style={{ margin: 0, justifyContent: 'flex-end' }}
+          {showBottomBar && (
+            <View
+              style={[
+                styles.bottomBar,
+                {
+                  backgroundColor: colors.inputBackground,
+                  paddingBottom: 0
+                }
+              ]}
             >
-              <Animated.View
-                style={[
-                  styles.infoDrawer,
-                  {
-                    backgroundColor: colors.background,
-                    height: drawerHeight,
-                    transform: [
-                      {
-                        translateY: drawerAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [drawerHeight, 0],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={navBack}
+                disabled={!activeTab.canGoBack}
               >
-                {/* ===== root menu ===== */}
-                {infoDrawerRoute === 'root' && (
-                  <>
-                    <Pressable style={styles.drawerHandle} onPress={() => toggleInfoDrawer(false)}>
-                      <View style={styles.handleBar} />
-                    </Pressable>
-                    <Balance />
-                    <DrawerItem
-                      label="Identity"
-                      onPress={() => setInfoDrawerRoute('identity')}
-                    />
-                    <DrawerItem
-                      label="Trust Network"
-                      onPress={() => setInfoDrawerRoute('trust')}
-                    />
-                    <DrawerItem
-                      label="Settings"
-                      onPress={() => setInfoDrawerRoute('settings')}
-                    />
-                    <DrawerItem
-                      label="Security"
-                      onPress={() => setInfoDrawerRoute('security')}
-                    />
-                    <DrawerItem
-                      label="Notifications"
-                      onPress={() => setInfoDrawerRoute('notifications')}
-                    />
-                    <DrawerItem
-                      label="Add Bookmark"
-                      onPress={() => {
-                        addBookmark(activeTab.title, activeTab.url);
-                        toggleInfoDrawer(false);
-                      }}
-                    />
-                    <DrawerItem
-                      label="Add to Device Homescreen"
-                      onPress={async () => {
-                        await addToHomeScreen();
-                        toggleInfoDrawer(false);
-                      }}
-                    />
-                    <DrawerItem
-                      label="Back to Homepage"
-                      onPress={() => {
-                        updateActiveTab({ url: kNEW_TAB_URL });
-                        setAddressText(kNEW_TAB_URL);
-                        toggleInfoDrawer(false);
-                      }}
-                    />
-                  </>
-                )}
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color={activeTab.canGoBack ? colors.textPrimary : colors.textSecondary}
+                />
+              </TouchableOpacity>
 
-                {/* ===== sub‑views (identity/settings/security/trust/notifications) ===== */}
-                {infoDrawerRoute !== 'root' && (
-                  <SubDrawerView
-                    route={infoDrawerRoute}
-                    onBack={() => setInfoDrawerRoute('root')}
-                    onOpenNotificationSettings={() => {
-                      setShowNotificationSettingsModal(true);
-                      toggleInfoDrawer(false);
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={navFwd}
+                disabled={!activeTab.canGoForward}
+              >
+                <Ionicons
+                  name="arrow-forward"
+                  size={24}
+                  color={activeTab.canGoForward ? colors.textPrimary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={shareCurrent}
+                disabled={activeTab.url === kNEW_TAB_URL}
+              >
+                <Ionicons
+                  name="share-outline"
+                  size={24}
+                  color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={() => toggleStarDrawer(true)}
+              >
+                <Ionicons name="star-outline" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={() => setShowTabsView(true)}
+              >
+                <Ionicons name="copy-outline" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <Modal
+            isVisible={showInfoDrawer}
+            onBackdropPress={() => toggleInfoDrawer(false)}
+            swipeDirection="down"
+            onSwipeComplete={() => toggleInfoDrawer(false)}
+            style={{ margin: 0, justifyContent: 'flex-end' }}
+          >
+            <Animated.View
+              style={[
+                styles.infoDrawer,
+                {
+                  backgroundColor: colors.background,
+                  height: drawerHeight,
+                  transform: [
+                    {
+                      translateY: drawerAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [drawerHeight, 0]
+                      })
+                    }
+                  ]
+                }
+              ]}
+            >
+              {infoDrawerRoute === 'root' && (
+                <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
+                  <Pressable
+                    style={styles.drawerHandle}
+                    onPress={() => toggleInfoDrawer(false)}
+                  >
+                    <View style={styles.handleBar} />
+                  </Pressable>
+                  <Balance />
+                  <DrawerItem
+                    label="Identity"
+                    icon="person-circle-outline"
+                    onPress={() => setInfoDrawerRoute('identity')}
+                  />
+                  <DrawerItem
+                    label="Security"
+                    icon="lock-closed-outline"
+                    onPress={() => setInfoDrawerRoute('security')}
+                  />
+                  <DrawerItem
+                    label="Trust Network"
+                    icon="shield-checkmark-outline"
+                    onPress={() => setInfoDrawerRoute('trust')}
+                  />
+                  <DrawerItem
+                    label="Settings"
+                    icon="settings-outline"
+                    onPress={() => setInfoDrawerRoute('settings')}
+                  />
+                  <View style={styles.divider} />
+                  <DrawerItem
+                    label="Add Bookmark"
+                    icon="star-outline"
+                    onPress={() => {
+                      addBookmark(
+                        activeTab.title || 'Untitled',
+                        activeTab.url
+                      )
+                      toggleInfoDrawer(false)
                     }}
                   />
-                )}
-              </Animated.View>
-            </Modal>
-            {/* ---------------- notification modals ---------------- */}
-            <NotificationPermissionModal
-              visible={showNotificationPermissionModal}
-              origin={notificationRequestOrigin}
-              onDismiss={() => setShowNotificationPermissionModal(false)}
-              onResponse={handleNotificationPermissionResponse}
-            />
+                  <DrawerItem
+                    label="Add to Device Homescreen"
+                    icon="home-outline"
+                    onPress={async () => {
+                      await addToHomeScreen()
+                      toggleInfoDrawer(false)
+                    }}
+                  />
+                  <DrawerItem
+                    label="Back to Homepage"
+                    icon="apps-outline"
+                    onPress={() => {
+                      updateActiveTab({ url: kNEW_TAB_URL })
+                      setAddressText(kNEW_TAB_URL)
+                      toggleInfoDrawer(false)
+                    }}
+                  />
+                  <DrawerItem
+                    label="Notifications"
+                    icon="notifications-outline"
+                    onPress={() => setInfoDrawerRoute('notifications')}
+                  />
+                </ScrollView>
+              )}
 
-            <NotificationSettingsModal
-              visible={showNotificationSettingsModal}
-              onDismiss={() => setShowNotificationSettingsModal(false)}
-            />
-          </SafeAreaView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </GestureHandlerRootView>
-  );
+              {infoDrawerRoute !== 'root' && (
+
+                <SubDrawerView
+                  route={infoDrawerRoute}
+                  onBack={() => setInfoDrawerRoute('root')}
+                  onOpenNotificationSettings={() => setShowNotificationSettingsModal(true)}
+                />
+              )}
+            </Animated.View>
+          </Modal>
+          {/* Add these notification modals */}
+          <NotificationPermissionModal
+            visible={showNotificationPermissionModal}
+            origin={notificationRequestOrigin}
+            onDismiss={() => setShowNotificationPermissionModal(false)}
+            onResponse={handleNotificationPermissionResponse}
+          />
+
+          <NotificationSettingsModal
+            visible={showNotificationSettingsModal}
+            onDismiss={() => setShowNotificationSettingsModal(false)}
+          />
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </GestureHandlerRootView >
+  )
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               SUB‑COMPONENTS                               */
+/*                               SUB-COMPONENTS                               */
 /* -------------------------------------------------------------------------- */
-
-const ToolbarButton = ({
-  icon,
-  onPress,
-  disabled,
-}: {
-  icon: string;
-  onPress: () => void;
-  disabled?: boolean;
-}) => (
-  <TouchableOpacity
-    style={styles.toolbarButton}
-    onPress={onPress}
-    disabled={disabled}
-  >
-    <Text style={[styles.toolbarIcon, disabled && { opacity: 0.3 }]}>{icon}</Text>
-  </TouchableOpacity>
-);
-
-/* ---- history list ---- */
-
-const HistoryList = ({
-  history,
-  onSelect,
-  onDelete,
-  onClear,
-}: {
-  history: HistoryEntry[];
-  onSelect: (url: string) => void;
-  onDelete: (url: string) => void;
-  onClear: () => void;
-}) => {
-  const { colors } = useTheme();
-  const renderItem = ({ item }: { item: HistoryEntry }) => (
-    <Swipeable
-      overshootRight={false}
-      renderRightActions={() => (
-        <View style={[styles.swipeDelete, { backgroundColor: '#ff3b30' }]}>
-          <Text style={styles.swipeDeleteText}>✕</Text>
-        </View>
-      )}
-      onSwipeableRightOpen={() => onDelete(item.url)}
-    >
-      <Pressable style={styles.historyItem} onPress={() => onSelect(item.url)}>
-        <Text numberOfLines={1} style={{ color: colors.textPrimary, fontSize: 15 }}>
-          {item.title}
-        </Text>
-        <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 12 }}>
-          {item.url}
-        </Text>
-      </Pressable>
-    </Swipeable>
-  );
-  return (
-    <View style={{ flex: 1 }}>
-      <FlatList
-        data={history}
-        keyExtractor={i => i.url + i.timestamp}
-        renderItem={renderItem}
-        ListFooterComponent={<View style={{ height: 80 }} />}
-      />
-      <TouchableOpacity style={styles.clearBtn} onPress={onClear}>
-        <Text style={styles.clearBtnIcon}>🗑️</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-/* ---- tabs view ---- */
 
 const TabsView = ({
   tabs,
@@ -1420,66 +1354,97 @@ const TabsView = ({
   addTab,
   closeTab,
   onDismiss,
-  colors,
+  colors
 }: {
-  tabs: Tab[];
-  activeId: number;
-  setActive: (id: number) => void;
-  addTab: () => void;
-  closeTab: (id: number) => void;
-  onDismiss: () => void;
-  colors: any;
+  tabs: Tab[]
+  activeId: number
+  setActive: (id: number) => void
+  addTab: () => void
+  closeTab: (id: number) => void
+  onDismiss: () => void
+  colors: any
 }) => {
-  const screen = Dimensions.get('window');
-  const ITEM_W = screen.width * 0.42;
-  const ITEM_H = screen.height * 0.28;
-  const insets = useSafeAreaInsets();
+  const screen = Dimensions.get('window')
+  const ITEM_W = screen.width * 0.42
+  const ITEM_H = screen.height * 0.28
+  const insets = useSafeAreaInsets()
 
-  const renderItem = ({ item }: { item: Tab }) => (
-    <Pressable
-      style={[
-        styles.tabPreview,
-        {
-          width: ITEM_W,
-          height: ITEM_H,
-          borderColor: item.id === activeId ? colors.primary : colors.inputBorder,
-          borderWidth: item.id === activeId ? 2 : StyleSheet.hairlineWidth,
-          backgroundColor: colors.background,
-        },
-      ]}
-      onPress={() => setActive(item.id)}
-    >
-      <View style={{ flex: 1, overflow: 'hidden' }}>
-        {item.url === kNEW_TAB_URL ? (
-          <View style={styles.tabPreviewEmpty}>
-            <Text style={{ fontSize: 16, color: colors.textSecondary }}>New Tab</Text>
-          </View>
-        ) : (
-          <WebView
-            source={{ uri: item.url }}
-            style={{ flex: 1 }}
-            scrollEnabled={false}
-            pointerEvents="none"
-          />
-        )}
-        <View style={[styles.tabTitleBar, { backgroundColor: colors.paperBackground }]}>
-          <Text
-            numberOfLines={1}
-            style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}
-          >
-            {item.title}
-          </Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={styles.tabCloseButton}
-        onPress={() => closeTab(item.id)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+  const renderItem = ({ item }: { item: Tab }) => {
+    const renderRightActions = (
+      progress: Animated.AnimatedInterpolation<number>,
+      dragX: Animated.AnimatedInterpolation<number>
+    ) => {
+      const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
+        inputRange: [-101, 0],
+        outputRange: [0, 1],
+        extrapolate: 'clamp'
+      })
+      return (
+        <Animated.View
+          style={[
+            styles.swipeDelete,
+            { backgroundColor: '#ff3b30', transform: [{ translateX: trans }] }
+          ]}
+        >
+          <Text style={styles.swipeDeleteText}>✕</Text>
+        </Animated.View>
+      )
+    }
+
+    return (
+      <Swipeable
+        renderRightActions={renderRightActions}
+        onSwipeableRightOpen={() => closeTab(item.id)}
+        friction={2}
+        rightThreshold={40}
       >
-        <Text style={{ color: colors.textSecondary }}>✕</Text>
-      </TouchableOpacity>
-    </Pressable>
-  );
+        <Pressable
+          style={[
+            styles.tabPreview,
+            {
+              width: ITEM_W,
+              height: ITEM_H,
+              borderColor:
+                item.id === activeId ? colors.primary : colors.inputBorder,
+              borderWidth: item.id === activeId ? 2 : StyleSheet.hairlineWidth,
+              backgroundColor: colors.background
+            }
+          ]}
+          onPress={() => setActive(item.id)}
+        >
+          <View style={{ flex: 1, overflow: 'hidden' }}>
+            {item.url === kNEW_TAB_URL ? (
+              <View style={styles.tabPreviewEmpty}>
+                <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+                  New Tab
+                </Text>
+              </View>
+            ) : (
+              <WebView
+                source={{ uri: item.url }}
+                style={{ flex: 1 }}
+                scrollEnabled={false}
+                pointerEvents="none"
+              />
+            )}
+            <View
+              style={[
+                styles.tabTitleBar,
+                { backgroundColor: colors.paperBackground }
+              ]}
+            >
+              <Text
+                numberOfLines={1}
+                style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}
+              >
+                {item.title}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+      </Swipeable>
+    )
+  }
 
   return (
     <View style={styles.tabsViewContainer}>
@@ -1492,10 +1457,15 @@ const TabsView = ({
         renderItem={renderItem}
         keyExtractor={t => String(t.id)}
         numColumns={2}
-        contentContainerStyle={{ padding: 12, paddingBottom: 100 + insets.bottom }}
+        contentContainerStyle={{
+          padding: 12,
+          paddingBottom: 100 + insets.bottom
+        }}
       />
 
-      <View style={[styles.tabsViewFooter, { paddingBottom: insets.bottom + 10 }]}>
+      <View
+        style={[styles.tabsViewFooter, { paddingBottom: insets.bottom + 10 }]}
+      >
         <TouchableOpacity style={styles.newTabBtn} onPress={() => addTab()}>
           <Text style={styles.newTabIcon}>＋</Text>
         </TouchableOpacity>
@@ -1504,21 +1474,29 @@ const TabsView = ({
         </TouchableOpacity>
       </View>
     </View>
-  );
-};
+  )
+}
 
-/* ---- drawer item ---- */
-
-const DrawerItem = ({ label, onPress }: { label: string; onPress: () => void }) => {
-  const { colors } = useTheme();
+const DrawerItem = ({
+  label,
+  icon,
+  onPress
+}: {
+  label: string
+  icon: keyof typeof Ionicons.glyphMap
+  onPress: () => void
+}) => {
+  const { colors } = useTheme()
   return (
-    <Pressable style={styles.drawerItem} onPress={onPress}>
-      <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>{label}</Text>
-    </Pressable>
-  );
-};
-
-/* ---- sub‑drawer view (identity/settings/security/trust) ---- */
+    <TouchableOpacity style={styles.drawerItem} onPress={onPress}>
+      <Ionicons name={icon} size={22} color={colors.textSecondary} style={styles.drawerIcon} />
+      <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
+        {label}
+      </Text>
+      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
+  )
+}
 
 const SubDrawerView = ({
   route,
@@ -1529,12 +1507,22 @@ const SubDrawerView = ({
   onBack: () => void;
   onOpenNotificationSettings?: () => void;
 }) => {
-  const { colors } = useTheme();
+  const { colors } = useTheme()
+
+  const screens = {
+    identity: <IdentityScreen />,
+    settings: <SettingsScreen />,
+    security: <SecurityScreen />,
+    trust: <TrustScreen />,
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.subDrawerHeader}>
         <TouchableOpacity onPress={onBack}>
-          <Text style={[styles.backBtn, { color: colors.primary }]}>‹ Back</Text>
+          <Text style={[styles.backBtn, { color: colors.primary }]}>
+            ‹ Back
+          </Text>
         </TouchableOpacity>
         <Text style={[styles.subDrawerTitle, { color: colors.textPrimary }]}>
           {route[0].toUpperCase() + route.slice(1)}
@@ -1576,8 +1564,8 @@ const SubDrawerView = ({
         )}
       </View>
     </View>
-  );
-};
+  )
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                    CSS                                     */
@@ -1589,24 +1577,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 12
   },
   addressInput: {
     paddingHorizontal: 8,
     paddingVertical: Platform.OS === 'ios' ? 6 : 2,
     borderRadius: 6,
-    fontSize: 15,
+    fontSize: 15
   },
-  addressButton: { fontSize: 18, marginHorizontal: 6, color: '#fff' },
-  padlock: { marginRight: 4, fontSize: 14 },
+  addressBarIcon: { paddingHorizontal: 6 },
+  padlock: { marginRight: 4 },
   bottomBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 6,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: StyleSheet.hairlineWidth
   },
   toolbarButton: { padding: 6 },
-  toolbarIcon: { fontSize: 20, color: '#fff' },
+  toolbarIcon: { fontSize: 20 },
 
   /* suggestions */
   suggestionBox: {
@@ -1615,7 +1603,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 30,
-    paddingBottom: 8,
+    paddingBottom: 8
   },
   suggestionItem: { paddingVertical: 8, paddingHorizontal: 16 },
   suggestionTitle: { fontSize: 14 },
@@ -1631,52 +1619,36 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     overflow: 'hidden',
-    elevation: 12,
+    elevation: 12
   },
   starTabBar: {
     flexDirection: 'row',
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth
   },
   starTab: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
+    borderBottomColor: 'transparent'
   },
   starTabLabel: { fontSize: 15, fontWeight: '600' },
-
-  /* history list */
-  historyItem: { padding: 12 },
-  clearBtn: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#ff3b30',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-  },
-  clearBtnIcon: { color: '#fff', fontSize: 22 },
 
   /* tabs view */
   tabsViewContainer: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.7)',
-    zIndex: 100,
+    zIndex: 100
   },
   tabPreview: {
     margin: '4%',
     borderRadius: 10,
-    overflow: 'visible', // for close button
+    overflow: 'visible'
   },
   tabPreviewEmpty: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   tabTitleBar: {
     position: 'absolute',
@@ -1685,20 +1657,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingVertical: 6,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  tabCloseButton: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#555',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#777',
+    backgroundColor: 'rgba(0,0,0,0.5)'
   },
   tabsViewFooter: {
     position: 'absolute',
@@ -1708,7 +1667,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 20
   },
   newTabBtn: {
     width: 56,
@@ -1716,20 +1675,19 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: '#4c4c4c',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   newTabIcon: { fontSize: 32, color: '#fff', lineHeight: 32 },
   doneButton: {
     position: 'absolute',
     right: 20,
-    bottom: 26,
+    bottom: 26
   },
   doneButtonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '600'
   },
-
 
   /* info drawer */
   infoDrawer: {
@@ -1739,25 +1697,42 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    elevation: 10,
+    elevation: 10
   },
   drawerHandle: { alignItems: 'center', padding: 10 },
   handleBar: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#999',
+    backgroundColor: '#999'
   },
-  drawerItem: { paddingVertical: 14, paddingHorizontal: 24 },
-  drawerLabel: { fontSize: 17 },
+  drawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24
+  },
+  drawerIcon: {
+    marginRight: 16,
+  },
+  drawerLabel: {
+    flex: 1,
+    fontSize: 17
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#ccc',
+    marginVertical: 8,
+    marginHorizontal: 24,
+  },
 
-  /* sub‑drawer */
+  /* sub-drawer */
   subDrawerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 44,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 12,
+    paddingHorizontal: 12
   },
   backBtn: { fontSize: 17 },
   subDrawerTitle: { flex: 1, textAlign: 'center', fontSize: 17 },
@@ -1769,7 +1744,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 60,
     marginVertical: 10,
-    borderRadius: 10,
+    borderRadius: 10
   },
   swipeDeleteText: { color: '#fff', fontSize: 24 },
 
@@ -1778,7 +1753,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 24,
     width: '85%',
-    alignSelf: 'center',
+    alignSelf: 'center'
   },
   confirmTitle: { fontSize: 16, fontWeight: '600', marginBottom: 16 },
   confirmButtons: { flexDirection: 'row', justifyContent: 'flex-end' },
@@ -1786,7 +1761,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 18,
     borderRadius: 6,
-    marginLeft: 12,
+    marginLeft: 12
   },
 
   /* modal */
