@@ -5,7 +5,7 @@ import { observer } from 'mobx-react-lite'
 import tabStore from '@/stores/TabStore'
 
 const BookmarkTabs = observer(() => {
-  const { tabs, activeTabId, setActiveTab, removeTab } = tabStore
+  const { tabs, activeTabId, setActiveTab } = tabStore
 
   return (
     <View style={styles.container}>
@@ -27,7 +27,6 @@ const BookmarkTabs = observer(() => {
           </TouchableOpacity>
           <Button
             title="Close"
-            onPress={() => removeTab(tab.id)}
             accessibilityLabel={`Close tab: ${tab.title || 'Untitled'}`}
           />
         </View>
