@@ -210,7 +210,10 @@ function Browser() {
 
   /* -------------------------------- bookmarks ------------------------------- */
   const addBookmark = useCallback((title: string, url: string) => {
+  // Only add bookmarks for valid URLs that aren't the new tab page
+  if (url && url !== kNEW_TAB_URL && isValidUrl(url) && !url.includes('about:blank')) {
     bookmarkStore.addBookmark(title, url)
+  }
   }, [])
 
   const removeBookmark = useCallback((url: string) => {
@@ -313,12 +316,12 @@ function Browser() {
       : activeTab.webviewRef.current?.reload()
 
   const updateActiveTab = useCallback((patch: Partial<Tab>) => {
-    const newUrl = patch.url
-    if (newUrl && !isValidUrl(newUrl)) {
-      patch.url = kNEW_TAB_URL
-    }
-    tabStore.updateTab(tabStore.activeTabId, patch)
-  }, [])
+  const newUrl = patch.url
+  if (newUrl && !isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
+    patch.url = kNEW_TAB_URL
+  }
+  tabStore.updateTab(tabStore.activeTabId, patch)
+}, [])
 
   function closeTab(id: number) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -437,6 +440,10 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
 
   const handleNavStateChange = (navState: WebViewNavigation) => {
+    // Ignore favicon requests for about:blank
+     if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
+    return;
+  }
     tabStore.handleNavigationStateChange(tabStore.activeTabId, navState)
     if (!addressEditing.current) setAddressText(navState.url)
 
@@ -579,13 +586,19 @@ function Browser() {
   }, [updateActiveTab])
 
   const BookmarksScene = useMemo(() => {
-    return () => (
-      <RecommendedApps
-        includeBookmarks={bookmarkStore.bookmarks}
-        setStartingUrl={handleSetStartingUrl}
-      />
-    )
-  }, [bookmarkStore.bookmarks, handleSetStartingUrl])
+  return () => (
+    <RecommendedApps
+      includeBookmarks={bookmarkStore.bookmarks.filter(bookmark => {
+        // Filter out invalid URLs to prevent favicon errors
+        return bookmark.url && 
+               bookmark.url !== kNEW_TAB_URL && 
+               isValidUrl(bookmark.url) &&
+               !bookmark.url.includes('about:blank')
+      })}
+      setStartingUrl={handleSetStartingUrl}
+    />
+  )
+}, [bookmarkStore.bookmarks, handleSetStartingUrl])
 
   const HistoryScene = React.useCallback(() => {
     return (
@@ -695,6 +708,41 @@ function Browser() {
       ? Dimensions.get('window').height * 0.75
       : Dimensions.get('window').height * 0.9
 
+
+
+  /* -------------------------------------------------------------------------- */
+  /*                               DRAWER HANDLERS                              */
+  /* -------------------------------------------------------------------------- */
+
+    const drawerHandlers = useMemo(() => ({
+      identity: () => setInfoDrawerRoute('identity'),
+            security: () => setInfoDrawerRoute('security'),
+      trust: () => setInfoDrawerRoute('trust'),
+      settings: () => setInfoDrawerRoute('settings'),
+      addBookmark: () => {
+        // Only add bookmark if URL is valid and not new tab page
+        if (activeTab.url && 
+            activeTab.url !== kNEW_TAB_URL && 
+            isValidUrl(activeTab.url) && 
+            !activeTab.url.includes('about:blank')) {
+          addBookmark(
+            activeTab.title || 'Untitled',
+            activeTab.url
+          )
+          toggleInfoDrawer(false)
+        }
+      },
+      addToHomeScreen: async () => {
+        await addToHomeScreen()
+        toggleInfoDrawer(false)
+      },
+      backToHomepage: () => {
+        updateActiveTab({ url: kNEW_TAB_URL })
+        setAddressText(kNEW_TAB_URL)
+        toggleInfoDrawer(false)
+      }
+    }), [activeTab.url, activeTab.title, addBookmark, toggleInfoDrawer, updateActiveTab, setAddressText, addToHomeScreen])
+
   /* -------------------------------------------------------------------------- */
   /*                                  RENDER                                    */
   /* -------------------------------------------------------------------------- */
@@ -741,7 +789,7 @@ function Browser() {
           {activeTab.url === kNEW_TAB_URL ? (
             <RecommendedApps
               includeBookmarks={[]}
-              hideHeader
+              // hideHeader
               setStartingUrl={url => updateActiveTab({ url })}
             />
           ) : (
@@ -756,6 +804,22 @@ function Browser() {
                 onMessage={handleMessage}
                 injectedJavaScript={injectedJavaScript}
                 onNavigationStateChange={handleNavStateChange}
+                onError={(syntheticEvent: any) => {
+                  const { nativeEvent } = syntheticEvent;
+                  // Ignore favicon errors for about:blank
+                  if (nativeEvent.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
+                    return;
+                  }
+                  console.warn('WebView error:', nativeEvent);
+                }}
+                onHttpError={(syntheticEvent: any) => {
+                  const { nativeEvent } = syntheticEvent;
+                  // Ignore favicon errors for about:blank
+                  if (nativeEvent.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
+                    return;
+                  }
+                  console.warn('WebView HTTP error:', nativeEvent);
+                }}
                 javaScriptEnabled
                 domStorageEnabled
                 allowsBackForwardNavigationGestures
@@ -1028,51 +1092,38 @@ function Browser() {
                   <DrawerItem
                     label="Identity"
                     icon="person-circle-outline"
-                    onPress={() => setInfoDrawerRoute('identity')}
+                    onPress={drawerHandlers.identity}
                   />
                   <DrawerItem
                     label="Security"
                     icon="lock-closed-outline"
-                    onPress={() => setInfoDrawerRoute('security')}
+                    onPress={drawerHandlers.security}
                   />
                   <DrawerItem
                     label="Trust Network"
                     icon="shield-checkmark-outline"
-                    onPress={() => setInfoDrawerRoute('trust')}
+                    onPress={drawerHandlers.trust}
                   />
                   <DrawerItem
                     label="Settings"
                     icon="settings-outline"
-                    onPress={() => setInfoDrawerRoute('settings')}
+                    onPress={drawerHandlers.settings}
                   />
                   <View style={styles.divider} />
                   <DrawerItem
                     label="Add Bookmark"
                     icon="star-outline"
-                    onPress={() => {
-                      addBookmark(
-                        activeTab.title || 'Untitled',
-                        activeTab.url
-                      )
-                      toggleInfoDrawer(false)
-                    }}
+                    onPress={drawerHandlers.addBookmark}
                   />
                   <DrawerItem
                     label="Add to Device Homescreen"
                     icon="home-outline"
-                    onPress={async () => {
-                      await addToHomeScreen()
-                      toggleInfoDrawer(false)
-                    }}
+                    onPress={drawerHandlers.addToHomeScreen}
                   />
                   <DrawerItem
                     label="Back to Homepage"
                     icon="apps-outline"
-                    onPress={() => {
-                      updateActiveTab({ url: kNEW_TAB_URL })
-                      setAddressText(kNEW_TAB_URL)
-                      toggleInfoDrawer(false)
-                    }}
+                    onPress={drawerHandlers.backToHomepage}
                   />
                 </ScrollView>
               )}
@@ -1229,7 +1280,7 @@ const TabsViewBase = ({
 
 const TabsView = observer(TabsViewBase)
 
-const DrawerItem = ({
+const DrawerItem = React.memo(({
   label,
   icon,
   onPress
@@ -1240,7 +1291,12 @@ const DrawerItem = ({
 }) => {
   const { colors } = useTheme()
   return (
-    <TouchableOpacity style={styles.drawerItem} onPress={onPress}>
+    <TouchableOpacity 
+      style={styles.drawerItem} 
+      onPress={onPress}
+      activeOpacity={0.6}
+      delayPressIn={0}
+    >
       <Ionicons name={icon} size={22} color={colors.textSecondary} style={styles.drawerIcon} />
       <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
         {label}
@@ -1248,9 +1304,9 @@ const DrawerItem = ({
       <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
     </TouchableOpacity>
   )
-}
+})
 
-const SubDrawerView = ({
+const SubDrawerView = React.memo(({
   route,
   onBack
 }: {
@@ -1259,17 +1315,21 @@ const SubDrawerView = ({
 }) => {
   const { colors } = useTheme()
 
-  const screens = {
+  const screens = useMemo(() => ({
     identity: <IdentityScreen />,
     settings: <SettingsScreen />,
     security: <SecurityScreen />,
     trust: <TrustScreen />,
-  }
+  }), [])
 
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.subDrawerHeader}>
-        <TouchableOpacity onPress={onBack}>
+        <TouchableOpacity 
+          onPress={onBack}
+          activeOpacity={0.6}
+          delayPressIn={0}
+        >
           <Text style={[styles.backBtn, { color: colors.primary }]}>
             ‹ Back
           </Text>
@@ -1284,7 +1344,7 @@ const SubDrawerView = ({
       </View>
     </View>
   )
-}
+})
 
 /* -------------------------------------------------------------------------- */
 /*                                    CSS                                     */
