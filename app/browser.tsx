@@ -31,6 +31,7 @@ import { TabView, SceneMap } from 'react-native-tab-view'
 import Fuse from 'fuse.js'
 import * as Linking from 'expo-linking'
 import { Ionicons } from '@expo/vector-icons'
+import { observer } from 'mobx-react-lite'
 
 import { useTheme } from '@/context/theme/ThemeContext'
 import { useWallet } from '@/context/WalletContext'
@@ -143,7 +144,7 @@ function StarDrawer({
 /*                                  BROWSER                                   */
 /* -------------------------------------------------------------------------- */
 
-export default function Browser() {
+function Browser() {
   /* --------------------------- theme / basic hooks -------------------------- */
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
@@ -564,7 +565,7 @@ export default function Browser() {
   const toggleStarDrawer = useCallback((open: boolean) => {
     setShowStarDrawer(open)
     Animated.timing(starDrawerAnim, {
-      toValue: open ? 1 : 0,
+      toValue: 1,
       duration: 250,
       useNativeDriver: true
     }).start()
@@ -691,7 +692,7 @@ export default function Browser() {
 
   const drawerHeight =
     infoDrawerRoute === 'root'
-      ? Dimensions.get('window').height * 0.5
+      ? Dimensions.get('window').height * 0.75
       : Dimensions.get('window').height * 0.9
 
   /* -------------------------------------------------------------------------- */
@@ -739,7 +740,8 @@ export default function Browser() {
 
           {activeTab.url === kNEW_TAB_URL ? (
             <RecommendedApps
-              includeBookmarks={bookmarkStore.bookmarks}
+              includeBookmarks={[]}
+              hideHeader
               setStartingUrl={url => updateActiveTab({ url })}
             />
           ) : (
@@ -837,7 +839,7 @@ export default function Browser() {
               }
               style={styles.addressBarIcon}
             >
-              <Ionicons 
+              <Ionicons
                 name={addressFocused || activeTab.isLoading ? 'close-circle' : 'refresh'}
                 size={22}
                 color={colors.textSecondary}
@@ -891,8 +893,8 @@ export default function Browser() {
               tabs={tabStore.tabs}
               activeId={tabStore.activeTabId}
               setActive={tabStore.setActiveTab}
-              addTab={tabStore.addTab}
-              closeTab={tabStore.removeTab}
+              addTab={tabStore.newTab}
+              closeTab={tabStore.closeTab}
               onDismiss={() => setShowTabsView(false)}
               colors={colors}
             />
@@ -1089,11 +1091,13 @@ export default function Browser() {
   )
 }
 
+export default observer(Browser)
+
 /* -------------------------------------------------------------------------- */
 /*                               SUB-COMPONENTS                               */
 /* -------------------------------------------------------------------------- */
 
-const TabsView = ({
+const TabsViewBase = ({
   tabs,
   activeId,
   setActive,
@@ -1105,7 +1109,7 @@ const TabsView = ({
   tabs: Tab[]
   activeId: number
   setActive: (id: number) => void
-  addTab: () => void
+  addTab: (initialUrl?: string) => void
   closeTab: (id: number) => void
   onDismiss: () => void
   colors: any
@@ -1199,7 +1203,7 @@ const TabsView = ({
       </TouchableWithoutFeedback>
 
       <FlatList
-        data={tabs}
+        data={tabs.slice()}
         renderItem={renderItem}
         keyExtractor={t => String(t.id)}
         numColumns={2}
@@ -1222,6 +1226,8 @@ const TabsView = ({
     </View>
   )
 }
+
+const TabsView = observer(TabsViewBase)
 
 const DrawerItem = ({
   label,
