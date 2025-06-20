@@ -173,7 +173,7 @@ export default function OtpScreen() {
           </View>
           
           {loading && <ActivityIndicator style={{ marginBottom: 20 }} />}
-
+          
           <View style={styles.resendContainer}>
             <Text style={[styles.resendText, { color: colors.textSecondary }]}>Didn't receive the code?</Text>
             {canResend ? (

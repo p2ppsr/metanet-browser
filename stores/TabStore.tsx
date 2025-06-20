@@ -37,10 +37,11 @@ export class TabStore {
     }
   }
 
-  addTab() {
-    const tab = this.createTab()
-    this.tabs.push(tab)
-    this.activeTabId = tab.id
+  newTab = (initialUrl: string = kNEW_TAB_URL) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    const newTab = this.createTab(initialUrl)
+    this.tabs.push(newTab)
+    this.activeTabId = newTab.id
     this.saveTabs()
   }
 
@@ -58,14 +59,6 @@ export class TabStore {
     this.showTabsView = show
   }
 
-  newTab(initialUrl: string = kNEW_TAB_URL) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    const newTab = this.createTab(initialUrl)
-    this.tabs.push(newTab)
-    this.activeTabId = newTab.id
-    this.saveTabs()
-  }
-
   updateTab(id: number, patch: Partial<Tab>) {
     const tab = this.tabs.find(t => t.id === id)
     if (tab) {
@@ -78,33 +71,20 @@ export class TabStore {
     }
   }
 
-  closeTab(id: number) {
+  closeTab = (id: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    this.tabs = this.tabs.filter(t => t.id !== id)
-    if (this.tabs.length === 0) {
-      this.tabs.push(this.createTab())
-    }
-    if (
-      id === this.activeTabId &&
-      !this.tabs.find(t => t.id === this.activeTabId)
-    ) {
-      const lastTab = this.tabs[this.tabs.length - 1]
-      this.activeTabId = lastTab?.id ?? 1
-    }
-    this.saveTabs()
-  }
+    const tabIndex = this.tabs.findIndex(t => t.id === id)
+    if (tabIndex === -1) return
 
-  removeTab(id: number) {
-    if (!this.tabs || !Array.isArray(this.tabs)) this.tabs = [] // Robust safety check
-    this.tabs = this.tabs.filter(t => t.id !== id)
+    this.tabs.splice(tabIndex, 1)
+
+    if (this.tabs.length === 0) {
+      this.newTab()
+      return
+    }
+
     if (this.activeTabId === id) {
-      if (this.tabs.length > 0) {
-        this.activeTabId = this.tabs[0].id
-      } else {
-        const newTab = this.createTab()
-        this.tabs = [newTab]
-        this.activeTabId = newTab.id
-      }
+      this.activeTabId = this.tabs[Math.max(tabIndex - 1, 0)].id
     }
     this.saveTabs()
   }

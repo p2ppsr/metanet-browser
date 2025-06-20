@@ -67,9 +67,11 @@ const defaultApps: App[] = [
 export const RecommendedApps = ({
   setStartingUrl,
   includeBookmarks = [],
+  hideHeader = false,
 }: {
   setStartingUrl: (url: string) => void;
   includeBookmarks?: { title: string; url: string }[];
+  hideHeader?: boolean;
 }) => {
   const { colors } = useTheme();
   const { recentApps } = useWallet();
@@ -140,9 +142,11 @@ export const RecommendedApps = ({
 
   return (
     <View style={[componentStyles.container, { backgroundColor: colors.paperBackground }]}>
+      {!hideHeader && (
       <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>
         Bookmarks
       </Text>
+      )}
 
       <View style={componentStyles.searchContainer}>
         <TextInput
