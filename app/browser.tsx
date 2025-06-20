@@ -691,7 +691,7 @@ export default function Browser() {
 
   const drawerHeight =
     infoDrawerRoute === 'root'
-      ? Dimensions.get('window').height * 0.5
+      ? Dimensions.get('window').height * 0.75
       : Dimensions.get('window').height * 0.9
 
   /* -------------------------------------------------------------------------- */
