@@ -12,42 +12,62 @@ import ProtocolAccessModal from '@/components/ProtocolAccessModal';
 import BasketAccessModal from '@/components/BasketAccessModal';
 import CertificateAccessModal from '@/components/CertificateAccessModal';
 import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal';
+import { useDeepLinking } from '@/hooks/useDeepLinking';
+import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt';
+import * as Notifications from 'expo-notifications';
 
 const nativeHandlers: NativeHandlers = {
-    isFocused: async () => false,
-    onFocusRequested: async () => { },
-    onFocusRelinquished: async () => { },
-    onDownloadFile: async (fileData: Blob, fileName: string) => {
-      try {
-          const url = window.URL.createObjectURL(fileData);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          return true;
-      } catch (error) {
-          console.error('Download failed:', error);
-          return false;
-      }
+  isFocused: async () => false,
+  onFocusRequested: async () => { },
+  onFocusRelinquished: async () => { },
+  onDownloadFile: async (fileData: Blob, fileName: string) => {
+    try {
+      const url = window.URL.createObjectURL(fileData);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      return true;
+    } catch (error) {
+      console.error('Download failed:', error);
+      return false;
     }
+  }
+};
+
+// Configure global notification behavior
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+// Deep link handler component
+function DeepLinkHandler() {
+  useDeepLinking();
+  return null;
 }
 
-// Root layout component that sets up providers and navigation
 export default function RootLayout() {
-  // With Expo Router, we need a simpler layout setup
   return (
     <LocalStorageProvider>
-      <UserContextProvider 
-        nativeHandlers={nativeHandlers} 
-        appVersion={packageJson.version} 
+      <UserContextProvider
+        nativeHandlers={nativeHandlers}
+        appVersion={packageJson.version}
         appName="Metanet"
       >
         <ExchangeRateContextProvider>
           <WalletContextProvider>
             <ThemeProvider>
+              <DeepLinkHandler />
+              <DefaultBrowserPrompt />
               <PasswordHandler />
               <RecoveryKeySaver />
               <ProtocolAccessModal />
@@ -56,24 +76,17 @@ export default function RootLayout() {
               <SpendingAuthorizationModal />
               <Stack
                 screenOptions={{
-                    animation: 'slide_from_right', // Default animation for most screens
+                  animation: 'slide_from_right',
                   headerShown: false
                 }}
               >
-                  <Stack.Screen 
-                    name="index"
-                  />
-                  <Stack.Screen 
-                    name="browser"
-                  />
-                  <Stack.Screen 
-                    name="config" 
-                    options={{ 
-                      headerShown: false,
-                      animation: 'slide_from_bottom',
-                      presentation: 'modal'
-                    }}
-                  />
+                <Stack.Screen name="index" />
+                <Stack.Screen name="browser" />
+                <Stack.Screen name="config" options={{
+                  headerShown: false,
+                  animation: 'slide_from_bottom',
+                  presentation: 'modal'
+                }} />
               </Stack>
             </ThemeProvider>
           </WalletContextProvider>
