@@ -65,8 +65,8 @@ export default function IdentityScreen() {
     <SafeAreaView style={themeStyles.container}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={themeStyles.contentContainer}>
-        <Text style={[themeStyles.title, { color: colors.textPrimary }]}>Identity</Text>
-        <Text style={[themeStyles.textSecondary, { marginBottom: 20 }]}>
+        <Text style={[themeStyles.title, { color: colors.textPrimary, textAlign:'left', alignSelf:'flex-start' }]}>Identity</Text>
+        <Text style={[themeStyles.textSecondary, { marginBottom: 20, textAlign:'left', alignSelf:'flex-start' }]}>
           Manage your digital identity and credentials.
         </Text>
         <View style={styles.keySection}>
