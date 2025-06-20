@@ -74,7 +74,7 @@ export const usePushNotifications = () => {
       const data = response.notification.request.content.data;
       if (data?.url) {
         console.log('Should navigate to URL:', data.url);
-        // Could trigger navigation here
+        // Trigger navigation here
       }
     });
 
@@ -152,7 +152,6 @@ export const usePushNotifications = () => {
         });
       }
 
-      // Get push token for remote notifications
       let token;
       try {
         const projectId = Constants.expoConfig?.extra?.eas?.projectId || 
@@ -165,7 +164,7 @@ export const usePushNotifications = () => {
           token = await Notifications.getExpoPushTokenAsync();
         } catch (fallbackError) {
           console.log('Fallback token failed, using mock token for local notifications');
-          // Use mock token for local notifications only
+          // Using mock token for local notifications only
           const mockToken = 'ExponentPushToken[mock-' + Date.now() + ']';
           setExpoPushToken(mockToken);
           return mockToken;

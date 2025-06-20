@@ -1278,6 +1278,11 @@ export default function Browser() {
                     icon="settings-outline"
                     onPress={() => setInfoDrawerRoute('settings')}
                   />
+                   <DrawerItem
+                    label="Notifications"
+                    icon="notifications-outline"
+                    onPress={() => setInfoDrawerRoute('notifications')}
+                  />
                   <View style={styles.divider} />
                   <DrawerItem
                     label="Add Bookmark"
@@ -1307,11 +1312,8 @@ export default function Browser() {
                       toggleInfoDrawer(false)
                     }}
                   />
-                  <DrawerItem
-                    label="Notifications"
-                    icon="notifications-outline"
-                    onPress={() => setInfoDrawerRoute('notifications')}
-                  />
+                 
+                  
                 </ScrollView>
               )}
 
@@ -1529,38 +1531,33 @@ const SubDrawerView = ({
         </Text>
         <View style={{ width: 60 }} />
       </View>
-      {/* ----  rendering real screens; placeholder for now ---- */}
       <View style={styles.subDrawerContent}>
         {route === 'notifications' ? (
           <View>
-            <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>
               Manage notifications from websites and apps.
             </Text>
-
             <TouchableOpacity
-              style={[styles.settingsButton, { backgroundColor: colors.inputBackground }]}
+              style={[
+                styles.drawerItem, 
+                { backgroundColor: colors.inputBackground, borderRadius: 8 }
+              ]}
               onPress={onOpenNotificationSettings}
             >
-              <View style={styles.settingsButtonContent}>
-                <View style={styles.settingsButtonIcon}>
-                  <Text style={{ fontSize: 20 }}>🔔</Text>
-                </View>
-                <View style={styles.settingsButtonText}>
-                  <Text style={[styles.settingsButtonTitle, { color: colors.textPrimary }]}>
-                    Notification Settings
-                  </Text>
-                  <Text style={[styles.settingsButtonSubtitle, { color: colors.textSecondary }]}>
-                    Manage website permissions
-                  </Text>
-                </View>
-                <Text style={[styles.settingsButtonChevron, { color: colors.textSecondary }]}>›</Text>
+              <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} style={styles.drawerIcon} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
+                  Notification Settings
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                  Manage website permissions
+                </Text>
               </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         ) : (
-          <Text style={{ color: colors.textSecondary }}>
-            {route} screen content goes here.
-          </Text>
+          screens[route]
         )}
       </View>
     </View>
@@ -1772,43 +1769,5 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.3)',
     zIndex: 20,
-  },
-  /* notification settings */
-  sectionDescription: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  settingsButton: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  settingsButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingsButtonIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  settingsButtonText: {
-    flex: 1,
-  },
-  settingsButtonTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  settingsButtonSubtitle: {
-    fontSize: 14,
-  },
-  settingsButtonChevron: {
-    fontSize: 20,
-    fontWeight: '300',
   },
 });

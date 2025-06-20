@@ -15,6 +15,7 @@ import { usePushNotifications, NotificationPermission } from '@/hooks/usePushNot
 interface NotificationSettingsModalProps {
   visible: boolean;
   onDismiss: () => void;
+  
 }
 
 export default function NotificationSettingsModal({
