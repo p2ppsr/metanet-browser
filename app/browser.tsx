@@ -53,6 +53,14 @@ import TrustScreen from './trust'
 /*                                   HELPERS                                   */
 /* -------------------------------------------------------------------------- */
 
+import NotificationPermissionModal from '@/components/NotificationPermissionModal';
+import NotificationSettingsModal from '@/components/NotificationSettingsModal';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+
+import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking';
+import { useWebAppManifest } from '@/hooks/useWebAppManifest';
+import * as Notifications from 'expo-notifications';
+
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
 /* -------------------------------------------------------------------------- */
@@ -232,19 +240,33 @@ function Browser() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const [showInfoDrawer, setShowInfoDrawer] = useState(false)
-  const [infoDrawerRoute, setInfoDrawerRoute] = useState<
-    'root' | 'identity' | 'settings' | 'security' | 'trust'
-  >('root')
-  const drawerAnim = useRef(new Animated.Value(0)).current
+  const [showInfoDrawer, setShowInfoDrawer] = useState(false);
+  const [infoDrawerRoute, setInfoDrawerRoute] = useState<'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'>('root');
+  const drawerAnim = useRef(new Animated.Value(0)).current;
 
   const [showTabsView, setShowTabsView] = useState(false)
   const [showStarDrawer, setShowStarDrawer] = useState(false)
   const [starTabIndex, setStarTabIndex] = useState(0);
   const starDrawerAnim = useRef(new Animated.Value(0)).current
 
+  const addressInputRef = useRef<TextInput>(null);
+  const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
+  const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();
 
-  const addressInputRef = useRef<TextInput>(null)
+  /* ------------------------- push notifications ----------------------------- */
+  const {
+    requestNotificationPermission,
+    createPushSubscription,
+    unsubscribe,
+    getPermission,
+    getSubscription,
+  } = usePushNotifications();
+
+  const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false);
+  const [showNotificationSettingsModal, setShowNotificationSettingsModal] = useState(false);
+  const [notificationRequestOrigin, setNotificationRequestOrigin] = useState('');
+  const [notificationRequestResolver, setNotificationRequestResolver] = useState<((granted: boolean) => void) | null>(null);
+
 
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
@@ -268,6 +290,77 @@ function Browser() {
       hideSub.remove();
     };
   }, []);
+
+  // Deep linking useEffect
+  useEffect(() => {
+    const checkPendingUrl = async () => {
+      try {
+        const pendingUrl = await getPendingUrl();
+        if (pendingUrl) {
+          console.log('Loading pending URL from deep link:', pendingUrl);
+          updateActiveTab({ url: pendingUrl });
+          setAddressText(pendingUrl);
+          await clearPendingUrl();
+        }
+      } catch (error) {
+        console.error('Error checking pending URL:', error);
+      }
+    };
+
+    checkPendingUrl();
+    const timer = setTimeout(checkPendingUrl, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Manifest checking useEffect 
+  useEffect(() => {
+    let isCancelled = false;
+
+    const handleManifest = async () => {
+      if (activeTab.url === kNEW_TAB_URL || !activeTab.url.startsWith('http') || activeTab.isLoading) {
+        return;
+      }
+
+      if (isCancelled) return;
+
+      console.log('Checking manifest for:', activeTab.url);
+
+      try {
+        const manifestData = await fetchManifest(activeTab.url);
+
+        if (isCancelled) return;
+
+        if (manifestData) {
+          console.log('Found manifest for', activeTab.url, manifestData);
+
+          if (manifestData.babbage?.protocolPermissions) {
+            console.log('Found Babbage protocol permissions:', manifestData.babbage.protocolPermissions);
+          }
+
+          const url = new URL(activeTab.url);
+          if (shouldRedirectToStartUrl(manifestData, activeTab.url) && url.pathname === '/') {
+            const startUrl = getStartUrl(manifestData, activeTab.url);
+            console.log('Redirecting to start_url:', startUrl);
+            updateActiveTab({ url: startUrl });
+            setAddressText(startUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Error in manifest handling:', error);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      if (!activeTab.isLoading && activeTab.url !== kNEW_TAB_URL && activeTab.url.startsWith('http')) {
+        handleManifest();
+      }
+    }, 1000);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [activeTab.url, activeTab.isLoading]);
 
   /* -------------------------------------------------------------------------- */
   /*                                 UTILITIES                                  */
@@ -345,10 +438,193 @@ function Browser() {
       : {};
 
   /* -------------------------------------------------------------------------- */
+  /*                           NOTIFICATION HANDLERS                            */
+  /* -------------------------------------------------------------------------- */
+
+  const handleNotificationPermissionRequest = async (origin: string): Promise<'granted' | 'denied' | 'default'> => {
+    return new Promise((resolve) => {
+      setNotificationRequestOrigin(origin);
+      setNotificationRequestResolver(() => (granted: boolean) => {
+        resolve(granted ? 'granted' : 'denied');
+      });
+      setShowNotificationPermissionModal(true);
+    });
+  };
+
+  const handleNotificationPermissionResponse = (granted: boolean) => {
+    if (notificationRequestResolver) {
+      notificationRequestResolver(granted);
+      setNotificationRequestResolver(null);
+    }
+    setShowNotificationPermissionModal(false);
+    setNotificationRequestOrigin('');
+  };
+
+  /* -------------------------------------------------------------------------- */
   /*                           WEBVIEW MESSAGE HANDLER                          */
   /* -------------------------------------------------------------------------- */
 
-  const injectedJavaScript = `/* YOUR ORIGINAL INJECTED JS HERE */`
+  // === 1. Injected JS ============================================
+  const injectedJavaScript = `
+  // Push Notification API polyfill
+  (function() {
+    // Check if Notification API already exists
+    if ('Notification' in window) {
+      return;
+    }
+
+    // Polyfill Notification constructor
+    window.Notification = function(title, options = {}) {
+      this.title = title;
+      this.body = options.body || '';
+      this.icon = options.icon || '';
+      this.tag = options.tag || '';
+      this.data = options.data || null;
+      
+      // Send notification to native
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'SHOW_NOTIFICATION',
+        title: this.title,
+        body: this.body,
+        icon: this.icon,
+        tag: this.tag,
+        data: this.data
+      }));
+      
+      return this;
+    };
+
+    // Static methods
+    window.Notification.requestPermission = function(callback) {
+      return new Promise((resolve) => {
+        window.ReactNativeWebView?.postMessage(JSON.stringify({
+          type: 'REQUEST_NOTIFICATION_PERMISSION',
+          callback: true
+        }));
+        
+        // Listen for response
+        const handler = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'NOTIFICATION_PERMISSION_RESPONSE') {
+              window.removeEventListener('message', handler);
+              const permission = data.permission;
+              if (callback) callback(permission);
+              resolve(permission);
+            }
+          } catch (e) {}
+        };
+        window.addEventListener('message', handler);
+      });
+    };
+
+    window.Notification.permission = 'default';
+
+    // ServiceWorker registration polyfill for push
+    if (!('serviceWorker' in navigator)) {
+      navigator.serviceWorker = {
+        register: function() {
+          return Promise.resolve({
+            pushManager: {
+              subscribe: function(options) {
+                return new Promise((resolve) => {
+                  window.ReactNativeWebView?.postMessage(JSON.stringify({
+                    type: 'PUSH_SUBSCRIBE',
+                    options: options
+                  }));
+                  
+                  const handler = (event) => {
+                    try {
+                      const data = JSON.parse(event.data);
+                      if (data.type === 'PUSH_SUBSCRIPTION_RESPONSE') {
+                        window.removeEventListener('message', handler);
+                        resolve(data.subscription);
+                      }
+                    } catch (e) {}
+                  };
+                  window.addEventListener('message', handler);
+                });
+              },
+              getSubscription: function() {
+                return new Promise((resolve) => {
+                  window.ReactNativeWebView?.postMessage(JSON.stringify({
+                    type: 'GET_PUSH_SUBSCRIPTION'
+                  }));
+                  
+                  const handler = (event) => {
+                    try {
+                      const data = JSON.parse(event.data);
+                      if (data.type === 'PUSH_SUBSCRIPTION_RESPONSE') {
+                        window.removeEventListener('message', handler);
+                        resolve(data.subscription);
+                      }
+                    } catch (e) {}
+                  };
+                  window.addEventListener('message', handler);
+                });
+              }
+            }
+          });
+        }
+      };
+    }
+
+    // Console logging
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    const originalInfo = console.info;
+    const originalDebug = console.debug;
+
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'log',
+        args: args
+      }));
+    };
+
+    console.warn = function(...args) {
+      originalWarn.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'warn',
+        args: args
+      }));
+    };
+
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'error',
+        args: args
+      }));
+    };
+
+    console.info = function(...args) {
+      originalInfo.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'info',
+        args: args
+      }));
+    };
+
+    console.debug = function(...args) {
+      originalDebug.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'debug',
+        args: args
+      }));
+    };
+  })();
+  true;
+`;
+
+  // === 2. RN ⇄ WebView message bridge ========================================
 
   const handleMessage = useCallback(
     async (event: WebViewMessageEvent) => {
@@ -359,78 +635,184 @@ function Browser() {
           isInvocation: false,
           result,
           status: 'ok'
-        }
+        };
+
         activeTab.webviewRef.current?.injectJavaScript(
           getInjectableJSMessage(message)
-        )
+        );
+      };
+
+      let msg;
+      try {
+        msg = JSON.parse(event.nativeEvent.data);
+      } catch (error) {
+        console.error('Failed to parse WebView message:', error);
+        return;
       }
 
-      const msg = JSON.parse(event.nativeEvent.data)
-
+      // Handle console logs from WebView
       if (msg.type === 'CONSOLE') {
+        const logPrefix = '[WebView]';
         switch (msg.method) {
           case 'log':
-            console.log('[WebView]', ...msg.args)
-            break
+            console.log(logPrefix, ...msg.args);
+            break;
           case 'warn':
-            console.warn('[WebView]', ...msg.args)
-            break
+            console.warn(logPrefix, ...msg.args);
+            break;
           case 'error':
-            console.error('[WebView]', ...msg.args)
-            break
+            console.error(logPrefix, ...msg.args);
+            break;
           case 'info':
-            console.info('[WebView]', ...msg.args)
-            break
+            console.info(logPrefix, ...msg.args);
+            break;
           case 'debug':
-            console.debug('[WebView]', ...msg.args)
-            break
+            console.debug(logPrefix, ...msg.args);
+            break;
         }
-        return
+        return;
       }
 
-      const origin = activeTab.url.replace(/^https?:\/\//, '').split('/')[0]
-      let response: any
-      switch (msg.call) {
-        case 'getPublicKey':
-        case 'revealCounterpartyKeyLinkage':
-        case 'revealSpecificKeyLinkage':
-        case 'encrypt':
-        case 'decrypt':
-        case 'createHmac':
-        case 'verifyHmac':
-        case 'createSignature':
-        case 'verifySignature':
-        case 'createAction':
-        case 'signAction':
-        case 'abortAction':
-        case 'listActions':
-        case 'internalizeAction':
-        case 'listOutputs':
-        case 'relinquishOutput':
-        case 'acquireCertificate':
-        case 'listCertificates':
-        case 'proveCertificate':
-        case 'relinquishCertificate':
-        case 'discoverByIdentityKey':
-        case 'isAuthenticated':
-        case 'waitForAuthentication':
-        case 'getHeight':
-        case 'getHeaderForHeight':
-        case 'discoverByAttributes':
-        case 'getNetwork':
-        case 'getVersion':
-          response = await (wallet as any)[msg.call](
-            typeof msg.args !== 'undefined' ? msg.args : {},
-            origin
-          )
-          break
-        default:
-          throw new Error('Unsupported method.')
+      // Handle notification permission request
+      if (msg.type === 'REQUEST_NOTIFICATION_PERMISSION') {
+        const permission = await handleNotificationPermissionRequest(activeTab.url);
+
+        activeTab.webviewRef.current?.injectJavaScript(`
+            window.Notification.permission = '${permission}';
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'NOTIFICATION_PERMISSION_RESPONSE',
+                permission: '${permission}'
+              })
+            }));
+          `);
+        return;
       }
-      sendResponseToWebView(msg.id, response)
+
+      // Handle push subscription for remote notifications
+      if (msg.type === 'PUSH_SUBSCRIBE') {
+        try {
+          const subscription = await createPushSubscription(activeTab.url, msg.options?.applicationServerKey);
+
+          activeTab.webviewRef.current?.injectJavaScript(`
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                  subscription: ${JSON.stringify(subscription)}
+                })
+              }));
+            `);
+        } catch (error) {
+          console.error('Error creating push subscription:', error);
+          activeTab.webviewRef.current?.injectJavaScript(`
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                  subscription: null,
+                  error: '${error}'
+                })
+              }));
+            `);
+        }
+        return;
+      }
+
+      // Handle get existing push subscription
+      if (msg.type === 'GET_PUSH_SUBSCRIPTION') {
+        const subscription = getSubscription(activeTab.url);
+
+        activeTab.webviewRef.current?.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                subscription: ${JSON.stringify(subscription)}
+              })
+            }));
+          `);
+        return;
+      }
+
+      // Handle immediate local notifications
+      if (msg.type === 'SHOW_NOTIFICATION') {
+        try {
+          const permission = getPermission(activeTab.url);
+          if (permission === 'granted') {
+            // Show notification immediately
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: msg.title || 'Website Notification',
+                body: msg.body || '',
+                data: {
+                  origin: activeTab.url,
+                  type: 'website',
+                  url: activeTab.url,
+                  icon: msg.icon,
+                  tag: msg.tag,
+                  ...msg.data
+                },
+                sound: true,
+              },
+              trigger: null,
+            });
+          }
+        } catch (error) {
+          console.error('Error showing notification:', error);
+        }
+        return;
+      }
+
+     // Handleing of wallet before api call.
+      if (msg.call && !wallet) {
+        console.log('Wallet not ready, ignoring call:', msg.call);
+        return;
+      }
+
+      // Handle wallet API calls
+      const origin = activeTab.url.replace(/^https?:\/\//, '').split('/')[0];
+      let response: any;
+
+      try {
+        switch (msg.call) {
+          case 'getPublicKey':
+          case 'revealCounterpartyKeyLinkage':
+          case 'revealSpecificKeyLinkage':
+          case 'encrypt':
+          case 'decrypt':
+          case 'createHmac':
+          case 'verifyHmac':
+          case 'createSignature':
+          case 'verifySignature':
+          case 'createAction':
+          case 'signAction':
+          case 'abortAction':
+          case 'listActions':
+          case 'internalizeAction':
+          case 'listOutputs':
+          case 'relinquishOutput':
+          case 'acquireCertificate':
+          case 'listCertificates':
+          case 'proveCertificate':
+          case 'relinquishCertificate':
+          case 'discoverByIdentityKey':
+          case 'isAuthenticated':
+          case 'waitForAuthentication':
+          case 'getHeight':
+          case 'getHeaderForHeight':
+          case 'discoverByAttributes':
+          case 'getNetwork':
+          case 'getVersion':
+            response = await (wallet as any)[msg.call](typeof msg.args !== 'undefined' ? msg.args : {}, origin);
+            break;
+          default:
+            throw new Error('Unsupported method.');
+        }
+        sendResponseToWebView(msg.id, response);
+      } catch (error) {
+        console.error('Error processing wallet API call:', msg.call, error);
+      }
     },
-    [activeTab.url, activeTab.webviewRef, wallet]
-  )
+    [activeTab.url, activeTab.webviewRef, wallet, createPushSubscription, getSubscription, getPermission, handleNotificationPermissionRequest]
+  );
 
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
@@ -1064,6 +1446,11 @@ function Browser() {
                     icon="settings-outline"
                     onPress={drawerHandlers.settings}
                   />
+                   <DrawerItem
+                    label="Notifications"
+                    icon="notifications-outline"
+                    onPress={() => setInfoDrawerRoute('notifications')}
+                  />
                   <View style={styles.divider} />
                   <DrawerItem
                     label="Add Bookmark"
@@ -1091,6 +1478,18 @@ function Browser() {
               )}
             </Animated.View>
           </Modal>
+          {/* Add these notification modals */}
+          <NotificationPermissionModal
+            visible={showNotificationPermissionModal}
+            origin={notificationRequestOrigin}
+            onDismiss={() => setShowNotificationPermissionModal(false)}
+            onResponse={handleNotificationPermissionResponse}
+          />
+
+          <NotificationSettingsModal
+            visible={showNotificationSettingsModal}
+            onDismiss={() => setShowNotificationSettingsModal(false)}
+          />
         </SafeAreaView>
       </KeyboardAvoidingView>
     </GestureHandlerRootView >
@@ -1263,10 +1662,12 @@ const DrawerItem = React.memo(({
 
 const SubDrawerView = React.memo(({
   route,
-  onBack
+  onBack,
+  onOpenNotificationSettings,
 }: {
-  route: 'identity' | 'settings' | 'security' | 'trust'
-  onBack: () => void
+  route: 'identity' | 'settings' | 'security' | 'trust' | 'notifications';
+  onBack: () => void;
+  onOpenNotificationSettings?: () => void;
 }) => {
   const { colors } = useTheme()
 
@@ -1295,7 +1696,33 @@ const SubDrawerView = React.memo(({
         <View style={{ width: 60 }} />
       </View>
       <View style={styles.subDrawerContent}>
-        {screens[route]}
+        {route === 'notifications' ? (
+          <View>
+            <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>
+              Manage notifications from websites and apps.
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.drawerItem, 
+                { backgroundColor: colors.inputBackground, borderRadius: 8 }
+              ]}
+              onPress={onOpenNotificationSettings}
+            >
+              <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} style={styles.drawerIcon} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
+                  Notification Settings
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                  Manage website permissions
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          screens[route]
+        )}
       </View>
     </View>  )
 })
