@@ -26,7 +26,7 @@ import {
   WebViewNavigation
 } from 'react-native-webview'
 import Modal from 'react-native-modal'
-import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler'
+import { GestureHandlerRootView, Swipeable, PanGestureHandler, State as GestureState } from 'react-native-gesture-handler'
 import { TabView, SceneMap } from 'react-native-tab-view'
 import Fuse from 'fuse.js'
 import * as Linking from 'expo-linking'
@@ -69,6 +69,74 @@ function getInjectableJSMessage(message: any = {}) {
       }));
     })();
   `
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 COMPONENTS                                 */
+/* -------------------------------------------------------------------------- */
+
+function StarDrawer({
+  BookmarksScene,
+  HistoryScene,
+  renderClearConfirm,
+  colors,
+  styles,
+  index,
+  setIndex
+}: {
+  BookmarksScene: React.ComponentType;
+  HistoryScene: React.ComponentType;
+  renderClearConfirm: () => React.ReactNode;
+  colors: any;
+  styles: any;
+  index: number;
+  setIndex: (index: number) => void;
+}) {
+  const routes = useMemo(() => [
+    { key: 'bookmarks', title: 'Bookmarks' },
+    { key: 'history', title: 'History' }
+  ], []);
+  const renderScene = useMemo(() => SceneMap({
+    bookmarks: BookmarksScene,
+    history: HistoryScene
+  }), [BookmarksScene, HistoryScene]);
+  return (
+    <View style={{ flex: 1 }}>
+      <TabView
+        navigationState={{ index, routes }}
+        onIndexChange={setIndex}
+        renderScene={renderScene}
+        lazy={false}
+        renderTabBar={props => (
+          <View style={styles.starTabBar}>
+            {props.navigationState.routes.map((r, i) => (
+              <TouchableOpacity
+                key={r.key}
+                style={[
+                  styles.starTab,
+                  i === index && { borderBottomColor: colors.primary }
+                ]}
+                onPress={() => setIndex(i)}
+              >
+                <Text
+                  style={[
+                    styles.starTabLabel,
+                    {
+                      color:
+                        i === index ? colors.primary : colors.textSecondary
+                    }
+                  ]}
+                >
+                  {r.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      />
+      {renderClearConfirm()}
+    </View>
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -168,7 +236,9 @@ export default function Browser() {
 
   const [showTabsView, setShowTabsView] = useState(false)
   const [showStarDrawer, setShowStarDrawer] = useState(false)
+  const [starTabIndex, setStarTabIndex] = useState(0);
   const starDrawerAnim = useRef(new Animated.Value(0)).current
+
 
   const addressInputRef = useRef<TextInput>(null)
 
@@ -185,6 +255,8 @@ export default function Browser() {
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardVisible(false);
       setKeyboardHeight(0);
+      if (addressInputRef.current) {
+      }
       addressInputRef.current?.blur();
     });
     return () => {
@@ -239,13 +311,13 @@ export default function Browser() {
       ? activeTab.webviewRef.current?.stopLoading()
       : activeTab.webviewRef.current?.reload()
 
-  function updateActiveTab(patch: Partial<Tab>) {
+  const updateActiveTab = useCallback((patch: Partial<Tab>) => {
     const newUrl = patch.url
     if (newUrl && !isValidUrl(newUrl)) {
       patch.url = kNEW_TAB_URL
     }
     tabStore.updateTab(tabStore.activeTabId, patch)
-  }
+  }, [])
 
   function closeTab(id: number) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -402,103 +474,136 @@ export default function Browser() {
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
   /* -------------------------------------------------------------------------- */
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isDrawerAnimating, setIsDrawerAnimating] = useState(false);
+  const windowHeight = Dimensions.get('window').height
+  const drawerFullHeight = windowHeight * 0.75
+  const translateY = useRef(new Animated.Value(drawerFullHeight)).current
 
-  const toggleStarDrawer = (open: boolean) => {
+  const closeStarDrawer = useCallback(() => {
+    const runCloseDrawer = () => {
+      Keyboard.dismiss();
+      setIsDrawerAnimating(true);
+
+      Animated.spring(translateY, {
+        toValue: drawerFullHeight,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8
+      }).start();
+
+      setTimeout(() => {
+        setShowStarDrawer(false);
+        setIsDrawerAnimating(false);
+      }, 300);
+    };
+    if (isDrawerAnimating) {
+      translateY.stopAnimation(() => {
+        runCloseDrawer();
+      });
+      return;
+    }
+    runCloseDrawer();
+  }, [isDrawerAnimating, drawerFullHeight, translateY])
+
+  const onPanGestureEvent = useRef(
+    Animated.event([{ nativeEvent: { translationY: translateY } }], {
+      useNativeDriver: true
+    })
+  ).current
+
+  const onPanHandlerStateChange = useCallback(
+    (event: any) => {
+      if (event.nativeEvent.oldState === GestureState.ACTIVE) {
+        if (isDrawerAnimating) return
+        setIsDrawerAnimating(true)
+
+        const { translationY, velocityY } = event.nativeEvent
+
+        const shouldClose =
+          translationY > drawerFullHeight / 3 || velocityY > 800
+        const targetValue = shouldClose ? drawerFullHeight : 0
+
+        Animated.spring(translateY, {
+          toValue: targetValue,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+          velocity: velocityY / 500
+        }).start();
+
+        if (shouldClose) {
+          Keyboard.dismiss();
+          setTimeout(() => {
+            setShowStarDrawer(false);
+            setIsDrawerAnimating(false);
+          }, 150);
+        } else {
+          setIsDrawerAnimating(false);
+        }
+      }
+    },
+    [drawerFullHeight, translateY, isDrawerAnimating]
+  )
+
+  useEffect(() => {
+    if (showStarDrawer) {
+      setIsDrawerAnimating(true)
+      translateY.setValue(drawerFullHeight)
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8
+      }).start(() => {
+        setIsDrawerAnimating(false)
+      })
+    }
+  }, [showStarDrawer])
+
+  const toggleStarDrawer = useCallback((open: boolean) => {
     setShowStarDrawer(open)
     Animated.timing(starDrawerAnim, {
       toValue: open ? 1 : 0,
       duration: 250,
       useNativeDriver: true
     }).start()
-  }
+  }, [starDrawerAnim])
 
-  const StarDrawer = () => {
-    const [index, setIndex] = useState(0)
-    const routes = [
-      { key: 'bookmarks', title: 'Bookmarks' },
-      { key: 'history', title: 'History' }
-    ]
-    const renderScene = SceneMap({
-      bookmarks: () => (
-        <RecommendedApps
-          includeBookmarks={bookmarkStore.bookmarks}
-          setStartingUrl={u => {
-            updateActiveTab({ url: u })
-            toggleStarDrawer(false)
-          }}
-        />
-      ),
-      history: () => (
-        <HistoryList
-          history={history}
-          onSelect={u => {
-            updateActiveTab({ url: u })
-            toggleStarDrawer(false)
-          }}
-          onDelete={removeHistoryItem}
-          onClear={() => setShowClearConfirm(true)}
-        />
-      )
-    })
+  // State for clear confirm modal (move this above scene components)
 
-    return (
-      <Animated.View
-        style={[
-          styles.starDrawer,
-          {
-            backgroundColor: colors.background,
-            transform: [
-              {
-                translateY: starDrawerAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [Dimensions.get('window').height, 0]
-                })
-              }
-            ]
-          }
-        ]}
-      >
-        <TabView
-          navigationState={{ index, routes }}
-          onIndexChange={setIndex}
-          renderScene={renderScene}
-          renderTabBar={props => (
-            <View style={styles.starTabBar}>
-              {props.navigationState.routes.map((r, i) => (
-                <TouchableOpacity
-                  key={r.key}
-                  style={[
-                    styles.starTab,
-                    i === index && { borderBottomColor: colors.primary }
-                  ]}
-                  onPress={() => setIndex(i)}
-                >
-                  <Text
-                    style={[
-                      styles.starTabLabel,
-                      {
-                        color:
-                          i === index ? colors.primary : colors.textSecondary
-                      }
-                    ]}
-                  >
-                    {r.title}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        />
+  const handleSetStartingUrl = useCallback((url: string) => {
+    updateActiveTab({ url })
+    toggleStarDrawer(false)
+  }, [updateActiveTab])
 
-        {renderClearConfirm()}
-      </Animated.View>
+  const BookmarksScene = useMemo(() => {
+    return () => (
+      <RecommendedApps
+        includeBookmarks={bookmarkStore.bookmarks}
+        setStartingUrl={handleSetStartingUrl}
+      />
     )
-  }
+  }, [bookmarkStore.bookmarks, handleSetStartingUrl])
+
+  const HistoryScene = React.useCallback(() => {
+    return (
+      <HistoryList
+        history={history}
+        onSelect={u => {
+          updateActiveTab({ url: u })
+          toggleStarDrawer(false)
+        }}
+        onDelete={removeHistoryItem}
+        onClear={() => setShowClearConfirm(true)}
+      />
+    )
+  }, [history, updateActiveTab, toggleStarDrawer, removeHistoryItem, setShowClearConfirm]);
+
+
 
   /* ---------------------------- clear history modal ------------------------- */
-  const [showClearConfirm, setShowClearConfirm] = useState(false)
-
-  const renderClearConfirm = () => (
+  const renderClearConfirm = useCallback(() => (
     <Modal
       isVisible={showClearConfirm}
       onBackdropPress={() => setShowClearConfirm(false)}
@@ -531,7 +636,7 @@ export default function Browser() {
         </View>
       </View>
     </Modal>
-  )
+  ), [showClearConfirm, colors, styles, clearHistory])
 
   /* -------------------------------------------------------------------------- */
   /*                         ADDRESS BAR AUTOCOMPLETE                           */
@@ -595,6 +700,16 @@ export default function Browser() {
 
   const showAddressBar = !keyboardVisible || addressFocused
   const showBottomBar = !(keyboardVisible && addressFocused)
+
+  const starDrawerAnimatedStyle = useMemo(() => ([
+    styles.starDrawer,
+    {
+      backgroundColor: colors.background,
+      height: drawerFullHeight,
+      top: windowHeight - drawerFullHeight,
+      transform: [{ translateY }]
+    }
+  ]), [styles.starDrawer, colors.background, drawerFullHeight, windowHeight, translateY]);
 
   const addressDisplay = addressFocused
     ? addressText
@@ -783,8 +898,36 @@ export default function Browser() {
             />
           )}
 
-          {showStarDrawer && <StarDrawer />}
-
+          {(showStarDrawer || isDrawerAnimating) && (
+            <View style={StyleSheet.absoluteFill}>
+              <Pressable style={styles.backdrop} onPress={closeStarDrawer} />
+              <Animated.View
+                style={starDrawerAnimatedStyle}
+              >
+                <PanGestureHandler
+                  onGestureEvent={onPanGestureEvent}
+                  onHandlerStateChange={onPanHandlerStateChange}
+                  activeOffsetY={10}
+                  failOffsetX={[-20, 20]}
+                >
+                  <Animated.View style={styles.drawerHandleArea}>
+                    <View style={styles.handleBar} />
+                  </Animated.View>
+                </PanGestureHandler>
+                <View style={{ flex: 1 }}>
+                  <StarDrawer
+                    BookmarksScene={BookmarksScene}
+                    HistoryScene={HistoryScene}
+                    renderClearConfirm={renderClearConfirm}
+                    colors={colors}
+                    styles={styles}
+                    index={starTabIndex}
+                    setIndex={setStarTabIndex}
+                  />
+                </View>
+              </Animated.View>
+            </View>
+          )}
           {showBottomBar && (
             <View
               style={[
@@ -1184,13 +1327,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
-    top: '30%',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     overflow: 'hidden',
+    zIndex: 20,
     elevation: 12
   },
+
   starTabBar: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth
@@ -1203,6 +1346,11 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent'
   },
   starTabLabel: { fontSize: 15, fontWeight: '600' },
+  drawerHandleArea: {
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   /* tabs view */
   tabsViewContainer: {

@@ -167,6 +167,7 @@ export const RecommendedApps = ({
         keyExtractor={item => item.domain}
         numColumns={3}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       />
     </View>
   );
