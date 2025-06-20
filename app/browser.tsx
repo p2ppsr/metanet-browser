@@ -272,8 +272,7 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
   /*                                 UTILITIES                                  */
   /* -------------------------------------------------------------------------- */
-
-  const domainForUrl = (u: string): string => {
+  const domainForUrl = useCallback((u: string): string => {
     try {
       if (u === kNEW_TAB_URL) return ''
       const { hostname } = new URL(u)
@@ -281,13 +280,20 @@ function Browser() {
     } catch {
       return u
     }
-  }
-
+  }, [])
   /* -------------------------------------------------------------------------- */
   /*                              ADDRESS HANDLING                              */
   /* -------------------------------------------------------------------------- */
 
-  const onAddressSubmit = () => {
+  const updateActiveTab = useCallback((patch: Partial<Tab>) => {
+    const newUrl = patch.url
+    if (newUrl && !isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
+      patch.url = kNEW_TAB_URL
+    }
+    tabStore.updateTab(tabStore.activeTabId, patch)
+  }, [])
+
+  const onAddressSubmit = useCallback(() => {
     let entry = addressText.trim()
     const isProbablyUrl =
       /^([a-z]+:\/\/|www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(entry)
@@ -302,26 +308,18 @@ function Browser() {
 
     updateActiveTab({ url: entry })
     addressEditing.current = false
-  }
+  }, [addressText, updateActiveTab])
 
   /* -------------------------------------------------------------------------- */
   /*                               TAB NAVIGATION                               */
   /* -------------------------------------------------------------------------- */
 
-  const navBack = () => activeTab.webviewRef.current?.goBack()
-  const navFwd = () => activeTab.webviewRef.current?.goForward()
-  const navReloadOrStop = () =>
+  const navBack = useCallback(() => activeTab.webviewRef.current?.goBack(), [activeTab.webviewRef])
+  const navFwd = useCallback(() => activeTab.webviewRef.current?.goForward(), [activeTab.webviewRef])
+  const navReloadOrStop = useCallback(() =>
     activeTab.isLoading
       ? activeTab.webviewRef.current?.stopLoading()
-      : activeTab.webviewRef.current?.reload()
-
-  const updateActiveTab = useCallback((patch: Partial<Tab>) => {
-  const newUrl = patch.url
-  if (newUrl && !isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
-    patch.url = kNEW_TAB_URL
-  }
-  tabStore.updateTab(tabStore.activeTabId, patch)
-}, [])
+      : activeTab.webviewRef.current?.reload(), [activeTab.isLoading, activeTab.webviewRef])
 
   function closeTab(id: number) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -333,11 +331,10 @@ function Browser() {
       tabStore.newTab()
     }
   }, [])
-
-  const dismissKeyboard = () => {
+  const dismissKeyboard = useCallback(() => {
     addressInputRef.current?.blur();
     Keyboard.dismiss();
-  };
+  }, []);
 
   const responderProps =
     addressFocused && keyboardVisible
@@ -459,16 +456,14 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
   /*                          SHARE / HOMESCREEN SHORTCUT                       */
   /* -------------------------------------------------------------------------- */
-
-  const shareCurrent = async () => {
+  const shareCurrent = useCallback(async () => {
     try {
       await Share.share({ message: activeTab.url })
     } catch (err) {
       console.warn('Share cancelled/failed', err)
     }
-  }
-
-  const addToHomeScreen = async () => {
+  }, [activeTab.url])
+  const addToHomeScreen = useCallback(async () => {
     try {
       if (Platform.OS === 'android') {
       } else {
@@ -477,7 +472,7 @@ function Browser() {
     } catch (e) {
       console.warn('Add to homescreen failed', e)
     }
-  }
+  }, [])
 
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
@@ -665,35 +660,39 @@ function Browser() {
   useEffect(() => {
     fuseRef.current.setCollection([...history, ...bookmarkStore.bookmarks])
   }, [history, bookmarkStore.bookmarks])
-
   const [addressSuggestions, setAddressSuggestions] = useState<
     (HistoryEntry | Bookmark)[]
   >([])
-
-  const onChangeAddressText = (txt: string) => {
+  
+  const onChangeAddressText = useCallback((txt: string) => {
     setAddressText(txt)
     if (txt.trim().length === 0) {
       setAddressSuggestions([])
       return
     }
-    const res = fuseRef.current
+    const results = fuseRef.current
       .search(txt)
-      .slice(0, 5)
+      .slice(0, 10) // Get more results initially
       .map(r => r.item)
-    setAddressSuggestions(res)
-  }
+    
+    // Remove duplicates based on URL
+    const uniqueResults = results.filter((item, index, self) => 
+      index === self.findIndex(t => t.url === item.url)
+    ).slice(0, 5) // Then limit to 5 unique results
+    
+    setAddressSuggestions(uniqueResults)
+  }, [])
 
   /* -------------------------------------------------------------------------- */
   /*                              INFO DRAWER NAV                               */
   /* -------------------------------------------------------------------------- */
-
-  const toggleInfoDrawer = (
+  const toggleInfoDrawer = useCallback((
     open: boolean,
     route: typeof infoDrawerRoute = 'root'
   ) => {
     setInfoDrawerRoute(route)
     setShowInfoDrawer(open)
-  }
+  }, [])
 
   useEffect(() => {
     Animated.timing(drawerAnim, {
@@ -910,7 +909,6 @@ function Browser() {
               />
             </TouchableOpacity>
           </View>
-
           {addressFocused && addressSuggestions.length > 0 && (
             <View
               style={[
@@ -919,12 +917,19 @@ function Browser() {
               ]}
             >
               {addressSuggestions.map(
-                (entry: HistoryEntry | Bookmark, i: number) => (
-                  <TouchableOpacity
-                    key={entry.url}
+                (entry: HistoryEntry | Bookmark, i: number) => (                  <TouchableOpacity
+                    key={`suggestion-${i}-${entry.url}`}
                     onPress={() => {
+                      // Dismiss keyboard and hide suggestions first
+                      addressInputRef.current?.blur()
+                      Keyboard.dismiss()
+                      setAddressFocused(false)
+                      setAddressSuggestions([])
+                      
+                      // Then load the page
                       setAddressText(entry.url)
-                      onAddressSubmit()
+                      updateActiveTab({ url: entry.url })
+                      addressEditing.current = false
                     }}
                     style={styles.suggestionItem}
                   >
@@ -992,68 +997,18 @@ function Browser() {
                   />
                 </View>
               </Animated.View>
-            </View>
-          )}
+            </View>          )}
           {showBottomBar && (
-            <View
-              style={[
-                styles.bottomBar,
-                {
-                  backgroundColor: colors.inputBackground,
-                  paddingBottom: 0
-                }
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.toolbarButton}
-                onPress={navBack}
-                disabled={!activeTab.canGoBack}
-              >
-                <Ionicons
-                  name="arrow-back"
-                  size={24}
-                  color={activeTab.canGoBack ? colors.textPrimary : colors.textSecondary}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolbarButton}
-                onPress={navFwd}
-                disabled={!activeTab.canGoForward}
-              >
-                <Ionicons
-                  name="arrow-forward"
-                  size={24}
-                  color={activeTab.canGoForward ? colors.textPrimary : colors.textSecondary}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolbarButton}
-                onPress={shareCurrent}
-                disabled={activeTab.url === kNEW_TAB_URL}
-              >
-                <Ionicons
-                  name="share-outline"
-                  size={24}
-                  color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolbarButton}
-                onPress={() => toggleStarDrawer(true)}
-              >
-                <Ionicons name="star-outline" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolbarButton}
-                onPress={() => setShowTabsView(true)}
-              >
-                <Ionicons name="copy-outline" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+            <BottomToolbar
+              activeTab={activeTab}
+              colors={colors}
+              styles={styles}
+              navBack={navBack}
+              navFwd={navFwd}
+              shareCurrent={shareCurrent}
+              toggleStarDrawer={toggleStarDrawer}
+              setShowTabsView={setShowTabsView}
+            />
           )}
 
           <Modal
@@ -1342,6 +1297,104 @@ const SubDrawerView = React.memo(({
       <View style={styles.subDrawerContent}>
         {screens[route]}
       </View>
+    </View>  )
+})
+
+/* -------------------------------------------------------------------------- */
+/*                              BOTTOM TOOLBAR                               */
+/* -------------------------------------------------------------------------- */
+
+const BottomToolbar = React.memo(({
+  activeTab,
+  colors,
+  styles,
+  navBack,
+  navFwd,
+  shareCurrent,
+  toggleStarDrawer,
+  setShowTabsView
+}: {
+  activeTab: Tab
+  colors: any
+  styles: any
+  navBack: () => void
+  navFwd: () => void
+  shareCurrent: () => void
+  toggleStarDrawer: (open: boolean) => void
+  setShowTabsView: (show: boolean) => void
+}) => {
+  const handleStarPress = useCallback(() => toggleStarDrawer(true), [toggleStarDrawer])
+  const handleTabsPress = useCallback(() => setShowTabsView(true), [setShowTabsView])
+
+  return (
+    <View
+      style={[
+        styles.bottomBar,
+        {
+          backgroundColor: colors.inputBackground,
+          paddingBottom: 0
+        }
+      ]}
+    >
+      <TouchableOpacity
+        style={styles.toolbarButton}
+        onPress={navBack}
+        disabled={!activeTab.canGoBack}
+        activeOpacity={0.6}
+        delayPressIn={0}
+      >
+        <Ionicons
+          name="arrow-back"
+          size={24}
+          color={activeTab.canGoBack ? colors.textPrimary : colors.textSecondary}
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.toolbarButton}
+        onPress={navFwd}
+        disabled={!activeTab.canGoForward}
+        activeOpacity={0.6}
+        delayPressIn={0}
+      >
+        <Ionicons
+          name="arrow-forward"
+          size={24}
+          color={activeTab.canGoForward ? colors.textPrimary : colors.textSecondary}
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.toolbarButton}
+        onPress={shareCurrent}
+        disabled={activeTab.url === kNEW_TAB_URL}
+        activeOpacity={0.6}
+        delayPressIn={0}
+      >
+        <Ionicons
+          name="share-outline"
+          size={24}
+          color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.toolbarButton}
+        onPress={handleStarPress}
+        activeOpacity={0.6}
+        delayPressIn={0}
+      >
+        <Ionicons name="star-outline" size={24} color={colors.textPrimary} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.toolbarButton}
+        onPress={handleTabsPress}
+        activeOpacity={0.6}
+        delayPressIn={0}
+      >
+        <Ionicons name="copy-outline" size={24} color={colors.textPrimary} />
+      </TouchableOpacity>
     </View>
   )
 })
