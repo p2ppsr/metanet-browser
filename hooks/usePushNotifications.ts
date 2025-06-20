@@ -35,7 +35,7 @@ Notifications.setNotificationHandler({
     return { 
       shouldShowAlert: true,
       shouldPlaySound: true,
-      shouldSetBadge: false,
+      shouldSetBadge: true,
       shouldShowBanner: true,
       shouldShowList: true,
     };
@@ -74,7 +74,6 @@ export const usePushNotifications = () => {
       const data = response.notification.request.content.data;
       if (data?.url) {
         console.log('Should navigate to URL:', data.url);
-        // Trigger navigation here
       }
     });
 
@@ -164,7 +163,6 @@ export const usePushNotifications = () => {
           token = await Notifications.getExpoPushTokenAsync();
         } catch (fallbackError) {
           console.log('Fallback token failed, using mock token for local notifications');
-          // Using mock token for local notifications only
           const mockToken = 'ExponentPushToken[mock-' + Date.now() + ']';
           setExpoPushToken(mockToken);
           return mockToken;
@@ -217,6 +215,26 @@ export const usePushNotifications = () => {
     }
   };
 
+  // Get native push token for backend compatibility
+  const getNativePushToken = async (): Promise<string | null> => {
+    try {
+      // For now, return Expo token but formatted for future FCM/APNS compatibility
+      const expoToken = expoPushToken || await registerForPushNotificationsAsync();
+      if (!expoToken) return null;
+
+      // Extract token from Expo format for potential FCM use
+      if (expoToken.startsWith('ExponentPushToken[')) {
+        const token = expoToken.replace('ExponentPushToken[', '').replace(']', '');
+        return token;
+      }
+      
+      return expoToken;
+    } catch (error) {
+      console.error('Error getting native push token:', error);
+      return null;
+    }
+  };
+
   const createPushSubscription = async (origin: string, vapidPublicKey?: string): Promise<PushSubscription | null> => {
     try {
       const permission = await requestNotificationPermission(origin);
@@ -224,13 +242,30 @@ export const usePushNotifications = () => {
         return null;
       }
 
-      const token = expoPushToken || await registerForPushNotificationsAsync();
-      if (!token) {
+      const nativeToken = await getNativePushToken();
+      if (!nativeToken) {
         return null;
       }
 
+      let endpoint: string;
+      
+      // TODO: For backend push notifications to work, these endpoints need to be implemented:
+      if (Platform.OS === 'android') {
+        // Future: Real FCM endpoint that PWA backends can use
+        endpoint = `https://fcm.googleapis.com/fcm/send/${nativeToken}`;
+        console.log('🔄 Android: Using FCM-style endpoint (requires Firebase setup)');
+      } else if (Platform.OS === 'ios') {
+        // Future: APNS bridge service endpoint
+        endpoint = `https://web.push.apple.com/v1/send/${nativeToken}`;
+        console.log('🔄 iOS: Using APNS-style endpoint (requires bridge service)');
+      } else {
+        // Current: Expo endpoint (works for in-app notifications)
+        endpoint = `https://exp.host/--/api/v2/push/send/${nativeToken}`;
+        console.log('✅ Expo: Using Expo endpoint (works now for testing)');
+      }
+
       const subscription: PushSubscription = {
-        endpoint: `https://exp.host/--/api/v2/push/send/${token}`,
+        endpoint,
         keys: {
           p256dh: generateRandomKey(),
           auth: generateRandomKey(),
@@ -242,6 +277,12 @@ export const usePushNotifications = () => {
       const updatedSubscriptions = subscriptions.filter(s => s.origin !== origin);
       updatedSubscriptions.push(subscription);
       await saveSubscriptions(updatedSubscriptions);
+
+      console.log('📱 Created push subscription:', {
+        origin,
+        endpoint: endpoint.substring(0, 50) + '...',
+        platform: Platform.OS
+      });
 
       return subscription;
     } catch (error) {

@@ -690,6 +690,12 @@ export default function Browser() {
         return;
       }
 
+     // Handleing of wallet before api call.
+      if (msg.call && !wallet) {
+        console.log('Wallet not ready, ignoring call:', msg.call);
+        return;
+      }
+
       // Handle wallet API calls
       const origin = activeTab.url.replace(/^https?:\/\//, '').split('/')[0];
       let response: any;
