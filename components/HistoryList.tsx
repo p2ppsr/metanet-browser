@@ -1,11 +1,12 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import {
   FlatList,
   Pressable,
   Text,
   TouchableOpacity,
   View,
-  StyleSheet
+  StyleSheet,
+  LayoutAnimation
 } from 'react-native'
 import { Swipeable } from 'react-native-gesture-handler'
 import { useTheme } from '@/context/theme/ThemeContext'
@@ -30,16 +31,55 @@ export const HistoryList = ({
   onClear
 }: Props) => {
   const { colors } = useTheme()
+  const swipeableRefs = useRef<Map<string, Swipeable>>(new Map())
 
+  const handleClear = () => {
+    // Close all swipeable items before clearing
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    swipeableRefs.current.forEach(swipeable => {
+      try {
+        swipeable?.close()
+      } catch (error) {
+        // Ignore errors when closing swipeables
+      }
+    })
+    
+    // Clear the refs map
+    swipeableRefs.current.clear()
+    
+    // Call the onClear callback
+    setTimeout(() => {
+      onClear()
+    }, 100) // Small delay to let animations finish
+  }
+
+  const handleDelete = (url: string) => {
+    // Close the specific swipeable before deleting
+    const swipeable = swipeableRefs.current.get(url)
+    if (swipeable) {
+      try {
+        swipeable.close()
+      } catch (error) {
+        // Ignore errors
+      }
+      swipeableRefs.current.delete(url)
+    }
+    onDelete(url)
+  }
   const renderItem = ({ item }: { item: HistoryEntry }) => (
     <Swipeable
+      ref={(ref) => {
+        if (ref) {
+          swipeableRefs.current.set(item.url, ref)
+        }
+      }}
       overshootRight={false}
       renderRightActions={() => (
         <View style={[styles.swipeDelete, { backgroundColor: '#ff3b30' }]}>
           <Text style={styles.swipeDeleteText}>✕</Text>
         </View>
       )}
-      onSwipeableRightOpen={() => onDelete(item.url)}
+      onSwipeableRightOpen={() => handleDelete(item.url)}
     >
       <Pressable style={styles.historyItem} onPress={() => onSelect(item.url)}>
         <Text
@@ -57,7 +97,6 @@ export const HistoryList = ({
       </Pressable>
     </Swipeable>
   )
-
   return (
     <View style={{ flex: 1 }}>
       <FlatList
@@ -65,8 +104,9 @@ export const HistoryList = ({
         keyExtractor={i => i.url + i.timestamp}
         renderItem={renderItem}
         ListFooterComponent={<View style={{ height: 80 }} />}
+        removeClippedSubviews={false}
       />
-      <TouchableOpacity style={styles.clearBtn} onPress={onClear}>
+      <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
         <Text style={styles.clearBtnIcon}>🗑️</Text>
       </TouchableOpacity>
     </View>
