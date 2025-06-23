@@ -416,9 +416,14 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
   /*                               TAB NAVIGATION                               */
   /* -------------------------------------------------------------------------- */
+  const navBack = useCallback(() => {
+    activeTab.webviewRef.current?.goBack()
+  }, [activeTab.webviewRef, activeTab.canGoBack, activeTab.canGoForward, activeTab.url])
+  
+  const navFwd = useCallback(() => {
 
-  const navBack = useCallback(() => activeTab.webviewRef.current?.goBack(), [activeTab.webviewRef])
-  const navFwd = useCallback(() => activeTab.webviewRef.current?.goForward(), [activeTab.webviewRef])
+    activeTab.webviewRef.current?.goForward()
+  }, [activeTab.webviewRef, activeTab.canGoBack, activeTab.canGoForward, activeTab.url])
   const navReloadOrStop = useCallback(() =>
     activeTab.isLoading
       ? activeTab.webviewRef.current?.stopLoading()
@@ -826,9 +831,7 @@ function Browser() {
 
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
-  /* -------------------------------------------------------------------------- */
-
-  const handleNavStateChange = (navState: WebViewNavigation) => {
+  /* -------------------------------------------------------------------------- */  const handleNavStateChange = (navState: WebViewNavigation) => {
     // Ignore favicon requests for about:blank
      if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
     return;
@@ -1772,32 +1775,29 @@ const BottomToolbar = React.memo(({
           paddingBottom: 0
         }
       ]}
-    >
-      <TouchableOpacity
+    >      <TouchableOpacity
         style={styles.toolbarButton}
         onPress={navBack}
-        disabled={!activeTab.canGoBack}
+        disabled={!activeTab.canGoBack || activeTab.url === kNEW_TAB_URL}
         activeOpacity={0.6}
         delayPressIn={0}
       >
         <Ionicons
           name="arrow-back"
           size={24}
-          color={(activeTab.canGoBack || activeTab.url !== kNEW_TAB_URL) ? colors.textPrimary : '#ddddd'}
+          color={activeTab.canGoBack && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
         />
-      </TouchableOpacity>
-
-      <TouchableOpacity
+      </TouchableOpacity>      <TouchableOpacity
         style={styles.toolbarButton}
         onPress={navFwd}
-        disabled={!activeTab.canGoForward}
+        disabled={!activeTab.canGoForward || activeTab.url === kNEW_TAB_URL}
         activeOpacity={0.6}
         delayPressIn={0}
       >
         <Ionicons
           name="arrow-forward"
           size={24}
-          color={(activeTab.canGoBack || activeTab.url !== kNEW_TAB_URL) ? colors.textPrimary : '#ddddd'}
+          color={activeTab.canGoForward && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
         />
       </TouchableOpacity>
 
