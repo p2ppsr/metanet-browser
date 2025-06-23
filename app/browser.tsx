@@ -251,7 +251,17 @@ function Browser() {
 
   const addressInputRef = useRef<TextInput>(null);
   const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
-  const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();
+  const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();  const [showBalance, setShowBalance] = useState(false);
+
+  // Balance handling - only delay on first open
+  useEffect(() => {
+    if (showInfoDrawer && infoDrawerRoute === 'root') {
+      const t = setTimeout(() => setShowBalance(true), 260); // shorter delay
+      return () => clearTimeout(t);
+    } else {
+      setShowBalance(false);
+    }
+  }, [showInfoDrawer, infoDrawerRoute]);
 
   /* ------------------------- push notifications ----------------------------- */
   const {
@@ -1425,7 +1435,7 @@ function Browser() {
                   >
                     <View style={styles.handleBar} />
                   </Pressable>
-                  <Balance />
+                  {showBalance && <Balance />}
                   <DrawerItem
                     label="Identity"
                     icon="person-circle-outline"
@@ -1773,7 +1783,7 @@ const BottomToolbar = React.memo(({
         <Ionicons
           name="arrow-back"
           size={24}
-          color={activeTab.canGoBack ? colors.textPrimary : colors.textSecondary}
+          color={(activeTab.canGoBack || activeTab.url !== kNEW_TAB_URL) ? colors.textPrimary : '#ddddd'}
         />
       </TouchableOpacity>
 
@@ -1787,7 +1797,7 @@ const BottomToolbar = React.memo(({
         <Ionicons
           name="arrow-forward"
           size={24}
-          color={activeTab.canGoForward ? colors.textPrimary : colors.textSecondary}
+          color={(activeTab.canGoBack || activeTab.url !== kNEW_TAB_URL) ? colors.textPrimary : '#ddddd'}
         />
       </TouchableOpacity>
 
