@@ -42,7 +42,7 @@ import Balance from '@/components/Balance'
 import type { Bookmark, HistoryEntry, Tab } from '@/shared/types/browser'
 import { HistoryList } from '@/components/HistoryList'
 import { isValidUrl } from '@/utils/generalHelpers'
-import tabStore from '@/stores/TabStore'
+import tabStore from '../stores/TabStore'
 import bookmarkStore from '@/stores/BookmarkStore'
 import SettingsScreen from './settings'
 import IdentityScreen from './identity'
@@ -1355,11 +1355,6 @@ function Browser() {
 
           {showTabsView && (
             <TabsView
-              tabs={tabStore.tabs}
-              activeId={tabStore.activeTabId}
-              setActive={tabStore.setActiveTab}
-              addTab={tabStore.newTab}
-              closeTab={tabStore.closeTab}
               onDismiss={() => setShowTabsView(false)}
               colors={colors}
             />
@@ -1517,22 +1512,13 @@ export default observer(Browser)
 /* -------------------------------------------------------------------------- */
 
 const TabsViewBase = ({
-  tabs,
-  activeId,
-  setActive,
-  addTab,
-  closeTab,
   onDismiss,
   colors
 }: {
-  tabs: Tab[]
-  activeId: number
-  setActive: (id: number) => void
-  addTab: (initialUrl?: string) => void
-  closeTab: (id: number) => void
   onDismiss: () => void
   colors: any
 }) => {
+  // Use the imported tabStore directly
   const screen = Dimensions.get('window')
   const ITEM_W = screen.width * 0.42
   const ITEM_H = screen.height * 0.28
@@ -1563,7 +1549,7 @@ const TabsViewBase = ({
     return (
       <Swipeable
         renderRightActions={renderRightActions}
-        onSwipeableRightOpen={() => closeTab(item.id)}
+        onSwipeableRightOpen={() => tabStore.closeTab(item.id)}
         friction={2}
         rightThreshold={40}
       >
@@ -1574,12 +1560,12 @@ const TabsViewBase = ({
               width: ITEM_W,
               height: ITEM_H,
               borderColor:
-                item.id === activeId ? colors.primary : colors.inputBorder,
-              borderWidth: item.id === activeId ? 2 : StyleSheet.hairlineWidth,
+                item.id === tabStore.activeTabId ? colors.primary : colors.inputBorder,
+              borderWidth: item.id === tabStore.activeTabId ? 2 : StyleSheet.hairlineWidth,
               backgroundColor: colors.background
             }
           ]}
-          onPress={() => setActive(item.id)}
+          onPress={() => tabStore.setActiveTab(item.id)}
         >
           <View style={{ flex: 1, overflow: 'hidden' }}>
             {item.url === kNEW_TAB_URL ? (
@@ -1622,7 +1608,7 @@ const TabsViewBase = ({
       </TouchableWithoutFeedback>
 
       <FlatList
-        data={tabs.slice()}
+        data={tabStore.tabs.slice()}
         renderItem={renderItem}
         keyExtractor={t => String(t.id)}
         numColumns={2}
@@ -1635,7 +1621,7 @@ const TabsViewBase = ({
       <View
         style={[styles.tabsViewFooter, { paddingBottom: insets.bottom + 10 }]}
       >
-        <TouchableOpacity style={styles.newTabBtn} onPress={() => addTab()}>
+        <TouchableOpacity style={styles.newTabBtn} onPress={() => tabStore.newTab()}>
           <Text style={styles.newTabIcon}>＋</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.doneButton} onPress={onDismiss}>
@@ -1789,7 +1775,7 @@ const BottomToolbar = React.memo(({
           size={24}
           color={activeTab.canGoBack && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
         />
-      </TouchableOpacity>
+      </TouchableOpacity>      
       <TouchableOpacity
         style={styles.toolbarButton}
         onPress={navFwd}
