@@ -7,7 +7,7 @@ import { Tab } from '@/shared/types/browser'
 import { kNEW_TAB_URL } from '@/shared/constants'
 import { isValidUrl } from '@/utils/generalHelpers'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-
+import type { WebViewNavigation } from 'react-native-webview'
 export class TabStore {
   tabs: Tab[] = [] // Always initialize as an array
   activeTabId = 1
@@ -89,15 +89,16 @@ export class TabStore {
     this.saveTabs()
   }
 
-  handleNavigationStateChange(id: number, navState: any) {
-    this.updateTab(id, {
-      url: navState.url,
-      title: navState.title || 'Loading...',
-      canGoBack: navState.canGoBack,
-      canGoForward: navState.canGoForward,
-      isLoading: navState.loading
-    })
+  handleNavigationStateChange(tabId: number, navState: WebViewNavigation) {
+  const tab = this.tabs.find(t => t.id === tabId)
+  if (tab) {
+    tab.canGoBack = navState.canGoBack
+    tab.canGoForward = navState.canGoForward
+    tab.isLoading = navState.loading
+    tab.url = navState.url
+    tab.title = navState.title || navState.url
   }
+}
 
   async saveTabs() {
     if (!this.tabs) this.tabs = [] // Prevent undefined
