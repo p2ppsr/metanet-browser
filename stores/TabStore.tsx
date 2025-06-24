@@ -13,6 +13,10 @@ export class TabStore {
   activeTabId = 1
   showTabsView = false
   private nextId = 1
+  private isSwitchingTabs = false
+  private tabNavigationHistories: { [tabId: number]: string[] } = {} // Track navigation history per tab
+  private tabHistoryIndexes: { [tabId: number]: number } = {} // Track current position in history per tab
+
 
   constructor() {
     console.log('TabStore constructor called')
@@ -24,7 +28,7 @@ export class TabStore {
   }
 
   createTab(url: string = kNEW_TAB_URL): Tab {
-    console.log(`createTab(): url=${url}`)
+    console.log(`createTab(): url=${url}, tabid=${this.nextId + 1}`)
     const safeUrl = isValidUrl(url) ? url : kNEW_TAB_URL
     return {
       id: this.nextId++,
@@ -38,20 +42,36 @@ export class TabStore {
   }
 
   newTab = (initialUrl: string = kNEW_TAB_URL) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    const newTab = this.createTab(initialUrl)
-    this.tabs.push(newTab)
-    this.activeTabId = newTab.id
-    this.saveTabs()
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+  const newTab = this.createTab(initialUrl)
+  this.tabs.push(newTab)
+  this.activeTabId = newTab.id
+  
+  // Initialize navigation history for new tab - only add valid URLs to history
+  if (initialUrl && initialUrl !== kNEW_TAB_URL && initialUrl !== 'about:blank' && isValidUrl(initialUrl)) {
+    this.tabNavigationHistories[newTab.id] = [initialUrl]
+    this.tabHistoryIndexes[newTab.id] = 0
+  } else {
+    // For new tabs with blank URLs, start with empty history
+    this.tabNavigationHistories[newTab.id] = []
+    this.tabHistoryIndexes[newTab.id] = -1
   }
+  
+  this.saveTabs()
+}
 
   get activeTab(): Tab | undefined {
     return this.tabs.find(t => t.id === this.activeTabId)
   }
 
-  setActiveTab(id: number) {
+ setActiveTab(id: number) {
     if (this.tabs.some(t => t.id === id)) {
+      this.isSwitchingTabs = true
       this.activeTabId = id
+      
+      setTimeout(() => {
+        this.isSwitchingTabs = false
+      }, 100) // Reduced timeout
     }
   }
 
@@ -71,12 +91,52 @@ export class TabStore {
     }
   }
 
+  goBack(tabId: number) {
+    const tab = this.tabs.find(t => t.id === tabId)
+    const history = this.tabNavigationHistories[tabId]
+    const currentIndex = this.tabHistoryIndexes[tabId]
+    console.log(`goBack(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history}`)
+    if (tab && history && currentIndex > 0) {
+      const newIndex = currentIndex - 1
+      const url = history[newIndex]
+      
+      this.tabHistoryIndexes[tabId] = newIndex
+      
+      // Navigate WebView to the URL
+      if (tab.webviewRef.current) {
+        tab.webviewRef.current.injectJavaScript(`window.location.href = "${url}";`)
+      }
+    }
+  }
+
+  goForward(tabId: number) {
+    const tab = this.tabs.find(t => t.id === tabId)
+    const history = this.tabNavigationHistories[tabId]
+    const currentIndex = this.tabHistoryIndexes[tabId]
+    console.log(`goForward(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history}`)
+    if (tab && history && currentIndex < history.length - 1) {
+      const newIndex = currentIndex + 1
+      const url = history[newIndex]
+      
+      this.tabHistoryIndexes[tabId] = newIndex
+      
+      // Navigate WebView to the URL
+      if (tab.webviewRef.current) {
+        tab.webviewRef.current.injectJavaScript(`window.location.href = "${url}";`)
+      }
+    }
+  }
+
   closeTab = (id: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     const tabIndex = this.tabs.findIndex(t => t.id === id)
     if (tabIndex === -1) return
 
     this.tabs.splice(tabIndex, 1)
+    
+    // Clear navigation history for closed tab
+    delete this.tabNavigationHistories[id]
+    delete this.tabHistoryIndexes[id]
 
     if (this.tabs.length === 0) {
       this.newTab()
@@ -91,12 +151,51 @@ export class TabStore {
 
   handleNavigationStateChange(tabId: number, navState: WebViewNavigation) {
   const tab = this.tabs.find(t => t.id === tabId)
-  if (tab) {
-    tab.canGoBack = navState.canGoBack
-    tab.canGoForward = navState.canGoForward
-    tab.isLoading = navState.loading
+  
+  // Only process navigation events for the currently active tab
+  if (!tab || tabId !== this.activeTabId || this.isSwitchingTabs) {
+    return
+  }
+
+  // Always update loading state (this doesn't affect history)
+  tab.isLoading = navState.loading
+
+  // Only update navigation state and history when navigation completes
+  // and exclude about:blank URLs from history
+  if (!navState.loading && navState.url && 
+      navState.url !== 'about:blank' && 
+      navState.url !== kNEW_TAB_URL &&
+      isValidUrl(navState.url)) {
+    const history = this.tabNavigationHistories[tabId] || []
+    const currentIndex = this.tabHistoryIndexes[tabId] ?? -1
+    
+    // If this is a new URL (not going back/forward)
+    if (navState.url !== history[currentIndex]) {
+      // Check if this is a back/forward navigation
+      const urlIndex = history.indexOf(navState.url)
+      
+      if (urlIndex !== -1) {
+        // This is back/forward navigation - update index
+        this.tabHistoryIndexes[tabId] = urlIndex
+      } else {
+        // This is new navigation - add to history
+        const newHistory = currentIndex >= 0 ? history.slice(0, currentIndex + 1) : []
+        newHistory.push(navState.url)
+        this.tabNavigationHistories[tabId] = newHistory
+        this.tabHistoryIndexes[tabId] = newHistory.length - 1
+      }
+    }
+
+    // Update tab state based on our tracked history
+    const currentHistory = this.tabNavigationHistories[tabId] || []
+    const currentIdx = this.tabHistoryIndexes[tabId] ?? -1
+    
+    tab.canGoBack = currentIdx > 0
+    tab.canGoForward = currentIdx < currentHistory.length - 1
     tab.url = navState.url
     tab.title = navState.title || navState.url
+    
+    this.saveTabs()
   }
 }
 

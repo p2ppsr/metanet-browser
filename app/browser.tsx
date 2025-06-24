@@ -333,7 +333,7 @@ function Browser() {
 
       if (isCancelled) return;
 
-      console.log('Checking manifest for:', activeTab.url);
+      // console.log('Checking manifest for:', activeTab.url);
 
       try {
         const manifestData = await fetchManifest(activeTab.url);
@@ -341,16 +341,16 @@ function Browser() {
         if (isCancelled) return;
 
         if (manifestData) {
-          console.log('Found manifest for', activeTab.url, manifestData);
+          // console.log('Found manifest for', activeTab.url, manifestData);
 
           if (manifestData.babbage?.protocolPermissions) {
-            console.log('Found Babbage protocol permissions:', manifestData.babbage.protocolPermissions);
+            // console.log('Found Babbage protocol permissions:', manifestData.babbage.protocolPermissions);
           }
 
           const url = new URL(activeTab.url);
           if (shouldRedirectToStartUrl(manifestData, activeTab.url) && url.pathname === '/') {
             const startUrl = getStartUrl(manifestData, activeTab.url);
-            console.log('Redirecting to start_url:', startUrl);
+            // console.log('Redirecting to start_url:', startUrl);
             updateActiveTab({ url: startUrl });
             setAddressText(startUrl);
           }
@@ -417,16 +417,16 @@ function Browser() {
   /*                               TAB NAVIGATION                               */
   /* -------------------------------------------------------------------------- */
  const navBack = useCallback(() => {
-  if (activeTab && activeTab.canGoBack && activeTab.webviewRef.current) {
-    activeTab.webviewRef.current.goBack()
+  if (activeTab.canGoBack) {
+    tabStore.goBack(activeTab.id)
   }
-}, [activeTab])
+}, [activeTab.canGoBack, activeTab.id])
 
 const navFwd = useCallback(() => {
-  if (activeTab && activeTab.canGoForward && activeTab.webviewRef.current) {
-    activeTab.webviewRef.current.goForward()
+  if (activeTab.canGoForward) {
+    tabStore.goForward(activeTab.id)
   }
-}, [activeTab])
+}, [activeTab.canGoForward, activeTab.id])
 
   const navReloadOrStop = useCallback(() =>
     activeTab.isLoading
@@ -782,7 +782,7 @@ const navFwd = useCallback(() => {
 
      // Handleing of wallet before api call.
       if (msg.call && !wallet) {
-        console.log('Wallet not ready, ignoring call:', msg.call);
+        // console.log('Wallet not ready, ignoring call:', msg.call);
         return;
       }
 
