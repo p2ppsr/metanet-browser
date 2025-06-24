@@ -16,7 +16,8 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   LayoutAnimation,
-  ScrollView
+  ScrollView,
+  Alert,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -83,11 +84,9 @@ function getInjectableJSMessage(message: any = {}) {
 /* -------------------------------------------------------------------------- */
 /*                                 COMPONENTS                                 */
 /* -------------------------------------------------------------------------- */
-
 function StarDrawer({
   BookmarksScene,
   HistoryScene,
-  renderClearConfirm,
   colors,
   styles,
   index,
@@ -95,7 +94,6 @@ function StarDrawer({
 }: {
   BookmarksScene: React.ComponentType;
   HistoryScene: React.ComponentType;
-  renderClearConfirm: () => React.ReactNode;
   colors: any;
   styles: any;
   index: number;
@@ -143,7 +141,6 @@ function StarDrawer({
           </View>
         )}
       />
-      {renderClearConfirm()}
     </View>
   );
 }
@@ -880,7 +877,7 @@ const navFwd = useCallback(() => {
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
   /* -------------------------------------------------------------------------- */
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  // const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isDrawerAnimating, setIsDrawerAnimating] = useState(false);
   const windowHeight = Dimensions.get('window').height
   const drawerFullHeight = windowHeight * 0.75
@@ -1007,48 +1004,31 @@ const navFwd = useCallback(() => {
           toggleStarDrawer(false)
         }}
         onDelete={removeHistoryItem}
-        onClear={() => setShowClearConfirm(true)}
+        onClear={() => showClearConfirm()}
       />
     )
-  }, [history, updateActiveTab, toggleStarDrawer, removeHistoryItem, setShowClearConfirm]);
+  }, [history, updateActiveTab, toggleStarDrawer, removeHistoryItem]);
 
 
 
   /* ---------------------------- clear history modal ------------------------- */
-  const renderClearConfirm = useCallback(() => (
-    <Modal
-      isVisible={showClearConfirm}
-      onBackdropPress={() => setShowClearConfirm(false)}
-      swipeDirection="down"
-      style={styles.modal}
-      useNativeDriver
-    >
-      <View
-        style={[styles.confirmBox, { backgroundColor: colors.paperBackground }]}
-      >
-        <Text style={[styles.confirmTitle, { color: colors.textPrimary }]}>
-          Clear browsing history?
-        </Text>
-        <View style={styles.confirmButtons}>
-          <TouchableOpacity
-            style={[styles.confirmBtn, { backgroundColor: colors.inputBorder }]}
-            onPress={() => setShowClearConfirm(false)}
-          >
-            <Text style={{ color: colors.textPrimary }}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.confirmBtn, { backgroundColor: '#ff3b30' }]}
-            onPress={() => {
-              clearHistory()
-              setShowClearConfirm(false)
-            }}
-          >
-            <Text style={{ color: '#fff' }}>Clear</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  ), [showClearConfirm, colors, styles, clearHistory])
+   const showClearConfirm = useCallback(() => {
+  Alert.alert(
+    'Clear browsing history?',
+    'This action cannot be undone.',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel'
+      },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: () => clearHistory()
+      }
+    ]
+  )
+}, [clearHistory])
 
   /* -------------------------------------------------------------------------- */
   /*                         ADDRESS BAR AUTOCOMPLETE                           */
@@ -1390,14 +1370,13 @@ const navFwd = useCallback(() => {
                 </PanGestureHandler>
                 <View style={{ flex: 1 }}>
                   <StarDrawer
-                    BookmarksScene={BookmarksScene}
-                    HistoryScene={HistoryScene}
-                    renderClearConfirm={renderClearConfirm}
-                    colors={colors}
-                    styles={styles}
-                    index={starTabIndex}
-                    setIndex={setStarTabIndex}
-                  />
+                  BookmarksScene={BookmarksScene}
+                  HistoryScene={HistoryScene}
+                  colors={colors}
+                  styles={styles}
+                  index={starTabIndex}
+                  setIndex={setStarTabIndex}
+                />
                 </View>
               </Animated.View>
             </View>          )}
