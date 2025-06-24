@@ -831,7 +831,8 @@ function Browser() {
 
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
-  /* -------------------------------------------------------------------------- */  const handleNavStateChange = (navState: WebViewNavigation) => {
+  /* -------------------------------------------------------------------------- */  
+  const handleNavStateChange = (navState: WebViewNavigation) => {
     // Ignore favicon requests for about:blank
      if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
     return;
@@ -1775,7 +1776,8 @@ const BottomToolbar = React.memo(({
           paddingBottom: 0
         }
       ]}
-    >      <TouchableOpacity
+    >      
+    <TouchableOpacity
         style={styles.toolbarButton}
         onPress={navBack}
         disabled={!activeTab.canGoBack || activeTab.url === kNEW_TAB_URL}
@@ -1787,7 +1789,8 @@ const BottomToolbar = React.memo(({
           size={24}
           color={activeTab.canGoBack && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
         />
-      </TouchableOpacity>      <TouchableOpacity
+      </TouchableOpacity>
+      <TouchableOpacity
         style={styles.toolbarButton}
         onPress={navFwd}
         disabled={!activeTab.canGoForward || activeTab.url === kNEW_TAB_URL}
