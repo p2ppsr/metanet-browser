@@ -211,13 +211,9 @@ function Browser() {
     },
     [history, saveHistory]
   )
+
   const clearHistory = useCallback(async () => {
-    try {
-      await saveHistory([])
-      setHistory([]) // Immediately update local state
-    } catch (error) {
-      console.error('Error clearing history:', error)
-    }
+    await saveHistory([])
   }, [saveHistory])
 
   /* -------------------------------- bookmarks ------------------------------- */
@@ -1031,18 +1027,12 @@ function Browser() {
             onPress={() => setShowClearConfirm(false)}
           >
             <Text style={{ color: colors.textPrimary }}>Cancel</Text>
-          </TouchableOpacity>          <TouchableOpacity
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.confirmBtn, { backgroundColor: '#ff3b30' }]}
-            onPress={async () => {
+            onPress={() => {
+              clearHistory()
               setShowClearConfirm(false)
-              // Small delay to let modal close animation finish
-              setTimeout(async () => {
-                try {
-                  await clearHistory()
-                } catch (error) {
-                  console.error('Error clearing history:', error)
-                }
-              }, 150)
             }}
           >
             <Text style={{ color: '#fff' }}>Clear</Text>
