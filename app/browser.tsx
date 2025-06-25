@@ -1237,7 +1237,7 @@ const navFwd = useCallback(() => {
           >
             {!addressFocused && (
               <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
-                <Ionicons name="person-circle-outline" size={22} color={colors.textSecondary} />
+                <Ionicons name='person-circle-outline' size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
 
@@ -1245,7 +1245,7 @@ const navFwd = useCallback(() => {
               !activeTab.isLoading &&
               activeTab.url.startsWith('https') && (
                 <Ionicons
-                  name="lock-closed"
+                  name='lock-closed'
                   size={16}
                   color={colors.textSecondary}
                   style={styles.padlock}
@@ -1283,9 +1283,9 @@ const navFwd = useCallback(() => {
                 }
               }}
               onSubmitEditing={onAddressSubmit}
-              autoCapitalize="none"
+              autoCapitalize='none'
               autoCorrect={false}
-              returnKeyType="go"
+              returnKeyType='go'
               style={[
                 styles.addressInput,
                 {
@@ -1295,7 +1295,7 @@ const navFwd = useCallback(() => {
                   textAlign: addressFocused ? 'left' : 'center'
                 }
               ]}
-              placeholder="Search or enter site name"
+              placeholder='Search or enter site name'
               placeholderTextColor={colors.textSecondary}
             />
 
@@ -1413,7 +1413,7 @@ const navFwd = useCallback(() => {
           <Modal
             isVisible={showInfoDrawer}
             onBackdropPress={() => toggleInfoDrawer(false)}
-            swipeDirection="down"
+            swipeDirection='down'
             onSwipeComplete={() => toggleInfoDrawer(false)}
             style={{ margin: 0, justifyContent: 'flex-end' }}
           >
@@ -1444,44 +1444,44 @@ const navFwd = useCallback(() => {
                   </Pressable>
                   {showBalance && <Balance />}
                   <DrawerItem
-                    label="Identity"
-                    icon="person-circle-outline"
+                    label='Identity'
+                    icon='person-circle-outline'
                     onPress={drawerHandlers.identity}
                   />
                   <DrawerItem
-                    label="Security"
-                    icon="lock-closed-outline"
+                    label='Security'
+                    icon='lock-closed-outline'
                     onPress={drawerHandlers.security}
                   />
                   <DrawerItem
-                    label="Trust Network"
-                    icon="shield-checkmark-outline"
+                    label='Trust Network'
+                    icon='shield-checkmark-outline'
                     onPress={drawerHandlers.trust}
                   />
                   <DrawerItem
-                    label="Settings"
-                    icon="settings-outline"
+                    label='Settings'
+                    icon='settings-outline'
                     onPress={drawerHandlers.settings}
                   />
                    <DrawerItem
-                    label="Notifications"
-                    icon="notifications-outline"
+                    label='Notifications'
+                    icon='notifications-outline'
                     onPress={() => setInfoDrawerRoute('notifications')}
                   />
                   <View style={styles.divider} />
                   <DrawerItem
-                    label="Add Bookmark"
-                    icon="star-outline"
+                    label='Add Bookmark'
+                    icon='star-outline'
                     onPress={drawerHandlers.addBookmark}
                   />
                   <DrawerItem
-                    label="Add to Device Homescreen"
-                    icon="home-outline"
+                    label='Add to Device Homescreen'
+                    icon='home-outline'
                     onPress={drawerHandlers.addToHomeScreen}
                   />
                   <DrawerItem
-                    label="Back to Homepage"
-                    icon="apps-outline"
+                    label='Back to Homepage'
+                    icon='apps-outline'
                     onPress={drawerHandlers.backToHomepage}
                   />
                 </ScrollView>
@@ -1536,8 +1536,15 @@ const TabsViewBase = ({
 
 // Animation for new tab button
   const newTabScale = useRef(new Animated.Value(1)).current
+  // Add cooldown state
+  const [isCreatingTab, setIsCreatingTab] = useState(false)
 
    const handleNewTabPress = useCallback(() => {
+    // Prevent multiple rapid presses
+    if (isCreatingTab) return
+    
+    setIsCreatingTab(true)
+    
     // Scale animation
     Animated.sequence([
       Animated.timing(newTabScale, {
@@ -1556,8 +1563,13 @@ const TabsViewBase = ({
       // Reset address text to new tab URL
       setAddressText(kNEW_TAB_URL)
       onDismiss()
+      
+      // Reset cooldown after a short delay
+      setTimeout(() => {
+        setIsCreatingTab(false)
+      }, 300)
     })
-  }, [newTabScale, onDismiss, setAddressText])
+  }, [newTabScale, onDismiss, setAddressText, isCreatingTab])
 
   const renderItem = ({ item }: { item: Tab }) => {
   const renderRightActions = (
@@ -1637,7 +1649,7 @@ const TabsViewBase = ({
               source={{ uri: item.url }}
               style={{ flex: 1 }}
               scrollEnabled={false}
-              pointerEvents="none"
+              pointerEvents='none'
             />
           )}
           <View
@@ -1682,9 +1694,14 @@ const TabsViewBase = ({
       >
         <Animated.View style={{ transform: [{ scale: newTabScale }] }}>
           <TouchableOpacity 
-            style={styles.newTabBtn} 
+            style={[
+              styles.newTabBtn,
+              // Add visual feedback when disabled
+              isCreatingTab && { opacity: 0.6 }
+            ]} 
             onPress={handleNewTabPress}  
-            activeOpacity={0.7}          
+            activeOpacity={0.7}
+            disabled={isCreatingTab}          
           >
             <Text style={styles.newTabIcon}>＋</Text>
           </TouchableOpacity>
@@ -1721,7 +1738,7 @@ const DrawerItem = React.memo(({
       <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
         {label}
       </Text>
-      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+      <Ionicons name='chevron-forward' size={20} color={colors.textSecondary} />
     </TouchableOpacity>
   )
 })
@@ -1774,7 +1791,7 @@ const SubDrawerView = React.memo(({
               ]}
               onPress={onOpenNotificationSettings}
             >
-              <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} style={styles.drawerIcon} />
+              <Ionicons name='notifications-outline' size={22} color={colors.textSecondary} style={styles.drawerIcon} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
                   Notification Settings
@@ -1783,7 +1800,7 @@ const SubDrawerView = React.memo(({
                   Manage website permissions
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+              <Ionicons name='chevron-forward' size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -1837,7 +1854,7 @@ const BottomToolbar = React.memo(({
         delayPressIn={0}
       >
         <Ionicons
-          name="arrow-back"
+          name='arrow-back'
           size={24}
           color={activeTab.canGoBack && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
         />
@@ -1850,7 +1867,7 @@ const BottomToolbar = React.memo(({
         delayPressIn={0}
       >
         <Ionicons
-          name="arrow-forward"
+          name='arrow-forward'
           size={24}
           color={activeTab.canGoForward && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
         />
@@ -1864,7 +1881,7 @@ const BottomToolbar = React.memo(({
         delayPressIn={0}
       >
         <Ionicons
-          name="share-outline"
+          name='share-outline'
           size={24}
           color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
         />
@@ -1876,7 +1893,7 @@ const BottomToolbar = React.memo(({
         activeOpacity={0.6}
         delayPressIn={0}
       >
-        <Ionicons name="star-outline" size={24} color={colors.textPrimary} />
+        <Ionicons name='star-outline' size={24} color={colors.textPrimary} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -1885,7 +1902,7 @@ const BottomToolbar = React.memo(({
         activeOpacity={0.6}
         delayPressIn={0}
       >
-        <Ionicons name="copy-outline" size={24} color={colors.textPrimary} />
+        <Ionicons name='copy-outline' size={24} color={colors.textPrimary} />
       </TouchableOpacity>
     </View>
   )
