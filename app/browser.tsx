@@ -1684,20 +1684,31 @@ const TabsViewBase = ({
       numColumns={2}
       contentContainerStyle={{
         padding: 12,
-        paddingTop: 32,  // Add this to move the tabs lower
-        paddingBottom: 100 + insets.bottom
+        paddingTop: 32,
+        paddingBottom: 20 // Reduced padding since we have a bar now
       }}
       />
 
-         <View
-        style={[styles.tabsViewFooter, { paddingBottom: insets.bottom + 10 }]}
+      {/* New styled footer bar */}
+      <View
+        style={[
+          styles.tabsViewFooterBar,
+          { 
+            backgroundColor: colors.inputBackground,
+            paddingBottom: insets.bottom + 10,
+            borderTopColor: colors.inputBorder
+          }
+        ]}
       >
         <Animated.View style={{ transform: [{ scale: newTabScale }] }}>
           <TouchableOpacity 
             style={[
               styles.newTabBtn,
-              // Add visual feedback when disabled
-              isCreatingTab && { opacity: 0.6 }
+              {
+                backgroundColor: colors.primary,
+                // Add visual feedback when disabled
+                ...(isCreatingTab && { opacity: 0.6 })
+              }
             ]} 
             onPress={handleNewTabPress}  
             activeOpacity={0.7}
@@ -1706,9 +1717,19 @@ const TabsViewBase = ({
             <Text style={styles.newTabIcon}>＋</Text>
           </TouchableOpacity>
         </Animated.View>
+        
         <View style={{ flex: 1 }} />
-        <TouchableOpacity style={styles.doneButton} onPress={onDismiss}>
-          <Text style={styles.doneButtonText}>Done</Text>
+        
+        <TouchableOpacity 
+          style={[
+            styles.doneButtonStyled,
+            { backgroundColor: colors.textSecondary }
+          ]} 
+          onPress={onDismiss}
+        >
+          <Text style={[styles.doneButtonText, { color: colors.background }]}>
+            Done
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -2013,7 +2034,49 @@ const styles = StyleSheet.create({
   flexDirection: 'row',
   alignItems: 'center',
   paddingHorizontal: 20
-},
+  },
+  tabsViewFooterBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+
+  doneButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 56
+  },
+  doneButtonStyled: { 
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  doneButtonText: {
+    fontSize: 16,
+    fontWeight: '600'
+  },
   newTabBtn: {
     width: 56,
     height: 56,
@@ -2023,16 +2086,6 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   newTabIcon: { fontSize: 32, color: '#fff', lineHeight: 32 },
-  doneButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 56
-  },
-  doneButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600'
-  },
 
   /* info drawer */
   infoDrawer: {
