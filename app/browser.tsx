@@ -17,7 +17,7 @@ import {
   KeyboardAvoidingView,
   LayoutAnimation,
   ScrollView,
-  Alert,
+  Modal as RNModal,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -1028,23 +1028,20 @@ const navFwd = useCallback(() => {
 
 
   /* ---------------------------- clear history modal ------------------------- */
-   const showClearConfirm = useCallback(() => {
-  Alert.alert(
-    'Clear browsing history?',
-    'This action cannot be undone.',
-    [
-      {
-        text: 'Cancel',
-        style: 'cancel'
-      },
-      {
-        text: 'Clear',
-        style: 'destructive',
-        onPress: () => clearHistory()
-      }
-    ]
-  )
-}, [clearHistory])
+  const [clearConfirmVisible, setClearConfirmVisible] = useState(false)
+
+  const showClearConfirm = useCallback(() => {
+    setClearConfirmVisible(true)
+  }, [])
+
+  const handleConfirmClearAll = useCallback(() => {
+    clearHistory()
+    setClearConfirmVisible(false)
+  }, [clearHistory])
+
+  const closeClearConfirm = useCallback(() => {
+    setClearConfirmVisible(false)
+  }, [])
 
   /* -------------------------------------------------------------------------- */
   /*                         ADDRESS BAR AUTOCOMPLETE                           */
@@ -1507,6 +1504,53 @@ const navFwd = useCallback(() => {
               )}
             </Animated.View>
           </Modal>
+          
+          {/* Clear History Confirmation Modal */}
+          <RNModal
+            transparent
+            visible={clearConfirmVisible}
+            onRequestClose={closeClearConfirm}
+            animationType="fade"
+          >
+            <Pressable 
+              style={styles.contextMenuBackdrop}
+              onPress={closeClearConfirm}
+            >
+              <View style={[styles.contextMenu, { backgroundColor: colors.background }]}>
+                <View style={[styles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
+                  <Text style={[styles.contextMenuTitle, { color: colors.textPrimary }]}>
+                    Clear browsing history?
+                  </Text>
+                  <Text style={[styles.contextMenuUrl, { color: colors.textSecondary }]}>
+                    This action cannot be undone.
+                  </Text>
+                </View>
+                
+                <TouchableOpacity 
+                  style={[styles.contextMenuItem, { borderBottomColor: colors.inputBorder }]}
+                  onPress={handleConfirmClearAll}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash-outline" size={22} color="#FF3B30" style={styles.contextMenuIcon} />
+                  <Text style={[styles.contextMenuText, { color: '#FF3B30' }]}>
+                    Clear
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.contextMenuItem, { borderBottomWidth: 0 }]}
+                  onPress={closeClearConfirm}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-outline" size={22} color={colors.textSecondary} style={styles.contextMenuIcon} />
+                  <Text style={[styles.contextMenuText, { color: colors.textSecondary }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </RNModal>
+          
           {/* Add these notification modals */}
           <NotificationPermissionModal
             visible={showNotificationPermissionModal}
@@ -2182,5 +2226,52 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.3)',
     zIndex: 20
-  }
+  },
+
+  /* context menu styles */
+  contextMenuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contextMenu: {
+    borderRadius: 12,
+    minWidth: 250,
+    maxWidth: 300,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  contextMenuHeader: {
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  contextMenuTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  contextMenuUrl: {
+    fontSize: 12,
+    opacity: 0.7,
+  },
+  contextMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  contextMenuIcon: {
+    marginRight: 12,
+  },
+  contextMenuText: {
+    fontSize: 16,
+    flex: 1,
+  },
 })

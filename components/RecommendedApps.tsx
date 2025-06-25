@@ -256,7 +256,7 @@ export const RecommendedApps = ({
             >
               <Ionicons name="trash-outline" size={22} color="#FF3B30" style={componentStyles.contextMenuIcon} />
               <Text style={[componentStyles.contextMenuText, { color: '#FF3B30' }]}>
-                {selectedApp && isBookmark(selectedApp) ? 'Delete Bookmark' : 'Remove from Favorites'}
+                 'Delete Bookmark?'
               </Text>
             </TouchableOpacity>
             
