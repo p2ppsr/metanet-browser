@@ -4,7 +4,7 @@ const defaultLogging = false
 // Specific file logging overrides
 const loggingConfig: { [file: string]: boolean } = {
   default: defaultLogging,
-  'context/WalletContext.tsx': true
+  'context/WalletContext': true
 }
 
 export default loggingConfig
