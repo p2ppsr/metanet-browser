@@ -16,7 +16,8 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   LayoutAnimation,
-  ScrollView
+  ScrollView,
+  Alert,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -42,7 +43,7 @@ import Balance from '@/components/Balance'
 import type { Bookmark, HistoryEntry, Tab } from '@/shared/types/browser'
 import { HistoryList } from '@/components/HistoryList'
 import { isValidUrl } from '@/utils/generalHelpers'
-import tabStore from '@/stores/TabStore'
+import tabStore from '../stores/TabStore'
 import bookmarkStore from '@/stores/BookmarkStore'
 import SettingsScreen from './settings'
 import IdentityScreen from './identity'
@@ -83,11 +84,9 @@ function getInjectableJSMessage(message: any = {}) {
 /* -------------------------------------------------------------------------- */
 /*                                 COMPONENTS                                 */
 /* -------------------------------------------------------------------------- */
-
 function StarDrawer({
   BookmarksScene,
   HistoryScene,
-  renderClearConfirm,
   colors,
   styles,
   index,
@@ -95,7 +94,6 @@ function StarDrawer({
 }: {
   BookmarksScene: React.ComponentType;
   HistoryScene: React.ComponentType;
-  renderClearConfirm: () => React.ReactNode;
   colors: any;
   styles: any;
   index: number;
@@ -143,7 +141,6 @@ function StarDrawer({
           </View>
         )}
       />
-      {renderClearConfirm()}
     </View>
   );
 }
@@ -251,7 +248,17 @@ function Browser() {
 
   const addressInputRef = useRef<TextInput>(null);
   const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
-  const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();
+  const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();  const [showBalance, setShowBalance] = useState(false);
+
+  // Balance handling - only delay on first open
+  useEffect(() => {
+    if (showInfoDrawer && infoDrawerRoute === 'root') {
+      const t = setTimeout(() => setShowBalance(true), 260); // shorter delay
+      return () => clearTimeout(t);
+    } else {
+      setShowBalance(false);
+    }
+  }, [showInfoDrawer, infoDrawerRoute]);
 
   /* ------------------------- push notifications ----------------------------- */
   const {
@@ -323,7 +330,7 @@ function Browser() {
 
       if (isCancelled) return;
 
-      console.log('Checking manifest for:', activeTab.url);
+      // console.log('Checking manifest for:', activeTab.url);
 
       try {
         const manifestData = await fetchManifest(activeTab.url);
@@ -331,16 +338,16 @@ function Browser() {
         if (isCancelled) return;
 
         if (manifestData) {
-          console.log('Found manifest for', activeTab.url, manifestData);
+          // console.log('Found manifest for', activeTab.url, manifestData);
 
           if (manifestData.babbage?.protocolPermissions) {
-            console.log('Found Babbage protocol permissions:', manifestData.babbage.protocolPermissions);
+            // console.log('Found Babbage protocol permissions:', manifestData.babbage.protocolPermissions);
           }
 
           const url = new URL(activeTab.url);
           if (shouldRedirectToStartUrl(manifestData, activeTab.url) && url.pathname === '/') {
             const startUrl = getStartUrl(manifestData, activeTab.url);
-            console.log('Redirecting to start_url:', startUrl);
+            // console.log('Redirecting to start_url:', startUrl);
             updateActiveTab({ url: startUrl });
             setAddressText(startUrl);
           }
@@ -406,9 +413,18 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
   /*                               TAB NAVIGATION                               */
   /* -------------------------------------------------------------------------- */
+ const navBack = useCallback(() => {
+  if (activeTab.canGoBack) {
+    tabStore.goBack(activeTab.id)
+  }
+}, [activeTab.canGoBack, activeTab.id])
 
-  const navBack = useCallback(() => activeTab.webviewRef.current?.goBack(), [activeTab.webviewRef])
-  const navFwd = useCallback(() => activeTab.webviewRef.current?.goForward(), [activeTab.webviewRef])
+const navFwd = useCallback(() => {
+  if (activeTab.canGoForward) {
+    tabStore.goForward(activeTab.id)
+  }
+}, [activeTab.canGoForward, activeTab.id])
+
   const navReloadOrStop = useCallback(() =>
     activeTab.isLoading
       ? activeTab.webviewRef.current?.stopLoading()
@@ -424,6 +440,13 @@ function Browser() {
       tabStore.newTab()
     }
   }, [])
+  useEffect(() => {
+    if (activeTab && !addressEditing.current) {
+      setAddressText(activeTab.url)
+    }
+  }, [activeTab.id, activeTab.url])
+
+
   const dismissKeyboard = useCallback(() => {
     addressInputRef.current?.blur();
     Keyboard.dismiss();
@@ -763,7 +786,7 @@ function Browser() {
 
      // Handleing of wallet before api call.
       if (msg.call && !wallet) {
-        console.log('Wallet not ready, ignoring call:', msg.call);
+        // console.log('Wallet not ready, ignoring call:', msg.call);
         return;
       }
 
@@ -816,24 +839,26 @@ function Browser() {
 
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
-  /* -------------------------------------------------------------------------- */
-
+  /* -------------------------------------------------------------------------- */  
   const handleNavStateChange = (navState: WebViewNavigation) => {
-    // Ignore favicon requests for about:blank
-     if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
+  // Ignore favicon requests for about:blank
+  if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
     return;
   }
-    tabStore.handleNavigationStateChange(tabStore.activeTabId, navState)
-    if (!addressEditing.current) setAddressText(navState.url)
+  
+  // Make sure we're updating the correct tab's navigation state
+  tabStore.handleNavigationStateChange(activeTab.id, navState)
+  
+  if (!addressEditing.current) setAddressText(navState.url)
 
-    if (!navState.loading && navState.url !== kNEW_TAB_URL) {
-      pushHistory({
-        title: navState.title || navState.url,
-        url: navState.url,
-        timestamp: Date.now()
-      }).catch(() => { })
-    }
+  if (!navState.loading && navState.url !== kNEW_TAB_URL) {
+    pushHistory({
+      title: navState.title || navState.url,
+      url: navState.url,
+      timestamp: Date.now()
+    }).catch(() => { })
   }
+}
 
   /* -------------------------------------------------------------------------- */
   /*                          SHARE / HOMESCREEN SHORTCUT                       */
@@ -859,7 +884,7 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
   /* -------------------------------------------------------------------------- */
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  // const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isDrawerAnimating, setIsDrawerAnimating] = useState(false);
   const windowHeight = Dimensions.get('window').height
   const drawerFullHeight = windowHeight * 0.75
@@ -986,48 +1011,31 @@ function Browser() {
           toggleStarDrawer(false)
         }}
         onDelete={removeHistoryItem}
-        onClear={() => setShowClearConfirm(true)}
+        onClear={() => showClearConfirm()}
       />
     )
-  }, [history, updateActiveTab, toggleStarDrawer, removeHistoryItem, setShowClearConfirm]);
+  }, [history, updateActiveTab, toggleStarDrawer, removeHistoryItem]);
 
 
 
   /* ---------------------------- clear history modal ------------------------- */
-  const renderClearConfirm = useCallback(() => (
-    <Modal
-      isVisible={showClearConfirm}
-      onBackdropPress={() => setShowClearConfirm(false)}
-      swipeDirection="down"
-      style={styles.modal}
-      useNativeDriver
-    >
-      <View
-        style={[styles.confirmBox, { backgroundColor: colors.paperBackground }]}
-      >
-        <Text style={[styles.confirmTitle, { color: colors.textPrimary }]}>
-          Clear browsing history?
-        </Text>
-        <View style={styles.confirmButtons}>
-          <TouchableOpacity
-            style={[styles.confirmBtn, { backgroundColor: colors.inputBorder }]}
-            onPress={() => setShowClearConfirm(false)}
-          >
-            <Text style={{ color: colors.textPrimary }}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.confirmBtn, { backgroundColor: '#ff3b30' }]}
-            onPress={() => {
-              clearHistory()
-              setShowClearConfirm(false)
-            }}
-          >
-            <Text style={{ color: '#fff' }}>Clear</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  ), [showClearConfirm, colors, styles, clearHistory])
+   const showClearConfirm = useCallback(() => {
+  Alert.alert(
+    'Clear browsing history?',
+    'This action cannot be undone.',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel'
+      },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: () => clearHistory()
+      }
+    ]
+  )
+}, [clearHistory])
 
   /* -------------------------------------------------------------------------- */
   /*                         ADDRESS BAR AUTOCOMPLETE                           */
@@ -1169,11 +1177,15 @@ function Browser() {
 
           {activeTab.url === kNEW_TAB_URL ? (
             <RecommendedApps
-              includeBookmarks={[]}
-              // hideHeader
-              setStartingUrl={url => updateActiveTab({ url })}
-            />
-          ) : (
+            includeBookmarks={bookmarkStore.bookmarks.filter(bookmark => {
+              return bookmark.url && 
+                    bookmark.url !== kNEW_TAB_URL && 
+                    isValidUrl(bookmark.url) &&
+                    !bookmark.url.includes('about:blank')
+            })}
+            setStartingUrl={url => updateActiveTab({ url })}
+          />
+        ) : (
             <View
               style={{ flex: 1 }}
               {...responderProps}
@@ -1250,9 +1262,14 @@ function Browser() {
               onFocus={() => {
                 addressEditing.current = true
                 setAddressFocused(true)
+                // Set the text to empty if it's the new tab URL
+                if (activeTab.url === kNEW_TAB_URL) {
+                  setAddressText('')
+                }
                 setTimeout(() => {
+                  const textToSelect = activeTab.url === kNEW_TAB_URL ? '' : addressText
                   addressInputRef.current?.setNativeProps({
-                    selection: { start: 0, end: addressText.length }
+                    selection: { start: 0, end: textToSelect.length }
                   })
                 }, 0)
               }}
@@ -1260,6 +1277,10 @@ function Browser() {
                 addressEditing.current = false
                 setAddressFocused(false)
                 setAddressSuggestions([])
+                // Reset to the actual URL when losing focus
+                if (!addressEditing.current) {
+                  setAddressText(activeTab.url)
+                }
               }}
               onSubmitEditing={onAddressSubmit}
               autoCapitalize="none"
@@ -1299,7 +1320,8 @@ function Browser() {
               ]}
             >
               {addressSuggestions.map(
-                (entry: HistoryEntry | Bookmark, i: number) => (                  <TouchableOpacity
+                (entry: HistoryEntry | Bookmark, i: number) => (                  
+                <TouchableOpacity
                     key={`suggestion-${i}-${entry.url}`}
                     onPress={() => {
                       // Dismiss keyboard and hide suggestions first
@@ -1341,12 +1363,8 @@ function Browser() {
 
           {showTabsView && (
             <TabsView
-              tabs={tabStore.tabs}
-              activeId={tabStore.activeTabId}
-              setActive={tabStore.setActiveTab}
-              addTab={tabStore.newTab}
-              closeTab={tabStore.closeTab}
               onDismiss={() => setShowTabsView(false)}
+              setAddressText={setAddressText}
               colors={colors}
             />
           )}
@@ -1369,14 +1387,13 @@ function Browser() {
                 </PanGestureHandler>
                 <View style={{ flex: 1 }}>
                   <StarDrawer
-                    BookmarksScene={BookmarksScene}
-                    HistoryScene={HistoryScene}
-                    renderClearConfirm={renderClearConfirm}
-                    colors={colors}
-                    styles={styles}
-                    index={starTabIndex}
-                    setIndex={setStarTabIndex}
-                  />
+                  BookmarksScene={BookmarksScene}
+                  HistoryScene={HistoryScene}
+                  colors={colors}
+                  styles={styles}
+                  index={starTabIndex}
+                  setIndex={setStarTabIndex}
+                />
                 </View>
               </Animated.View>
             </View>          )}
@@ -1425,7 +1442,7 @@ function Browser() {
                   >
                     <View style={styles.handleBar} />
                   </Pressable>
-                  <Balance />
+                  {showBalance && <Balance />}
                   <DrawerItem
                     label="Identity"
                     icon="person-circle-outline"
@@ -1503,103 +1520,144 @@ export default observer(Browser)
 /* -------------------------------------------------------------------------- */
 
 const TabsViewBase = ({
-  tabs,
-  activeId,
-  setActive,
-  addTab,
-  closeTab,
   onDismiss,
+  setAddressText,
   colors
 }: {
-  tabs: Tab[]
-  activeId: number
-  setActive: (id: number) => void
-  addTab: (initialUrl?: string) => void
-  closeTab: (id: number) => void
   onDismiss: () => void
+  setAddressText: (text: string) => void
   colors: any
 }) => {
+  // Use the imported tabStore directly
   const screen = Dimensions.get('window')
   const ITEM_W = screen.width * 0.42
   const ITEM_H = screen.height * 0.28
   const insets = useSafeAreaInsets()
 
-  const renderItem = ({ item }: { item: Tab }) => {
-    const renderRightActions = (
-      progress: Animated.AnimatedInterpolation<number>,
-      dragX: Animated.AnimatedInterpolation<number>
-    ) => {
-      const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
-        inputRange: [-101, 0],
-        outputRange: [0, 1],
-        extrapolate: 'clamp'
-      })
-      return (
-        <Animated.View
-          style={[
-            styles.swipeDelete,
-            { backgroundColor: '#ff3b30', transform: [{ translateX: trans }] }
-          ]}
-        >
-          <Text style={styles.swipeDeleteText}>✕</Text>
-        </Animated.View>
-      )
-    }
+// Animation for new tab button
+  const newTabScale = useRef(new Animated.Value(1)).current
 
+   const handleNewTabPress = useCallback(() => {
+    // Scale animation
+    Animated.sequence([
+      Animated.timing(newTabScale, {
+        toValue: 0.85,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(newTabScale, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Create new tab and dismiss view after animation
+      tabStore.newTab()
+      // Reset address text to new tab URL
+      setAddressText(kNEW_TAB_URL)
+      onDismiss()
+    })
+  }, [newTabScale, onDismiss, setAddressText])
+
+  const renderItem = ({ item }: { item: Tab }) => {
+  const renderRightActions = (
+    progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>
+  ) => {
+    const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
+      inputRange: [-101, 0],
+      outputRange: [0, 1],
+      extrapolate: 'clamp'
+    })
     return (
-      <Swipeable
-        renderRightActions={renderRightActions}
-        onSwipeableRightOpen={() => closeTab(item.id)}
-        friction={2}
-        rightThreshold={40}
+      <Animated.View
+        style={[
+          styles.swipeDelete,
+        ]}
       >
-        <Pressable
-          style={[
-            styles.tabPreview,
-            {
-              width: ITEM_W,
-              height: ITEM_H,
-              borderColor:
-                item.id === activeId ? colors.primary : colors.inputBorder,
-              borderWidth: item.id === activeId ? 2 : StyleSheet.hairlineWidth,
-              backgroundColor: colors.background
-            }
-          ]}
-          onPress={() => setActive(item.id)}
-        >
-          <View style={{ flex: 1, overflow: 'hidden' }}>
-            {item.url === kNEW_TAB_URL ? (
-              <View style={styles.tabPreviewEmpty}>
-                <Text style={{ fontSize: 16, color: colors.textSecondary }}>
-                  New Tab
-                </Text>
-              </View>
-            ) : (
-              <WebView
-                source={{ uri: item.url }}
-                style={{ flex: 1 }}
-                scrollEnabled={false}
-                pointerEvents="none"
-              />
-            )}
-            <View
-              style={[
-                styles.tabTitleBar,
-                { backgroundColor: colors.paperBackground }
-              ]}
-            >
-              <Text
-                numberOfLines={1}
-                style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}
-              >
-                {item.title}
-              </Text>
-            </View>
-          </View>
-        </Pressable>
-      </Swipeable>
+      </Animated.View>
     )
   }
+
+  return (
+    <Swipeable
+      renderRightActions={renderRightActions}
+      onSwipeableRightOpen={() => tabStore.closeTab(item.id)}
+      friction={2}
+      rightThreshold={40}
+    >
+      <Pressable
+        style={[
+          styles.tabPreview,
+          {
+            width: ITEM_W,
+            height: ITEM_H,
+            borderColor:
+              item.id === tabStore.activeTabId ? '#007AFF' : colors.inputBorder,
+            borderWidth: item.id === tabStore.activeTabId ? 3 : StyleSheet.hairlineWidth,
+            backgroundColor: colors.background
+          }
+        ]}
+        onPress={() => {
+          tabStore.setActiveTab(item.id)
+          onDismiss()
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10,
+          }}
+          onPress={(e) => {
+            e.stopPropagation() // Prevent tab selection when closing
+            tabStore.closeTab(item.id)
+          }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✕</Text>
+        </TouchableOpacity>
+
+        <View style={{ flex: 1, overflow: 'hidden' }}>
+          {item.url === kNEW_TAB_URL ? (
+            <View style={styles.tabPreviewEmpty}>
+              <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+                New Tab
+              </Text>
+            </View>
+          ) : (
+            <WebView
+              source={{ uri: item.url }}
+              style={{ flex: 1 }}
+              scrollEnabled={false}
+              pointerEvents="none"
+            />
+          )}
+          <View
+            style={[
+              styles.tabTitleBar,
+              { backgroundColor: colors.paperBackground }
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}
+            >
+              {item.title}
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+    </Swipeable>
+  )
+}
 
   return (
     <View style={styles.tabsViewContainer}>
@@ -1608,22 +1666,30 @@ const TabsViewBase = ({
       </TouchableWithoutFeedback>
 
       <FlatList
-        data={tabs.slice()}
-        renderItem={renderItem}
-        keyExtractor={t => String(t.id)}
-        numColumns={2}
-        contentContainerStyle={{
-          padding: 12,
-          paddingBottom: 100 + insets.bottom
-        }}
+      data={tabStore.tabs.slice()}
+      renderItem={renderItem}
+      keyExtractor={t => String(t.id)}
+      numColumns={2}
+      contentContainerStyle={{
+        padding: 12,
+        paddingTop: 32,  // Add this to move the tabs lower
+        paddingBottom: 100 + insets.bottom
+      }}
       />
 
-      <View
+         <View
         style={[styles.tabsViewFooter, { paddingBottom: insets.bottom + 10 }]}
       >
-        <TouchableOpacity style={styles.newTabBtn} onPress={() => addTab()}>
-          <Text style={styles.newTabIcon}>＋</Text>
-        </TouchableOpacity>
+        <Animated.View style={{ transform: [{ scale: newTabScale }] }}>
+          <TouchableOpacity 
+            style={styles.newTabBtn} 
+            onPress={handleNewTabPress}  
+            activeOpacity={0.7}          
+          >
+            <Text style={styles.newTabIcon}>＋</Text>
+          </TouchableOpacity>
+        </Animated.View>
+        <View style={{ flex: 1 }} />
         <TouchableOpacity style={styles.doneButton} onPress={onDismiss}>
           <Text style={styles.doneButtonText}>Done</Text>
         </TouchableOpacity>
@@ -1762,32 +1828,31 @@ const BottomToolbar = React.memo(({
           paddingBottom: 0
         }
       ]}
-    >
-      <TouchableOpacity
+    >      
+    <TouchableOpacity
         style={styles.toolbarButton}
         onPress={navBack}
-        disabled={!activeTab.canGoBack}
+        disabled={!activeTab.canGoBack || activeTab.url === kNEW_TAB_URL}
         activeOpacity={0.6}
         delayPressIn={0}
       >
         <Ionicons
           name="arrow-back"
           size={24}
-          color={activeTab.canGoBack ? colors.textPrimary : colors.textSecondary}
+          color={activeTab.canGoBack && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
         />
-      </TouchableOpacity>
-
+      </TouchableOpacity>      
       <TouchableOpacity
         style={styles.toolbarButton}
         onPress={navFwd}
-        disabled={!activeTab.canGoForward}
+        disabled={!activeTab.canGoForward || activeTab.url === kNEW_TAB_URL}
         activeOpacity={0.6}
         delayPressIn={0}
       >
         <Ionicons
           name="arrow-forward"
           size={24}
-          color={activeTab.canGoForward ? colors.textPrimary : colors.textSecondary}
+          color={activeTab.canGoForward && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
         />
       </TouchableOpacity>
 
@@ -1924,15 +1989,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)'
   },
   tabsViewFooter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20
-  },
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 20
+},
   newTabBtn: {
     width: 56,
     height: 56,
@@ -1945,7 +2009,7 @@ const styles = StyleSheet.create({
   doneButton: {
     position: 'absolute',
     right: 20,
-    bottom: 26
+    bottom: 56
   },
   doneButtonText: {
     color: '#fff',

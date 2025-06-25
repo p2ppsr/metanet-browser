@@ -5,39 +5,101 @@ import { useWallet } from '@/context/WalletContext';
 import { sdk } from '@bsv/wallet-toolbox-mobile';
 import AmountDisplay from './AmountDisplay';
 import AppLogo from './AppLogo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BALANCE_CACHE_KEY = 'cached_wallet_balance';
+const BALANCE_CACHE_TIMESTAMP_KEY = 'cached_wallet_balance_timestamp';
+const CACHE_DURATION = 30000; // 30 seconds
 
 export default function Balance() {
     const { colors } = useTheme();
     const { managers, adminOriginator } = useWallet();
-    const [accountBalance, setAccountBalance] = React.useState(0);
+    const [accountBalance, setAccountBalance] = React.useState<number | null>(null);
     const [balanceLoading, setBalanceLoading] = React.useState(false);
+    const [isFromCache, setIsFromCache] = React.useState(false);
+
+    // Load cached balance immediately on mount
+    useEffect(() => {
+        let mounted = true;
+        
+        const loadCachedBalance = async () => {
+            try {
+                const [cachedBalance, cachedTimestamp] = await Promise.all([
+                    AsyncStorage.getItem(BALANCE_CACHE_KEY),
+                    AsyncStorage.getItem(BALANCE_CACHE_TIMESTAMP_KEY)
+                ]);
+                
+                if (mounted && cachedBalance !== null) {
+                    const balance = Number(cachedBalance);
+                    const timestamp = Number(cachedTimestamp);
+                    const isRecent = timestamp && (Date.now() - timestamp < CACHE_DURATION);
+                    
+                    setAccountBalance(balance);
+                    setIsFromCache(true);
+                    
+                    // If cache is old, fetch fresh data
+                    if (!isRecent) {
+                        refreshBalance();
+                    }
+                } else if (mounted) {
+                    // No cache, fetch fresh data
+                    refreshBalance();
+                }
+            } catch (error) {
+                console.error('Error loading cached balance:', error);
+                if (mounted) refreshBalance();
+            }
+        };
+        
+        loadCachedBalance();
+        return () => { mounted = false; };
+    }, []);
 
     const refreshBalance = useCallback(async () => {
         try {
-          if (!managers?.permissionsManager) {
-            return
-          }
-          setBalanceLoading(true)
-    
-          // Fetch the first page
-          const { totalOutputs } = await managers?.permissionsManager?.listOutputs({ basket: sdk.specOpWalletBalance }, adminOriginator)
-    
-          const total = totalOutputs ?? 0
-          setAccountBalance(total)
-          setBalanceLoading(false)
+            if (!managers?.permissionsManager) {
+                return;
+            }
+            
+            // Only show loading if we don't have cached data
+            if (accountBalance === null) {
+                setBalanceLoading(true);
+            }
+            
+            // Fetch the first page
+            const { totalOutputs } = await managers?.permissionsManager?.listOutputs(
+                { basket: sdk.specOpWalletBalance }, 
+                adminOriginator
+            );
+            
+            const total = totalOutputs ?? 0;
+            setAccountBalance(total);
+            setIsFromCache(false);
+            
+            // Cache the new balance
+            await Promise.all([
+                AsyncStorage.setItem(BALANCE_CACHE_KEY, String(total)),
+                AsyncStorage.setItem(BALANCE_CACHE_TIMESTAMP_KEY, String(Date.now()))
+            ]);
+            
+            setBalanceLoading(false);
         } catch (e) {
-          setBalanceLoading(false)
+            console.error('Error refreshing balance:', e);
+            setBalanceLoading(false);
         }
-      }, [managers, adminOriginator])
-
-    useEffect(() => {
-    refreshBalance()
-    }, [refreshBalance])
-
-    return (
+    }, [managers, adminOriginator, accountBalance]);    return (
         <View style={[componentStyles.container, { backgroundColor: colors.paperBackground }]}>
             <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>you have</Text>
-            {balanceLoading ? <View style={componentStyles.loadingContainer}><AppLogo size={50} rotate /></View> : <Text onPress={refreshBalance} style={[componentStyles.balance, { color: colors.textPrimary }]}><AmountDisplay abbreviate>{accountBalance}</AmountDisplay></Text>}
+            {accountBalance === null && balanceLoading ? (
+                <View style={componentStyles.loadingContainer}>
+                    <AppLogo size={50} rotate />
+                </View>
+            ) : (
+                <Text onPress={refreshBalance} style={[componentStyles.balance, { color: colors.textPrimary }]}>
+                    <AmountDisplay abbreviate>{accountBalance ?? 0}</AmountDisplay>
+                        <Text style={[componentStyles.cacheIndicator, { color: colors.textSecondary }]}></Text>
+                </Text>
+            )}
         </View>
     );
 };
@@ -61,5 +123,9 @@ const componentStyles = StyleSheet.create({
         fontSize: 30,
         fontWeight: 'bold',
         textAlign: 'center'
+    },
+    cacheIndicator: {
+        fontSize: 16,
+        fontWeight: 'normal'
     }
-}); 
+});
