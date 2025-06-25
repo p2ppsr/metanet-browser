@@ -214,6 +214,8 @@ function Browser() {
   }, [saveHistory])
 
   /* -------------------------------- bookmarks ------------------------------- */
+  const [removedDefaultApps, setRemovedDefaultApps] = useState<string[]>([]);
+
   const addBookmark = useCallback((title: string, url: string) => {
   // Only add bookmarks for valid URLs that aren't the new tab page
   if (url && url !== kNEW_TAB_URL && isValidUrl(url) && !url.includes('about:blank')) {
@@ -224,6 +226,10 @@ function Browser() {
   const removeBookmark = useCallback((url: string) => {
     bookmarkStore.removeBookmark(url)
   }, [])
+
+  const removeDefaultApp = useCallback((url: string) => {
+    setRemovedDefaultApps(prev => [...prev, url]);
+  }, []);
 
   /* ---------------------------------- tabs --------------------------------- */
   const activeTab = tabStore.activeTab!
@@ -998,9 +1004,12 @@ const navFwd = useCallback(() => {
                !bookmark.url.includes('about:blank')
       })}
       setStartingUrl={handleSetStartingUrl}
+      onRemoveBookmark={removeBookmark}
+      onRemoveDefaultApp={removeDefaultApp}
+      removedDefaultApps={removedDefaultApps}
     />
   )
-}, [bookmarkStore.bookmarks, handleSetStartingUrl])
+}, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps])
 
   const HistoryScene = React.useCallback(() => {
     return (
@@ -1184,6 +1193,9 @@ const navFwd = useCallback(() => {
                     !bookmark.url.includes('about:blank')
             })}
             setStartingUrl={url => updateActiveTab({ url })}
+            onRemoveBookmark={removeBookmark}
+            onRemoveDefaultApp={removeDefaultApp}
+            removedDefaultApps={removedDefaultApps}
           />
         ) : (
             <View

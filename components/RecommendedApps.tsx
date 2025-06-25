@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,10 @@ import {
   StyleSheet,
   Image,
   TextInput,
+  Modal,
+  Pressable,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Fuse from 'fuse.js';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
@@ -16,6 +19,15 @@ interface App {
   domain: string;
   appName: string;
   appIconImageUrl?: string;
+}
+
+interface RecommendedAppsProps {
+  setStartingUrl: (url: string) => void;
+  includeBookmarks?: { title: string; url: string }[];
+  hideHeader?: boolean;
+  onRemoveBookmark?: (url: string) => void;
+  onRemoveDefaultApp?: (url: string) => void;
+  removedDefaultApps?: string[];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -68,19 +80,59 @@ export const RecommendedApps = ({
   setStartingUrl,
   includeBookmarks = [],
   hideHeader = false,
-}: {
-  setStartingUrl: (url: string) => void;
-  includeBookmarks?: { title: string; url: string }[];
-  hideHeader?: boolean;
-}) => {
+  onRemoveBookmark,
+  onRemoveDefaultApp,
+  removedDefaultApps = [],
+}: RecommendedAppsProps) => {
   const { colors } = useTheme();
   const { recentApps } = useWallet();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Context menu state
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
+  const [selectedApp, setSelectedApp] = useState<App | null>(null);
+
+  /* -------------------------- helper functions -------------------------- */
+  const isBookmark = useCallback((app: App) => {
+    // Check if it's in the actual bookmarks list
+    return includeBookmarks.some(bookmark => bookmark.url === app.domain);
+  }, [includeBookmarks]);
+
+  const isDefaultApp = useCallback((app: App) => {
+    // Check if it's one of the default apps
+    return defaultApps.some(defaultApp => defaultApp.domain === app.domain);
+  }, []);
+
+  const handleLongPress = useCallback((app: App) => {
+    // Allow removal of bookmarks OR default apps
+    if ((isBookmark(app) || isDefaultApp(app)) && (onRemoveBookmark || onRemoveDefaultApp)) {
+      setSelectedApp(app);
+      setContextMenuVisible(true);
+    }
+  }, [isBookmark, isDefaultApp, onRemoveBookmark, onRemoveDefaultApp]);
+
+  const handleDeleteBookmark = useCallback(() => {
+    if (selectedApp) {
+      if (isBookmark(selectedApp) && onRemoveBookmark) {
+        onRemoveBookmark(selectedApp.domain);
+      } else if (isDefaultApp(selectedApp) && onRemoveDefaultApp) {
+        onRemoveDefaultApp(selectedApp.domain);
+      }
+    }
+    setContextMenuVisible(false);
+    setSelectedApp(null);
+  }, [selectedApp, isBookmark, isDefaultApp, onRemoveBookmark, onRemoveDefaultApp]);
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenuVisible(false);
+    setSelectedApp(null);
+  }, []);
 
   /* -------------------------- compose data sources -------------------------- */
   const allApps: App[] = useMemo(() => {
     const sources: App[] = [
-      ...defaultApps,
+      // Filter out removed default apps
+      ...defaultApps.filter(app => !removedDefaultApps.includes(app.domain)),
       ...recentApps.map(a => ({ ...a, appIconImageUrl: a.appIconImageUrl })),
       ...includeBookmarks.map(bm => ({
         domain: bm.url,
@@ -94,7 +146,7 @@ export const RecommendedApps = ({
       if (!acc.find(a => a.domain === cur.domain)) acc.push(cur);
       return acc;
     }, []);
-  }, [includeBookmarks, recentApps]);
+  }, [includeBookmarks, recentApps, removedDefaultApps]);
 
   /* ---------------------------- fuzzy searching ---------------------------- */
   const fuse = useMemo(() => {
@@ -115,6 +167,8 @@ export const RecommendedApps = ({
     <TouchableOpacity
       style={componentStyles.appItem}
       onPress={() => setStartingUrl(item.domain)}
+      onLongPress={() => handleLongPress(item)}
+      delayLongPress={800} // Increased from 500ms to 800ms
     >
       {item.appIconImageUrl ? (
         <Image
@@ -173,6 +227,52 @@ export const RecommendedApps = ({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       />
+
+      {/* Context Menu Modal */}
+      <Modal
+        transparent
+        visible={contextMenuVisible}
+        onRequestClose={closeContextMenu}
+        animationType="fade"
+      >
+        <Pressable 
+          style={componentStyles.contextMenuBackdrop}
+          onPress={closeContextMenu}
+        >
+          <View style={[componentStyles.contextMenu, { backgroundColor: colors.background }]}>
+            <View style={[componentStyles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
+              <Text style={[componentStyles.contextMenuTitle, { color: colors.textPrimary }]}>
+                {selectedApp?.appName}
+              </Text>
+              <Text style={[componentStyles.contextMenuUrl, { color: colors.textSecondary }]}>
+                {selectedApp?.domain}
+              </Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={[componentStyles.contextMenuItem, { borderBottomColor: colors.inputBorder }]}
+              onPress={handleDeleteBookmark}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={22} color="#FF3B30" style={componentStyles.contextMenuIcon} />
+              <Text style={[componentStyles.contextMenuText, { color: '#FF3B30' }]}>
+                {selectedApp && isBookmark(selectedApp) ? 'Delete Bookmark' : 'Remove from Favorites'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[componentStyles.contextMenuItem, { borderBottomWidth: 0 }]}
+              onPress={closeContextMenu}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close-outline" size={22} color={colors.textSecondary} style={componentStyles.contextMenuIcon} />
+              <Text style={[componentStyles.contextMenuText, { color: colors.textSecondary }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -225,5 +325,51 @@ const componentStyles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     flexWrap: 'wrap',
+  },
+  // Context Menu Styles
+  contextMenuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contextMenu: {
+    borderRadius: 12,
+    minWidth: 250,
+    maxWidth: 300,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  contextMenuHeader: {
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  contextMenuTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  contextMenuUrl: {
+    fontSize: 12,
+    opacity: 0.7,
+  },
+  contextMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  contextMenuIcon: {
+    marginRight: 12,
+  },
+  contextMenuText: {
+    fontSize: 16,
+    flex: 1,
   },
 });
