@@ -9,6 +9,7 @@ import {
   TextInput,
   Modal,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Fuse from 'fuse.js';
@@ -25,9 +26,22 @@ interface RecommendedAppsProps {
   setStartingUrl: (url: string) => void;
   includeBookmarks?: { title: string; url: string }[];
   hideHeader?: boolean;
+  showOnlyBookmarks?: boolean;
+  limitBookmarks?: number; // Limit number of bookmarks to show on homepage
   onRemoveBookmark?: (url: string) => void;
   onRemoveDefaultApp?: (url: string) => void;
   removedDefaultApps?: string[];
+  // Homepage customization props
+  homepageSettings?: {
+    showBookmarks: boolean;
+    showRecentApps: boolean;
+    showRecommendedApps: boolean;
+  };
+  onUpdateHomepageSettings?: (settings: Partial<{
+    showBookmarks: boolean;
+    showRecentApps: boolean;
+    showRecommendedApps: boolean;
+  }>) => void;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -80,13 +94,18 @@ export const RecommendedApps = ({
   setStartingUrl,
   includeBookmarks = [],
   hideHeader = false,
+  showOnlyBookmarks = false,
+  limitBookmarks,
   onRemoveBookmark,
   onRemoveDefaultApp,
   removedDefaultApps = [],
+  homepageSettings,
+  onUpdateHomepageSettings,
 }: RecommendedAppsProps) => {
   const { colors } = useTheme();
   const { recentApps } = useWallet();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   
   // Context menu state
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
@@ -128,25 +147,44 @@ export const RecommendedApps = ({
     setSelectedApp(null);
   }, []);
 
-  /* -------------------------- compose data sources -------------------------- */
-  const allApps: App[] = useMemo(() => {
-    const sources: App[] = [
-      // Filter out removed default apps
-      ...defaultApps.filter(app => !removedDefaultApps.includes(app.domain)),
-      ...recentApps.map(a => ({ ...a, appIconImageUrl: a.appIconImageUrl })),
-      ...includeBookmarks.map(bm => ({
-        domain: bm.url,
-        appName: bm.title || bm.url,
-        appIconImageUrl: `${bm.url.replace(/\/$/, '')}/favicon.ico`,
-      })),
-    ];
+  /* -------------------------- prepare separate data sources -------------------------- */
+  const filteredDefaultApps = useMemo(() => {
+    if (showOnlyBookmarks) return [];
+    // Use homepage settings to determine if recommended apps should be shown
+    if (homepageSettings && !homepageSettings.showRecommendedApps) return [];
+    return defaultApps.filter(app => !removedDefaultApps.includes(app.domain));
+  }, [removedDefaultApps, showOnlyBookmarks, homepageSettings]);
 
-    // deduplicate by domain
+  const processedRecentApps = useMemo(() => {
+    if (showOnlyBookmarks) return [];
+    // Use homepage settings to determine if recent apps should be shown
+    if (homepageSettings && !homepageSettings.showRecentApps) return [];
+    return recentApps.map(a => ({ ...a, appIconImageUrl: a.appIconImageUrl }));
+  }, [recentApps, showOnlyBookmarks, homepageSettings]);
+
+  const processedBookmarks = useMemo(() => {
+    const bookmarks = includeBookmarks.map(bm => ({
+      domain: bm.url,
+      appName: bm.title || bm.url,
+      appIconImageUrl: `${bm.url.replace(/\/$/, '')}/favicon.ico`,
+    }));
+    
+    // If we're not showing only bookmarks and we have a limit, slice the array
+    if (!showOnlyBookmarks && limitBookmarks) {
+      return bookmarks.slice(0, limitBookmarks);
+    }
+    
+    return bookmarks;
+  }, [includeBookmarks, showOnlyBookmarks, limitBookmarks]);
+
+  // Combined for search functionality
+  const allApps = useMemo(() => {
+    const sources = [...filteredDefaultApps, ...processedRecentApps, ...processedBookmarks];
     return sources.reduce<App[]>((acc, cur) => {
       if (!acc.find(a => a.domain === cur.domain)) acc.push(cur);
       return acc;
     }, []);
-  }, [includeBookmarks, recentApps, removedDefaultApps]);
+  }, [filteredDefaultApps, processedRecentApps, processedBookmarks]);
 
   /* ---------------------------- fuzzy searching ---------------------------- */
   const fuse = useMemo(() => {
@@ -158,17 +196,19 @@ export const RecommendedApps = ({
   }, [allApps]);
 
   const visibleApps = useMemo(() => {
-    if (!searchQuery.trim()) return allApps;
+    if (!searchQuery.trim()) return null; // Return null when not searching
     return fuse.search(searchQuery).map(r => r.item);
   }, [allApps, fuse, searchQuery]);
 
-  /* ------------------------------- render ---------------------------------- */
+  const searchResults = visibleApps;
+
+  /* ------------------------------- render functions ---------------------------------- */
   const renderAppItem = ({ item }: { item: App }) => (
     <TouchableOpacity
       style={componentStyles.appItem}
       onPress={() => setStartingUrl(item.domain)}
       onLongPress={() => handleLongPress(item)}
-      delayLongPress={800} // Increased from 500ms to 800ms
+      delayLongPress={800}
     >
       {item.appIconImageUrl ? (
         <Image
@@ -194,85 +234,262 @@ export const RecommendedApps = ({
     </TouchableOpacity>
   );
 
+  const renderSection = (title: string, data: App[], key: string) => {
+    if (data.length === 0) return null;
+    
+    return (
+      <View key={key} style={componentStyles.section}>
+        <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>
+          {title}
+        </Text>
+        <FlatList
+          data={data}
+          renderItem={renderAppItem}
+          keyExtractor={item => `${key}-${item.domain}`}
+          numColumns={3}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+        />
+      </View>
+    );
+  };
+
   return (
     <View style={[componentStyles.container, { backgroundColor: colors.paperBackground }]}>
       {!hideHeader && (
-      <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>
-        Bookmarks
-      </Text>
+        <View style={componentStyles.headerContainer}>
+          <Text style={[componentStyles.mainTitle, { color: colors.textPrimary }]}>
+            {showOnlyBookmarks ? 'Bookmarks' : ''}
+          </Text>
+          {!showOnlyBookmarks && onUpdateHomepageSettings && (
+            <TouchableOpacity 
+              onPress={() => setShowCustomizeModal(true)}
+              style={componentStyles.customizeButton}
+            >
+              <Ionicons name="options-outline" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
       )}
 
-      <View style={componentStyles.searchContainer}>
-        <TextInput
-          style={[
-            componentStyles.searchInput,
-            {
-              color: colors.textPrimary,
-              backgroundColor: colors.inputBackground || colors.background,
-              borderColor: colors.inputBorder,
-            },
-          ]}
-          placeholder="Search bookmarks…"
-          placeholderTextColor={colors.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
+      {showOnlyBookmarks && (
+        <View style={componentStyles.searchContainer}>
+          <TextInput
+            style={[
+              componentStyles.searchInput,
+              {
+                color: colors.textPrimary,
+                backgroundColor: colors.inputBackground || colors.background,
+                borderColor: colors.inputBorder,
+              },
+            ]}
+            placeholder="Search bookmarks…"
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      )}
 
-      <FlatList
-        data={visibleApps}
-        renderItem={renderAppItem}
-        keyExtractor={item => item.domain}
-        numColumns={3}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      />
+      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+        {searchResults ? (
+          // Show search results
+          <View style={componentStyles.section}>
+            <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>
+              Search Results ({searchResults.length})
+            </Text>
+            <FlatList
+              data={searchResults}
+              renderItem={renderAppItem}
+              keyExtractor={item => `search-${item.domain}`}
+              numColumns={3}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+            />
+          </View>
+        ) : (
+          // Show separated sections
+          <>
+            {showOnlyBookmarks ? (
+              // Only show bookmarks without section title (tab already shows "Bookmarks")
+              <View style={componentStyles.section}>
+                <FlatList
+                  data={processedBookmarks}
+                  renderItem={renderAppItem}
+                  keyExtractor={item => `bookmarks-${item.domain}`}
+                  numColumns={3}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={false}
+                />
+              </View>
+            ) : (
+              // Show all sections based on homepage settings
+              <>
+                {(homepageSettings?.showBookmarks !== false) && renderSection(
+                  limitBookmarks ? `Recent Bookmarks` : 'Bookmarks', 
+                  processedBookmarks, 
+                  'bookmarks'
+                )}
+                {(homepageSettings?.showRecentApps !== false) && renderSection('Recent Apps', processedRecentApps, 'recent')}
+                {(homepageSettings?.showRecommendedApps !== false) && renderSection('Recommended Apps', filteredDefaultApps, 'default')}
+              </>
+            )}
+          </>
+        )}
+      </ScrollView>
+
+      {/* Customize Homepage Modal */}
+      {showCustomizeModal && homepageSettings && onUpdateHomepageSettings && (
+        <Modal
+          transparent
+          visible={showCustomizeModal}
+          onRequestClose={() => setShowCustomizeModal(false)}
+          animationType="fade"
+        >
+          <Pressable 
+            style={componentStyles.contextMenuBackdrop}
+            onPress={() => setShowCustomizeModal(false)}
+          >
+            <View style={[componentStyles.customizeModal, { backgroundColor: colors.background }]}>
+              <View style={[componentStyles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
+                <Text style={[componentStyles.contextMenuTitle, { color: colors.textPrimary }]}>
+                  Customize Homepage
+                </Text>
+                <Text style={[componentStyles.contextMenuUrl, { color: colors.textSecondary }]}>
+                  Show or hide sections on your homepage
+                </Text>
+              </View>
+              
+              <View style={componentStyles.customizeOptions}>
+                <TouchableOpacity 
+                  style={componentStyles.customizeOption}
+                  onPress={() => onUpdateHomepageSettings({ showBookmarks: !homepageSettings.showBookmarks })}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name={homepageSettings.showBookmarks ? "checkbox" : "square-outline"} 
+                    size={22} 
+                    color={homepageSettings.showBookmarks ? colors.primary : colors.textSecondary} 
+                  />
+                  <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
+                    Recent Bookmarks
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={componentStyles.customizeOption}
+                  onPress={() => onUpdateHomepageSettings({ showRecentApps: !homepageSettings.showRecentApps })}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name={homepageSettings.showRecentApps ? "checkbox" : "square-outline"} 
+                    size={22} 
+                    color={homepageSettings.showRecentApps ? colors.primary : colors.textSecondary} 
+                  />
+                  <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
+                    Recent Apps
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={componentStyles.customizeOption}
+                  onPress={() => onUpdateHomepageSettings({ showRecommendedApps: !homepageSettings.showRecommendedApps })}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name={homepageSettings.showRecommendedApps ? "checkbox" : "square-outline"} 
+                    size={22} 
+                    color={homepageSettings.showRecommendedApps ? colors.primary : colors.textSecondary} 
+                  />
+                  <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
+                    Recommended Apps
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={componentStyles.customizeActions}>
+                <TouchableOpacity 
+                  style={[componentStyles.customizeActionButton, { backgroundColor: colors.inputBackground }]}
+                  onPress={() => {
+                    if (onUpdateHomepageSettings) {
+                      onUpdateHomepageSettings({
+                        showBookmarks: true,
+                        showRecentApps: true,
+                        showRecommendedApps: true,
+                      });
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="refresh-outline" size={18} color={colors.textSecondary} />
+                  <Text style={[componentStyles.customizeActionText, { color: colors.textSecondary }]}>
+                    Reset
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[componentStyles.customizeActionButton, { backgroundColor: colors.primary }]}
+                  onPress={() => setShowCustomizeModal(false)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="checkmark-outline" size={18} color={colors.background} />
+                  <Text style={[componentStyles.customizeActionText, { color: colors.background }]}>
+                    Done
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Pressable>
+        </Modal>
+      )}
 
       {/* Context Menu Modal */}
-      <Modal
-        transparent
-        visible={contextMenuVisible}
-        onRequestClose={closeContextMenu}
-        animationType="fade"
-      >
-        <Pressable 
-          style={componentStyles.contextMenuBackdrop}
-          onPress={closeContextMenu}
+      {selectedApp && (
+        <Modal
+          transparent
+          visible={contextMenuVisible}
+          onRequestClose={closeContextMenu}
+          animationType="fade"
         >
-          <View style={[componentStyles.contextMenu, { backgroundColor: colors.background }]}>
-            <View style={[componentStyles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
-              <Text style={[componentStyles.contextMenuTitle, { color: colors.textPrimary }]}>
-                {selectedApp?.appName}
-              </Text>
-              <Text style={[componentStyles.contextMenuUrl, { color: colors.textSecondary }]}>
-                {selectedApp?.domain}
-              </Text>
+          <Pressable 
+            style={componentStyles.contextMenuBackdrop}
+            onPress={closeContextMenu}
+          >
+            <View style={[componentStyles.contextMenu, { backgroundColor: colors.background }]}>
+              <View style={[componentStyles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
+                <Text style={[componentStyles.contextMenuTitle, { color: colors.textPrimary }]}>
+                  {selectedApp.appName}
+                </Text>
+                <Text style={[componentStyles.contextMenuUrl, { color: colors.textSecondary }]}>
+                  {selectedApp.domain}
+                </Text>
+              </View>
+              
+              <TouchableOpacity 
+                style={[componentStyles.contextMenuItem, { borderBottomColor: colors.inputBorder }]}
+                onPress={handleDeleteBookmark}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={22} color="#FF3B30" style={componentStyles.contextMenuIcon} />
+                <Text style={[componentStyles.contextMenuText, { color: '#FF3B30' }]}>
+                  {selectedApp && isBookmark(selectedApp) ? 'Delete Bookmark' : 'Hide App'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[componentStyles.contextMenuItem, { borderBottomWidth: 0 }]}
+                onPress={closeContextMenu}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-outline" size={22} color={colors.textSecondary} style={componentStyles.contextMenuIcon} />
+                <Text style={[componentStyles.contextMenuText, { color: colors.textSecondary }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
-              style={[componentStyles.contextMenuItem, { borderBottomColor: colors.inputBorder }]}
-              onPress={handleDeleteBookmark}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="trash-outline" size={22} color="#FF3B30" style={componentStyles.contextMenuIcon} />
-              <Text style={[componentStyles.contextMenuText, { color: '#FF3B30' }]}>
-                 'Delete Bookmark?'
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[componentStyles.contextMenuItem, { borderBottomWidth: 0 }]}
-              onPress={closeContextMenu}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close-outline" size={22} color={colors.textSecondary} style={componentStyles.contextMenuIcon} />
-              <Text style={[componentStyles.contextMenuText, { color: colors.textSecondary }]}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
+          </Pressable>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -287,6 +504,22 @@ const componentStyles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  mainTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    flex: 1,
+  },
+  customizeButton: {
+    padding: 8,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
   searchContainer: { marginBottom: 16 },
   searchInput: {
     height: 40,
@@ -295,10 +528,13 @@ const componentStyles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
   },
+  section: {
+    marginBottom: 24,
+  },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   appItem: {
     alignItems: 'center',
@@ -322,9 +558,10 @@ const componentStyles = StyleSheet.create({
     marginBottom: 8,
   },
   appTitle: {
-    fontSize: 14,
+    fontSize: 12,
     textAlign: 'center',
     flexWrap: 'wrap',
+    lineHeight: 16,
   },
   // Context Menu Styles
   contextMenuBackdrop: {
@@ -371,5 +608,65 @@ const componentStyles = StyleSheet.create({
   contextMenuText: {
     fontSize: 16,
     flex: 1,
+  },
+  // Customize Modal Styles
+  customizeModal: {
+    borderRadius: 12,
+    minWidth: 300,
+    maxWidth: 350,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  customizeOptions: {
+    paddingVertical: 8,
+  },
+  customizeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  customizeOptionText: {
+    fontSize: 16,
+    marginLeft: 12,
+    flex: 1,
+  },
+  customizeActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    gap: 12,
+  },
+  customizeActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  customizeActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  bookmarkLimitControls: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  limitButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

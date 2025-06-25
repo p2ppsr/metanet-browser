@@ -216,6 +216,39 @@ function Browser() {
   /* -------------------------------- bookmarks ------------------------------- */
   const [removedDefaultApps, setRemovedDefaultApps] = useState<string[]>([]);
 
+  // Homepage customization settings
+  const [homepageSettings, setHomepageSettings] = useState({
+    showBookmarks: true,
+    showRecentApps: true,
+    showRecommendedApps: true,
+  });
+
+  // Load homepage settings from storage
+  useEffect(() => {
+    const loadHomepageSettings = async () => {
+      try {
+        const savedSettings = await getItem('homepageSettings');
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings);
+          setHomepageSettings(prev => ({ ...prev, ...parsedSettings }));
+        }
+      } catch (error) {
+        console.error('Error loading homepage settings:', error);
+      }
+    };
+    loadHomepageSettings();
+  }, [getItem]);
+
+  const updateHomepageSettings = useCallback(async (newSettings: Partial<typeof homepageSettings>) => {
+    const updatedSettings = { ...homepageSettings, ...newSettings };
+    setHomepageSettings(updatedSettings);
+    try {
+      await setItem('homepageSettings', JSON.stringify(updatedSettings));
+    } catch (error) {
+      console.error('Error saving homepage settings:', error);
+    }
+  }, [homepageSettings, setItem]);
+
   const addBookmark = useCallback((title: string, url: string) => {
   // Only add bookmarks for valid URLs that aren't the new tab page
   if (url && url !== kNEW_TAB_URL && isValidUrl(url) && !url.includes('about:blank')) {
@@ -1007,6 +1040,8 @@ const navFwd = useCallback(() => {
       onRemoveBookmark={removeBookmark}
       onRemoveDefaultApp={removeDefaultApp}
       removedDefaultApps={removedDefaultApps}
+      hideHeader={true}
+      showOnlyBookmarks={true}
     />
   )
 }, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps])
@@ -1193,6 +1228,9 @@ const navFwd = useCallback(() => {
             onRemoveBookmark={removeBookmark}
             onRemoveDefaultApp={removeDefaultApp}
             removedDefaultApps={removedDefaultApps}
+            limitBookmarks={6}
+            homepageSettings={homepageSettings}
+            onUpdateHomepageSettings={updateHomepageSettings}
           />
         ) : (
             <View
