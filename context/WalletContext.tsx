@@ -32,6 +32,7 @@ import parseAppManifest from '../utils/parseAppManifest'
 import { useLocalStorage } from "@/context/LocalStorageProvider";
 import { getApps } from "@/utils/getApps";
 import { router } from "expo-router";
+import { logWithTimestamp } from "@/utils/logging";
  
 // -----
 // Context Types
@@ -181,9 +182,13 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // Separate request queues for basket and certificate access
   const [basketRequests, setBasketRequests] = useState<BasketAccessRequest[]>([])
+  logWithTimestamp('Basket requests initialized');
   const [certificateRequests, setCertificateRequests] = useState<CertificateAccessRequest[]>([])
+  logWithTimestamp('Certificate requests initialized');
   const [protocolRequests, setProtocolRequests] = useState<ProtocolAccessRequest[]>([])
+  logWithTimestamp('Protocol requests initialized');
   const [spendingRequests, setSpendingRequests] = useState<SpendingRequest[]>([])
+  logWithTimestamp('Spending requests initialized');
 
   // Pop the first request from the basket queue, close if empty, relinquish focus if needed
   const advanceBasketQueue = () => {
@@ -197,6 +202,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       }
       return newQueue
     })
+    logWithTimestamp('Advanced basket queue');
   }
 
   // Pop the first request from the certificate queue, close if empty, relinquish focus if needed
@@ -211,6 +217,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       }
       return newQueue
     })
+    logWithTimestamp('Advanced certificate queue');
   }
 
   // Pop the first request from the protocol queue, close if empty, relinquish focus if needed
@@ -225,6 +232,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       }
       return newQueue
     })
+    logWithTimestamp('Advanced protocol queue');
   }
 
   // Pop the first request from the spending queue, close if empty, relinquish focus if needed
@@ -239,6 +247,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       }
       return newQueue
     })
+    logWithTimestamp('Advanced spending queue');
   }
 
   const updateSettings = useCallback(async (newSettings: WalletSettings) => {
@@ -247,16 +256,18 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
     }
     await managers.settingsManager.set(newSettings);
     setSettings(newSettings);
+    logWithTimestamp('Settings updated');
   }, [managers.settingsManager]);
 
   // ---- Callbacks for password/recovery/etc.
   const [passwordRetriever, setPasswordRetriever] = useState<
     (reason: string, test: (passwordCandidate: string) => boolean) => Promise<string>
   >();
+  logWithTimestamp('Password retriever initialized');
   const [recoveryKeySaver, setRecoveryKeySaver] = useState<
     (key: number[]) => Promise<true>
   >();
-
+  logWithTimestamp('Recovery key saver initialized');
 
   // Provide a handler for basket-access requests that enqueues them
   const basketAccessCallback = useCallback((incomingRequest: PermissionRequest & {
@@ -293,6 +304,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
           }
         ]
       })
+      logWithTimestamp('Basket access request enqueued');
     }
   }, [isFocused, onFocusRequested])
 
@@ -347,6 +359,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
           }
         ]
       })
+      logWithTimestamp('Certificate access request enqueued');
     }
   }, [isFocused, onFocusRequested])
 
@@ -408,6 +421,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         resolve()
         return [...prev, newItem]
       })
+      logWithTimestamp('Protocol permission request enqueued');
     })
   }, [isFocused, onFocusRequested])
 
@@ -471,20 +485,27 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         resolve()
         return [...prev, newItem]
       })
+      logWithTimestamp('Spending authorization request enqueued');
     })
   }, [isFocused, onFocusRequested])
 
   // ---- WAB + network + storage configuration ----
   const [selectedWabUrl, setSelectedWabUrl] = useState<string>(DEFAULT_WAB_URL);
+  logWithTimestamp('Selected WAB URL initialized');
   const [selectedMethod, setSelectedMethod] = useState<string>('');
+  logWithTimestamp('Selected method initialized');
   const [selectedNetwork, setSelectedNetwork] = useState<'main' | 'test'>(DEFAULT_CHAIN); // "test" or "main"
+  logWithTimestamp('Selected network initialized');
   const [selectedStorageUrl, setSelectedStorageUrl] = useState<string>(DEFAULT_STORAGE_URL);
+  logWithTimestamp('Selected storage URL initialized');
 
   // Flag that indicates configuration is complete. For returning users,
   // if a snapshot exists we auto-mark configComplete.
   const [configStatus, setConfigStatus] = useState<ConfigStatus>('initial');
+  logWithTimestamp('Config status initialized');
   // Used to trigger a re-render after snapshot load completes.
   const [snapshotLoaded, setSnapshotLoaded] = useState<boolean>(false);
+  logWithTimestamp('Snapshot loaded state initialized');
 
   // For new users: mark configuration complete when WalletConfig is submitted.
   const finalizeConfig = (wabConfig: WABConfig): boolean => {
@@ -518,10 +539,12 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       // Save the configuration
       toast.success("Configuration applied successfully!");
       setConfigStatus('configured');
+      logWithTimestamp('Configuration finalized successfully');
       return true
     } catch (error: any) {
       console.error("Error applying configuration:", error);
       toast.error("Failed to apply configuration: " + (error.message || "Unknown error"));
+      logWithTimestamp('Error applying configuration', error.message);
       return false
     }
   }
@@ -574,11 +597,13 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       newManagers.permissionsManager = permissionsManager;
       
       setManagers(m => ({ ...m, ...newManagers }));
+      logWithTimestamp('Wallet build completed successfully');
       
       return permissionsManager;
     } catch (error: any) {
       console.error("Error building wallet:", error);
       toast.error("Failed to build wallet: " + error.message);
+      logWithTimestamp('Error building wallet', error.message);
       return null;
     }
   }, [
@@ -598,12 +623,16 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       try {
         await walletManager.loadSnapshot(snap);
         await walletManager.waitForAuthentication({})
+        logWithTimestamp('Snapshot loaded and authenticated successfully');
         // We'll handle setting snapshotLoaded in a separate effect watching authenticated state
       } catch (err: any) {
         console.error("Error loading snapshot", err);
         deleteSnap(); // Clear invalid snapshot
         toast.error("Couldn't load saved data: " + err.message);
+        logWithTimestamp('Error loading snapshot', err.message);
       }
+    } else {
+      logWithTimestamp('No snapshot found');
     }
     return walletManager
   }, [deleteSnap, getSnap]);
@@ -611,10 +640,13 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   // Watch for wallet authentication after snapshot is loaded
   useEffect(() => {
     (async () => {
+      logWithTimestamp('Checking authentication state');
       const snap = await getSnap()
       if (managers?.walletManager?.authenticated && snap) {
         setSnapshotLoaded(true);
+        logWithTimestamp('Authentication confirmed, snapshot loaded');
       }
+      logWithTimestamp('Authentication state check complete');
     })()
   }, [managers?.walletManager?.authenticated]);
 
@@ -626,6 +658,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       configStatus !== 'editing' && // either user configured or snapshot exists
       !walletBuilt // build only once
     ) {
+      logWithTimestamp('Starting wallet manager initialization');
       try {
         // Create network service based on selected network
         const networkPreset = selectedNetwork === 'main' ? 'mainnet' : 'testnet';
@@ -665,18 +698,23 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
         (window as any).walletManager = walletManager;
 
         // Load snapshot if available
+        logWithTimestamp('Loading wallet snapshot');
         loadWalletSnapshot(walletManager).then(walletManager => {
+          logWithTimestamp('Wallet snapshot loaded');
           // Set initial managers state to prevent null references
           setManagers(m => ({ ...m, walletManager }));
           setWalletBuilt(true)
+          logWithTimestamp('Wallet manager initialization completed successfully');
         })
 
       } catch (err: any) {
         console.error("Error initializing wallet manager:", err);
         toast.error("Failed to initialize wallet: " + err.message);
+        logWithTimestamp('Error initializing wallet manager', err.message);
         // Reset configuration if wallet initialization fails
         setConfigStatus('editing');
       }
+      logWithTimestamp('Wallet manager initialization process complete');
     }
   }, [
     passwordRetriever,
@@ -692,12 +730,15 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   // When Settings manager becomes available, populate the user's settings
   useEffect(() => {
+    logWithTimestamp('Checking settings manager availability');
     const loadSettings = async () => {
       if (managers.settingsManager) {
         try {
           const userSettings = await managers.settingsManager.get();
           setSettings(userSettings);
+          logWithTimestamp('Settings loaded successfully');
         } catch (e) {
+          logWithTimestamp('Failed to load settings');
           // Unable to load settings, defaults are already loaded.
         }
       }
@@ -708,15 +749,20 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   const logout = useCallback(() => {
     // Clear localStorage to prevent auto-login
+    logWithTimestamp('Initiating logout process');
     deleteSnap().then(() => {
       // Reset manager state
       setManagers({});
+      logWithTimestamp('Managers reset');
 
       // Reset configuration state
       setConfigStatus('configured');
       setSnapshotLoaded(false);
       setWalletBuilt(false);
+      logWithTimestamp('Configuration and state reset');
+
       router.replace('/')
+      logWithTimestamp('Logout completed, navigating to root');
     })
   }, [deleteSnap]);
 
@@ -726,16 +772,19 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       let appName = domain
       try {
         const url = domain.startsWith('http') ? domain : `https://${domain}/favicon.ico`
+        logWithTimestamp(`Checking image URL for ${domain}`);
         if (await isImageUrl(url)) {
           appIconImageUrl = url
         }
         // Try to parse the app manifest to find the app info
+        logWithTimestamp(`Fetching manifest for ${domain}`);
         const manifest = await parseAppManifest({ domain })
         if (manifest && typeof manifest.name === 'string') {
           appName = manifest.name
         }
       } catch (e) {
         console.error(e)
+        logWithTimestamp(`Error resolving app data for ${domain}`, (e as Error).message);
       }
 
       return { appName, appIconImageUrl, domain }
@@ -745,22 +794,32 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 
   useEffect(() => {
     if (typeof managers?.permissionsManager === 'object') {
+      logWithTimestamp('Checking permissions manager for stored apps');
       (async () => {
+        logWithTimestamp('Fetching stored apps from AsyncStorage');
         const storedApps = await getItem('recentApps')
         console.log('Retrieved from storage', storedApps)
+        logWithTimestamp(`Retrieved from storage: ${storedApps}`);
         if (storedApps) {
           setRecentApps(JSON.parse(storedApps))
+          logWithTimestamp('Recent apps set from storage');
         }
         // Parse out the app data from the domains
+        logWithTimestamp('Fetching app domains');
         const appDomains = await getApps({ permissionsManager: managers.permissionsManager!, adminOriginator })
+        logWithTimestamp('App domains fetched, resolving data');
         const parsedAppData = await resolveAppDataFromDomain({ appDomains })
+        logWithTimestamp('App data resolved, sorting');
         parsedAppData.sort((a, b) => a.appName.localeCompare(b.appName))
         setRecentApps(parsedAppData)
 
         // store for next app load
+        logWithTimestamp('Storing apps in AsyncStorage');
         await setItem('recentApps', JSON.stringify(parsedAppData))
+        logWithTimestamp('Stored apps processing complete');
       })()
     }
+    logWithTimestamp('Permissions manager check complete');
   }, [adminOriginator, managers?.permissionsManager, getItem, setItem])
 
   const contextValue = useMemo<WalletContextValue>(() => ({
@@ -826,3 +885,4 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
 }
 
 export const useWallet = () => useContext(WalletContext);
+
