@@ -440,6 +440,13 @@ const navFwd = useCallback(() => {
       tabStore.newTab()
     }
   }, [])
+  useEffect(() => {
+    if (activeTab && !addressEditing.current) {
+      setAddressText(activeTab.url)
+    }
+  }, [activeTab.id, activeTab.url])
+
+
   const dismissKeyboard = useCallback(() => {
     addressInputRef.current?.blur();
     Keyboard.dismiss();
@@ -1255,9 +1262,14 @@ const navFwd = useCallback(() => {
               onFocus={() => {
                 addressEditing.current = true
                 setAddressFocused(true)
+                // Set the text to empty if it's the new tab URL
+                if (activeTab.url === kNEW_TAB_URL) {
+                  setAddressText('')
+                }
                 setTimeout(() => {
+                  const textToSelect = activeTab.url === kNEW_TAB_URL ? '' : addressText
                   addressInputRef.current?.setNativeProps({
-                    selection: { start: 0, end: addressText.length }
+                    selection: { start: 0, end: textToSelect.length }
                   })
                 }, 0)
               }}
@@ -1265,6 +1277,10 @@ const navFwd = useCallback(() => {
                 addressEditing.current = false
                 setAddressFocused(false)
                 setAddressSuggestions([])
+                // Reset to the actual URL when losing focus
+                if (!addressEditing.current) {
+                  setAddressText(activeTab.url)
+                }
               }}
               onSubmitEditing={onAddressSubmit}
               autoCapitalize="none"
@@ -1348,6 +1364,7 @@ const navFwd = useCallback(() => {
           {showTabsView && (
             <TabsView
               onDismiss={() => setShowTabsView(false)}
+              setAddressText={setAddressText}
               colors={colors}
             />
           )}
@@ -1504,9 +1521,11 @@ export default observer(Browser)
 
 const TabsViewBase = ({
   onDismiss,
+  setAddressText,
   colors
 }: {
   onDismiss: () => void
+  setAddressText: (text: string) => void
   colors: any
 }) => {
   // Use the imported tabStore directly
@@ -1518,7 +1537,7 @@ const TabsViewBase = ({
 // Animation for new tab button
   const newTabScale = useRef(new Animated.Value(1)).current
 
-  const handleNewTabPress = useCallback(() => {
+   const handleNewTabPress = useCallback(() => {
     // Scale animation
     Animated.sequence([
       Animated.timing(newTabScale, {
@@ -1534,9 +1553,11 @@ const TabsViewBase = ({
     ]).start(() => {
       // Create new tab and dismiss view after animation
       tabStore.newTab()
+      // Reset address text to new tab URL
+      setAddressText(kNEW_TAB_URL)
       onDismiss()
     })
-  }, [newTabScale, onDismiss])
+  }, [newTabScale, onDismiss, setAddressText])
 
   const renderItem = ({ item }: { item: Tab }) => {
   const renderRightActions = (
