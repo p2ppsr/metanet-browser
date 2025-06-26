@@ -21,6 +21,7 @@
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-clipboard/clipboard": "^1.16.2",
+    "@react-native-community/slider": "4.5.6",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/material-top-tabs": "^7.2.14",
@@ -31,8 +32,10 @@
     "expo-clipboard": "~7.1.4",
     "expo-constants": "~17.1.6",
     "expo-crypto": "~14.1.4",
-    "expo-device": "^7.1.4",
     "expo-dev-client": "~5.2.0",
+    "expo-device": "^7.1.4",
+    "expo-firebase-analytics": "^8.0.0",
+    "expo-firebase-remote-config": "^2.0.0",
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
     "expo-image": "~2.3.0",
@@ -46,6 +49,7 @@
     "expo-symbols": "~0.4.4",
     "expo-system-ui": "~5.0.7",
     "expo-web-browser": "~14.1.6",
+    "firebase": "^11.9.1",
     "fuse.js": "^7.1.0",
     "idb": "^8.0.3",
     "mobx": "^6.13.7",
@@ -67,8 +71,7 @@
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
     "react-toastify": "^11.0.5",
-    "watchman": "^1.0.0",
-    "@react-native-community/slider": "4.5.6"
+    "watchman": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
