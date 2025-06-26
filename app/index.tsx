@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView , Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import ConfigModal from '@/components/ConfigModal';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +9,7 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 import { Utils } from '@bsv/sdk';
+import analytics from '@react-native-firebase/analytics';
 
 export default function LoginScreen() {
   // Get theme colors
@@ -21,8 +22,15 @@ export default function LoginScreen() {
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
     try {
+      await analytics().logEvent('get_started_tapped', {
+        screen: 'browser', variant: 'A'
+      });
+    } catch (error) {
+      console.error('Failed to log event', error);
+    }
+    try {
       setLoading(true)
-      
+
       // Fetch WAB info
       const res = await fetch(`${selectedWabUrl}/info`)
       if (!res.ok) {
@@ -43,7 +51,7 @@ export default function LoginScreen() {
         return
       }
       await setItem('finalConfig', JSON.stringify(finalConfig))
-      
+
       // if there's a wallet snapshot, load that
       const snap = await getSnap()
       if (!snap) {
@@ -51,7 +59,7 @@ export default function LoginScreen() {
         return
       }
       await managers?.walletManager?.loadSnapshot(snap)
-      
+
       router.replace('/browser')
       return
     } catch (error) {
@@ -89,7 +97,7 @@ export default function LoginScreen() {
       }
       const snapArr = Utils.toArray(snap, 'base64');
       await managers?.walletManager?.loadSnapshot(snapArr);
-      
+
       router.replace('/browser');
     } catch (error) {
       console.error(error);
@@ -121,39 +129,39 @@ export default function LoginScreen() {
         </View>
         {!initializing && (
           <>
-        <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>Metanet</Text>
-        <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
-          Browser with identity and payments built in
-        </Text>
-        
-        <TouchableOpacity 
-          style={[styles.getStartedButton, { backgroundColor: colors.primary, opacity: loading ? 0.2 : 1 }]} 
-          onPress={handleGetStarted}
-          disabled={loading}
-        >
-          <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>Get Started</Text>
-        </TouchableOpacity>
-        
-        <Text style={[styles.termsText, { color: colors.textSecondary }]}>
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </Text>
-        
-        <TouchableOpacity 
-          style={styles.configButton} 
-          onPress={handleConfig}
-        >
-          <View style={styles.configIconContainer}>
-            <Ionicons name="settings-outline" size={20} color={colors.secondary} />
-            <Text style={styles.configButtonText}>Configure Providers</Text>
-          </View>
-        </TouchableOpacity>
+            <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>Metanet</Text>
+            <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
+              Browser with identity and payments built in
+            </Text>
 
-        <ConfigModal
-          visible={showConfig}
-          onDismiss={handleConfigDismiss}
-          onConfigured={handleConfigured}
-        />
-        </>
+            <TouchableOpacity
+              style={[styles.getStartedButton, { backgroundColor: colors.primary, opacity: loading ? 0.2 : 1 }]}
+              onPress={handleGetStarted}
+              disabled={loading}
+            >
+              <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>Get Started</Text>
+            </TouchableOpacity>
+
+            <Text style={[styles.termsText, { color: colors.textSecondary }]}>
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </Text>
+
+            <TouchableOpacity
+              style={styles.configButton}
+              onPress={handleConfig}
+            >
+              <View style={styles.configIconContainer}>
+                <Ionicons name="settings-outline" size={20} color={colors.secondary} />
+                <Text style={styles.configButtonText}>Configure Providers</Text>
+              </View>
+            </TouchableOpacity>
+
+            <ConfigModal
+              visible={showConfig}
+              onDismiss={handleConfigDismiss}
+              onConfigured={handleConfigured}
+            />
+          </>
         )}
       </View>
     </SafeAreaView>

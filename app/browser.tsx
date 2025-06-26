@@ -49,7 +49,6 @@ import SettingsScreen from './settings'
 import IdentityScreen from './identity'
 import SecurityScreen from './security'
 import TrustScreen from './trust'
-import { logEvent } from 'expo-firebase-analytics'
 
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
@@ -892,7 +891,6 @@ const navFwd = useCallback(() => {
   const translateY = useRef(new Animated.Value(drawerFullHeight)).current
 
   const closeStarDrawer = useCallback(() => {
-    logEvent('star-drawer-closed', { screen: 'browser', variant: 'A' })
     const runCloseDrawer = () => {
       Keyboard.dismiss();
       setIsDrawerAnimating(true);

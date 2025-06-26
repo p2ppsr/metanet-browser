@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { UserContextProvider, NativeHandlers } from '../context/UserContext';
 import packageJson from '../package.json';
@@ -15,6 +15,7 @@ import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal'
 import { useDeepLinking } from '@/hooks/useDeepLinking';
 import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt';
 import * as Notifications from 'expo-notifications';
+import analytics from '@react-native-firebase/analytics';
 
 const nativeHandlers: NativeHandlers = {
   isFocused: async () => false,
@@ -56,6 +57,18 @@ function DeepLinkHandler() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    const logAppOpen = async () => {
+      try {
+        await analytics().logAppOpen();
+        console.log('Firebase Analytics: App Open event logged successfully.');
+      } catch (error) {
+        console.error('Firebase Analytics: Error logging App Open event', error);
+      }
+    };
+    logAppOpen();
+  }, []);
+
   return (
     <LocalStorageProvider>
       <UserContextProvider
