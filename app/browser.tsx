@@ -49,7 +49,7 @@ import SettingsScreen from './settings'
 import IdentityScreen from './identity'
 import SecurityScreen from './security'
 import TrustScreen from './trust'
-import { logEvent } from 'firebase/analytics'
+import { logEvent } from '@/utils/firebase'
 
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
@@ -62,7 +62,6 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking';
 import { useWebAppManifest } from '@/hooks/useWebAppManifest';
 import * as Notifications from 'expo-notifications';
-import { analytics } from '@/utils/firebase'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -893,7 +892,7 @@ const navFwd = useCallback(() => {
   const translateY = useRef(new Animated.Value(drawerFullHeight)).current
 
   const closeStarDrawer = useCallback(() => {
-    logEvent(analytics, 'star-drawer-closed', { screen: 'browser', variant: 'A' })
+    logEvent('star-drawer-closed', { screen: 'browser', variant: 'A' })
     const runCloseDrawer = () => {
       Keyboard.dismiss();
       setIsDrawerAnimating(true);
