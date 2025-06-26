@@ -1035,7 +1035,7 @@ const navFwd = useCallback(() => {
                bookmark.url !== kNEW_TAB_URL && 
                isValidUrl(bookmark.url) &&
                !bookmark.url.includes('about:blank')
-      })}
+      }).reverse()}
       setStartingUrl={handleSetStartingUrl}
       onRemoveBookmark={removeBookmark}
       onRemoveDefaultApp={removeDefaultApp}
@@ -1223,12 +1223,12 @@ const navFwd = useCallback(() => {
                     bookmark.url !== kNEW_TAB_URL && 
                     isValidUrl(bookmark.url) &&
                     !bookmark.url.includes('about:blank')
-            })}
+            }).reverse() }
+            
             setStartingUrl={url => updateActiveTab({ url })}
             onRemoveBookmark={removeBookmark}
             onRemoveDefaultApp={removeDefaultApp}
             removedDefaultApps={removedDefaultApps}
-            limitBookmarks={6}
             homepageSettings={homepageSettings}
             onUpdateHomepageSettings={updateHomepageSettings}
           />
@@ -2173,7 +2173,7 @@ const styles = StyleSheet.create({
   },
   newTabBtn: {
     width: 56,
-    height: 56,
+    height: 46,
     borderRadius: 28,
     backgroundColor: '#4c4c4c',
     justifyContent: 'center',

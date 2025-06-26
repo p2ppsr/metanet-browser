@@ -56,6 +56,7 @@ export default function PasswordScreen() {
       if (managers!.walletManager!.authenticated) {
         const snapshot = managers!.walletManager!.saveSnapshot()
         await setSnap(snapshot)
+        router.dismissAll();          
         router.replace('/browser');
       } else {
         Alert.alert('Error', 'Authentication failed, maybe password is incorrect?')

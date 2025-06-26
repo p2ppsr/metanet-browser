@@ -51,7 +51,7 @@ export default function LoginScreen() {
         return
       }
       await managers?.walletManager?.loadSnapshot(snap)
-      
+      router.dismissAll();
       router.replace('/browser')
       return
     } catch (error) {
@@ -89,7 +89,7 @@ export default function LoginScreen() {
       }
       const snapArr = Utils.toArray(snap, 'base64');
       await managers?.walletManager?.loadSnapshot(snapArr);
-      
+      router.dismissAll()
       router.replace('/browser');
     } catch (error) {
       console.error(error);
@@ -104,6 +104,7 @@ export default function LoginScreen() {
         const snap = await getSnap()
         if (snap) {
           await managers?.walletManager?.loadSnapshot(snap)
+          router.dismissAll()
           router.replace('/browser')
         }
       } finally {

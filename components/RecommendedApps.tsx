@@ -330,8 +330,8 @@ export const RecommendedApps = ({
                   processedBookmarks, 
                   'bookmarks'
                 )}
-                {(homepageSettings?.showRecentApps !== false) && renderSection('Recent Apps', processedRecentApps, 'recent')}
-                {(homepageSettings?.showRecommendedApps !== false) && renderSection('Recommended Apps', filteredDefaultApps, 'default')}
+                {(homepageSettings?.showRecentApps !== false) && renderSection('Recent', processedRecentApps, 'recent')}
+                {(homepageSettings?.showRecommendedApps !== false) && renderSection('Recommended', filteredDefaultApps, 'default')}
               </>
             )}
           </>
@@ -387,7 +387,7 @@ export const RecommendedApps = ({
                     color={homepageSettings.showRecentApps ? colors.primary : colors.textSecondary} 
                   />
                   <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
-                    Recent Apps
+                    Recent
                   </Text>
                 </TouchableOpacity>
 
@@ -402,7 +402,7 @@ export const RecommendedApps = ({
                     color={homepageSettings.showRecommendedApps ? colors.primary : colors.textSecondary} 
                   />
                   <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
-                    Recommended Apps
+                    Recommended
                   </Text>
                 </TouchableOpacity>
               </View>
