@@ -18,6 +18,7 @@ import {
   LayoutAnimation,
   ScrollView,
   Modal as RNModal,
+  BackHandler,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -289,7 +290,9 @@ function Browser() {
 
   const addressInputRef = useRef<TextInput>(null);
   const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
-  const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();  const [showBalance, setShowBalance] = useState(false);
+  const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();
+  const [showBalance, setShowBalance] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Balance handling - only delay on first open
   useEffect(() => {
@@ -655,6 +658,77 @@ const navFwd = useCallback(() => {
       };
     }
 
+    // Fullscreen API polyfill
+    if (!document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen = function() {
+        return new Promise((resolve, reject) => {
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'REQUEST_FULLSCREEN'
+          }));
+          
+          const handler = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.type === 'FULLSCREEN_RESPONSE') {
+                window.removeEventListener('message', handler);
+                if (data.success) {
+                  resolve();
+                } else {
+                  reject(new Error('Fullscreen request denied'));
+                }
+              }
+            } catch (e) {}
+          };
+          window.addEventListener('message', handler);
+        });
+      };
+    }
+
+    if (!document.exitFullscreen) {
+      document.exitFullscreen = function() {
+        return new Promise((resolve) => {
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'EXIT_FULLSCREEN'
+          }));
+          
+          const handler = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.type === 'FULLSCREEN_RESPONSE') {
+                window.removeEventListener('message', handler);
+                resolve();
+              }
+            } catch (e) {}
+          };
+          window.addEventListener('message', handler);
+        });
+      };
+    }
+
+    // Define fullscreen properties
+    Object.defineProperty(document, 'fullscreenElement', {
+      get: function() {
+        return window.__fullscreenElement || null;
+      }
+    });
+
+    Object.defineProperty(document, 'fullscreen', {
+      get: function() {
+        return !!window.__fullscreenElement;
+      }
+    });
+
+    // Listen for fullscreen changes from native
+    window.addEventListener('message', function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'FULLSCREEN_CHANGE') {
+          window.__fullscreenElement = data.isFullscreen ? document.documentElement : null;
+          document.dispatchEvent(new Event('fullscreenchange'));
+        }
+      } catch (e) {}
+    });
+
     // Console logging
     const originalLog = console.log;
     const originalWarn = console.warn;
@@ -756,6 +830,52 @@ const navFwd = useCallback(() => {
             console.debug(logPrefix, ...msg.args);
             break;
         }
+        return;
+      }
+
+      // Handle fullscreen requests
+      if (msg.type === 'REQUEST_FULLSCREEN') {
+        console.log('Fullscreen requested by website');
+        setIsFullscreen(true);
+        
+        // Send success response back to webview
+        activeTab.webviewRef.current?.injectJavaScript(`
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'FULLSCREEN_RESPONSE',
+              success: true
+            })
+          }));
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'FULLSCREEN_CHANGE',
+              isFullscreen: true
+            })
+          }));
+        `);
+        return;
+      }
+
+      // Handle exit fullscreen requests
+      if (msg.type === 'EXIT_FULLSCREEN') {
+        console.log('Exit fullscreen requested by website');
+        setIsFullscreen(false);
+        
+        // Send response back to webview
+        activeTab.webviewRef.current?.injectJavaScript(`
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'FULLSCREEN_RESPONSE',
+              success: true
+            })
+          }));
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'FULLSCREEN_CHANGE',
+              isFullscreen: false
+            })
+          }));
+        `);
         return;
       }
 
@@ -1208,6 +1328,31 @@ const navFwd = useCallback(() => {
   const showAddressBar = !keyboardVisible || addressFocused
   const showBottomBar = !(keyboardVisible && addressFocused)
 
+  // Exit fullscreen on back button or gesture when in fullscreen
+  useEffect(() => {
+    if (isFullscreen) {
+      const backHandler = () => {
+        setIsFullscreen(false);
+        // Notify webview that fullscreen exited
+        activeTab.webviewRef.current?.injectJavaScript(`
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'FULLSCREEN_CHANGE',
+              isFullscreen: false
+            })
+          }));
+        `);
+        return true; // Prevent default back behavior
+      };
+      
+      // Add back button listener for Android
+      if (Platform.OS === 'android') {
+        const subscription = BackHandler.addEventListener('hardwareBackPress', backHandler);
+        return () => subscription.remove();
+      }
+    }
+  }, [isFullscreen, activeTab.webviewRef]);
+
   const starDrawerAnimatedStyle = useMemo(() => ([
     styles.starDrawer,
     {
@@ -1238,11 +1383,13 @@ const navFwd = useCallback(() => {
               backgroundColor: colors.inputBackground,
               paddingBottom: addressFocused && keyboardVisible
                 ? 0
-                : insets.bottom
+                : isFullscreen 
+                  ? 0 
+                  : insets.bottom
             }
           ]}
         >
-          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <StatusBar style={isDark ? 'light' : 'dark'} hidden={isFullscreen} />
 
           {activeTab.url === kNEW_TAB_URL ? (
             <RecommendedApps
@@ -1265,6 +1412,35 @@ const navFwd = useCallback(() => {
               style={{ flex: 1 }}
               {...responderProps}
             >
+              {isFullscreen && (
+                <TouchableOpacity
+                  style={{
+                    position: 'absolute',
+                    top: insets.top + 10,
+                    right: 20,
+                    zIndex: 1000,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    borderRadius: 20,
+                    width: 40,
+                    height: 40,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                  onPress={() => {
+                    setIsFullscreen(false);
+                    activeTab.webviewRef.current?.injectJavaScript(`
+                      window.dispatchEvent(new MessageEvent('message', {
+                        data: JSON.stringify({
+                          type: 'FULLSCREEN_CHANGE',
+                          isFullscreen: false
+                        })
+                      }));
+                    `);
+                  }}
+                >
+                  <Ionicons name="contract-outline" size={20} color="white" />
+                </TouchableOpacity>
+              )}
               <WebView
                 ref={activeTab.webviewRef}
                 source={{ uri: activeTab.url }}
@@ -1297,20 +1473,21 @@ const navFwd = useCallback(() => {
               />
             </View>
           )}
-          <View
-            onLayout={(e) => setAddressBarHeight(e.nativeEvent.layout.height)}
-            style={[
-              styles.addressBar,
-              {
-                backgroundColor: colors.inputBackground,
-                borderColor: colors.inputBorder,
-                paddingTop: addressFocused && keyboardVisible ? 8 : 12,
-                paddingBottom: addressFocused && keyboardVisible ? 0 : 12,
-                zIndex: 10,
-                elevation: 10
-              }
-            ]}
-          >
+          {!isFullscreen && (
+            <View
+              onLayout={(e) => setAddressBarHeight(e.nativeEvent.layout.height)}
+              style={[
+                styles.addressBar,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                  paddingTop: addressFocused && keyboardVisible ? 8 : 12,
+                  paddingBottom: addressFocused && keyboardVisible ? 0 : 12,
+                  zIndex: 10,
+                  elevation: 10
+                }
+              ]}
+            >
             {!addressFocused && (
               <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
                 <Ionicons name='person-circle-outline' size={22} color={colors.textSecondary} />
@@ -1401,7 +1578,8 @@ const navFwd = useCallback(() => {
               </TouchableOpacity>
             )}
           </View>
-          {addressFocused && addressSuggestions.length > 0 && (
+          )}
+          {!isFullscreen && addressFocused && addressSuggestions.length > 0 && (
             <View
               style={[
                 styles.suggestionBox,
@@ -1450,7 +1628,7 @@ const navFwd = useCallback(() => {
             </View>
           )}
 
-          {showTabsView && (
+          {!isFullscreen && showTabsView && (
             <TabsView
               onDismiss={() => setShowTabsView(false)}
               setAddressText={setAddressText}
@@ -1458,7 +1636,7 @@ const navFwd = useCallback(() => {
             />
           )}
 
-          {(showStarDrawer || isDrawerAnimating) && (
+          {!isFullscreen && (showStarDrawer || isDrawerAnimating) && (
             <View style={StyleSheet.absoluteFill}>
               <Pressable style={styles.backdrop} onPress={closeStarDrawer} />
               <Animated.View
@@ -1486,7 +1664,7 @@ const navFwd = useCallback(() => {
                 </View>
               </Animated.View>
             </View>          )}
-          {showBottomBar && (
+          {!isFullscreen && showBottomBar && (
             <BottomToolbar
               activeTab={activeTab}
               colors={colors}
@@ -1500,7 +1678,7 @@ const navFwd = useCallback(() => {
           )}
 
           <Modal
-            isVisible={showInfoDrawer}
+            isVisible={!isFullscreen && showInfoDrawer}
             onBackdropPress={() => toggleInfoDrawer(false)}
             swipeDirection='down'
             onSwipeComplete={() => toggleInfoDrawer(false)}

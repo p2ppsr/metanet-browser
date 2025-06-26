@@ -107,6 +107,7 @@ export default function LoginScreen() {
           router.dismissAll()
           router.replace('/browser')
         }
+        router.dismissAll()
       } finally {
         setInitializing(false)
       }

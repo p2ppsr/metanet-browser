@@ -716,6 +716,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       setConfigStatus('configured');
       setSnapshotLoaded(false);
       setWalletBuilt(false);
+      router.dismissAll()
       router.replace('/')
     })
   }, [deleteSnap]);
