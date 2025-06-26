@@ -257,22 +257,6 @@ export const RecommendedApps = ({
 
   return (
     <View style={[componentStyles.container, { backgroundColor: colors.paperBackground }]}>
-      {!hideHeader && (
-        <View style={componentStyles.headerContainer}>
-          <Text style={[componentStyles.mainTitle, { color: colors.textPrimary }]}>
-            {showOnlyBookmarks ? 'Bookmarks' : ''}
-          </Text>
-          {!showOnlyBookmarks && onUpdateHomepageSettings && (
-            <TouchableOpacity 
-              onPress={() => setShowCustomizeModal(true)}
-              style={componentStyles.customizeButton}
-            >
-              <Ionicons name="options-outline" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-
       {showOnlyBookmarks && (
         <View style={componentStyles.searchContainer}>
           <TextInput
@@ -336,6 +320,21 @@ export const RecommendedApps = ({
               </>
             )}
           </>
+        )}
+
+        {/* Customize Homepage Button at the bottom */}
+        {!showOnlyBookmarks && onUpdateHomepageSettings && (
+          <View style={componentStyles.customizeSection}>
+            <TouchableOpacity 
+              onPress={() => setShowCustomizeModal(true)}
+              style={[componentStyles.customizeButtonBottom, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}
+            >
+              <Ionicons name="options-outline" size={20} color={colors.textSecondary} />
+              <Text style={[componentStyles.customizeButtonText, { color: colors.textSecondary }]}>
+                Customize Homepage
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       </ScrollView>
 
@@ -502,7 +501,7 @@ export const RecommendedApps = ({
 const componentStyles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 8,
     borderRadius: 12,
   },
   headerContainer: {
@@ -656,6 +655,23 @@ const componentStyles = StyleSheet.create({
   },
   customizeActionText: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  customizeSection: {
+    marginTop: 32,
+    marginBottom: 16,
+  },
+  customizeButtonBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+  },
+  customizeButtonText: {
+    fontSize: 16,
     fontWeight: '600',
   },
   bookmarkLimitControls: {

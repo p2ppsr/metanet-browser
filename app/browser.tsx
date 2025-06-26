@@ -1385,7 +1385,7 @@ const navFwd = useCallback(() => {
                 ? 0
                 : isFullscreen 
                   ? 0 
-                  : insets.bottom
+                  : Platform.OS === 'ios' ? 0 : insets.bottom
             }
           ]}
         >
