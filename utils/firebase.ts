@@ -1,22 +1,13 @@
-import * as Analytics from 'expo-firebase-analytics'
+import { initializeApp } from 'firebase/app';
 
-export const logEvent = async (eventName: string, params?: Record<string, any>) => {
-  try {
-    const safeParams: Record<string, string | number> = {}
-
-    if (params) {
-      for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined && value !== null) {
-          safeParams[key] = typeof value === 'string' || typeof value === 'number'
-            ? value
-            : String(value)
-        }
-      }
-    }
-
-    await Analytics.logEvent(eventName, safeParams)
-    console.log(`[Analytics] ${eventName}`, safeParams)
-  } catch (err) {
-    console.warn(`[Analytics Error] ${eventName}`, err)
-  }
+const firebaseConfig = {
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 }
+
+const app = initializeApp(firebaseConfig);

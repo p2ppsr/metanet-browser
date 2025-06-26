@@ -49,7 +49,7 @@ import SettingsScreen from './settings'
 import IdentityScreen from './identity'
 import SecurityScreen from './security'
 import TrustScreen from './trust'
-import { logEvent } from '@/utils/firebase'
+import { logEvent } from 'expo-firebase-analytics'
 
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
