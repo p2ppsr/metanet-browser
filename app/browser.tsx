@@ -1926,9 +1926,9 @@ const TabsViewBase = ({
             width: ITEM_W,
             height: ITEM_H,
             borderColor:
-              item.id === tabStore.activeTabId ? '#007AFF' : colors.inputBorder,
+              item.id === tabStore.activeTabId ? colors.primary : colors.inputBorder,
             borderWidth: item.id === tabStore.activeTabId ? 3 : StyleSheet.hairlineWidth,
-            backgroundColor: colors.background
+            backgroundColor: colors.paperBackground
           }
         ]}
         onPress={() => {
@@ -1944,7 +1944,7 @@ const TabsViewBase = ({
             width: 24,
             height: 24,
             borderRadius: 12,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backgroundColor: colors.textSecondary + '80',
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 10,
@@ -1955,7 +1955,7 @@ const TabsViewBase = ({
           }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✕</Text>
+          <Text style={{ color: colors.background, fontSize: 14, fontWeight: 'bold' }}>✕</Text>
         </TouchableOpacity>
 
         <View style={{ flex: 1, overflow: 'hidden' }}>
@@ -1976,7 +1976,7 @@ const TabsViewBase = ({
           <View
             style={[
               styles.tabTitleBar,
-              { backgroundColor: colors.paperBackground }
+              { backgroundColor: colors.inputBackground + 'E6' }
             ]}
           >
             <Text
@@ -1993,7 +1993,7 @@ const TabsViewBase = ({
 }
 
   return (
-    <View style={styles.tabsViewContainer}>
+    <View style={[styles.tabsViewContainer, { backgroundColor: colors.background + 'CC' }]}>
       <TouchableWithoutFeedback onPress={onDismiss}>
         <View style={StyleSheet.absoluteFill} />
       </TouchableWithoutFeedback>
@@ -2035,7 +2035,7 @@ const TabsViewBase = ({
             activeOpacity={0.7}
             disabled={isCreatingTab}          
           >
-            <Text style={styles.newTabIcon}>＋</Text>
+            <Text style={[styles.newTabIcon, { color: colors.background }]}>＋</Text>
           </TouchableOpacity>
         </Animated.View>
         
@@ -2044,7 +2044,10 @@ const TabsViewBase = ({
         <TouchableOpacity 
           style={[
             styles.doneButtonStyled,
-            { backgroundColor: colors.textSecondary }
+            { 
+              backgroundColor: colors.primary,
+              shadowColor: colors.textPrimary
+            }
           ]} 
           onPress={onDismiss}
         >
@@ -2325,7 +2328,6 @@ const styles = StyleSheet.create({
   /* tabs view */
   tabsViewContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
     zIndex: 100
   },
   tabPreview: {
@@ -2345,7 +2347,6 @@ const styles = StyleSheet.create({
     right: 0,
     paddingVertical: 6,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)'
   },
   tabsViewFooter: {
   position: 'absolute',
@@ -2402,11 +2403,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 46,
     borderRadius: 28,
-    backgroundColor: '#4c4c4c',
     justifyContent: 'center',
     alignItems: 'center'
   },
-  newTabIcon: { fontSize: 32, color: '#fff', lineHeight: 32 },
+  newTabIcon: { fontSize: 32, lineHeight: 32 },
 
   /* info drawer */
   infoDrawer: {
