@@ -106,6 +106,7 @@ export const RecommendedApps = ({
   const { recentApps } = useWallet();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [isDesktopView, setIsDesktopView] = useState(false);
   
   // Context menu state
   const [contextMenuVisible, setContextMenuVisible] = useState(false);

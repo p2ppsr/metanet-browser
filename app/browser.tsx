@@ -284,6 +284,8 @@ function Browser() {
   const [showStarDrawer, setShowStarDrawer] = useState(false)
   const [starTabIndex, setStarTabIndex] = useState(0);
   const starDrawerAnim = useRef(new Animated.Value(0)).current
+  const [isDesktopView, setIsDesktopView] = useState(false);
+  const [isToggleDesktopCooldown, setIsToggleDesktopCooldown] = useState(false);
 
   const addressInputRef = useRef<TextInput>(null);
   const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
@@ -468,6 +470,28 @@ const navFwd = useCallback(() => {
     activeTab.isLoading
       ? activeTab.webviewRef.current?.stopLoading()
       : activeTab.webviewRef.current?.reload(), [activeTab.isLoading, activeTab.webviewRef])
+
+  const toggleDesktopView = useCallback(() => {
+    // Prevent multiple rapid presses during cooldown
+    if (isToggleDesktopCooldown) return
+    
+    setIsToggleDesktopCooldown(true)
+    setIsDesktopView(prev => !prev)
+    
+    // Reload the current page to apply the new user agent
+    if (activeTab.url !== kNEW_TAB_URL) {
+      activeTab.webviewRef.current?.reload()
+    }
+    
+    // Reset cooldown after reload animation/loading time
+    setTimeout(() => {
+      setIsToggleDesktopCooldown(false)
+    }, 1500) // 1.5 second cooldown to allow for reload
+  }, [activeTab.url, activeTab.webviewRef, isToggleDesktopCooldown])
+
+  // User agent strings
+  const mobileUserAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
+  const desktopUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
 
   function closeTab(id: number) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -1149,6 +1173,10 @@ const navFwd = useCallback(() => {
             security: () => setInfoDrawerRoute('security'),
       trust: () => setInfoDrawerRoute('trust'),
       settings: () => setInfoDrawerRoute('settings'),
+      toggleDesktopView: () => {
+        toggleDesktopView()
+        toggleInfoDrawer(false)
+      },
       addBookmark: () => {
         // Only add bookmark if URL is valid and not new tab page
         if (activeTab.url && 
@@ -1171,7 +1199,7 @@ const navFwd = useCallback(() => {
         setAddressText(kNEW_TAB_URL)
         toggleInfoDrawer(false)
       }
-    }), [activeTab.url, activeTab.title, addBookmark, toggleInfoDrawer, updateActiveTab, setAddressText, addToHomeScreen])
+    }), [activeTab.url, activeTab.title, addBookmark, toggleInfoDrawer, updateActiveTab, setAddressText, addToHomeScreen, toggleDesktopView])
 
   /* -------------------------------------------------------------------------- */
   /*                                  RENDER                                    */
@@ -1244,6 +1272,7 @@ const navFwd = useCallback(() => {
                 onMessage={handleMessage}
                 injectedJavaScript={injectedJavaScript}
                 onNavigationStateChange={handleNavStateChange}
+                userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent;
                   // Ignore favicon errors for about:blank
@@ -1358,6 +1387,19 @@ const navFwd = useCallback(() => {
                 color={colors.textSecondary}
               />
             </TouchableOpacity>
+
+            {!addressFocused && activeTab.url !== kNEW_TAB_URL && (
+              <TouchableOpacity
+                onPress={toggleDesktopView}
+                style={styles.addressBarIcon}
+              >
+                <Ionicons
+                  name={isDesktopView ? 'phone-portrait' : 'desktop'}
+                  size={20}
+                  color={isDesktopView ? colors.primary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+            )}
           </View>
           {addressFocused && addressSuggestions.length > 0 && (
             <View
@@ -1516,6 +1558,13 @@ const navFwd = useCallback(() => {
                     onPress={() => setInfoDrawerRoute('notifications')}
                   />
                   <View style={styles.divider} />
+                  {activeTab.url !== kNEW_TAB_URL && (
+                    <DrawerItem
+                      label={isDesktopView ? 'Switch to Mobile View' : 'Switch to Desktop View'}
+                      icon={isDesktopView ? 'phone-portrait-outline' : 'desktop-outline'}
+                      onPress={drawerHandlers.toggleDesktopView}
+                    />
+                  )}
                   <DrawerItem
                     label='Add Bookmark'
                     icon='star-outline'
