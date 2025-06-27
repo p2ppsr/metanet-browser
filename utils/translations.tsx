@@ -303,6 +303,7 @@ const resources = {
       // Navigation
       search_placeholder: '搜索或输入网站名称',
       search_bookmarks: '搜索书签…',
+      search_results: '搜索结果',
       new_tab: '新标签页',
       back: '后退',
       forward: '前进',
@@ -312,6 +313,7 @@ const resources = {
       // Bookmarks
       bookmark: '书签',
       bookmarks: '书签',
+      add_bookmark: '添加书签',
       remove_bookmark: '移除书签',
       delete_bookmark: '删除书签',
       recent_bookmarks: '最近书签',
@@ -342,6 +344,13 @@ const resources = {
       ok: '确定',
       yes: '是',
       no: '否',
+      
+      // Navigation actions
+      switch_to_mobile_view: '切换到移动视图',
+      switch_to_desktop_view: '切换到桌面视图',
+      add_to_device_homescreen: '添加到设备主屏幕',
+      back_to_homepage: '返回主页',
+      notifications: '通知',
       
       // Browser actions
       clear_browsing_history: '清除浏览历史记录？',
@@ -495,6 +504,8 @@ const resources = {
     translation: {
       // Navigation
       search_placeholder: 'खोजें या साइट का नाम दर्ज करें',
+      search_bookmarks: 'बुकमार्क खोजें…',
+      search_results: 'खोज परिणाम',
       new_tab: 'नया टैब',
       back: 'पीछे',
       forward: 'आगे',
@@ -504,6 +515,7 @@ const resources = {
       // Bookmarks
       bookmark: 'बुकमार्क',
       bookmarks: 'बुकमार्क',
+      add_bookmark: 'बुकमार्क जोड़ें',
       remove_bookmark: 'बुकमार्क हटाएं',
       delete_bookmark: 'बुकमार्क मिटाएं',
       recent_bookmarks: 'हाल के बुकमार्क',
@@ -535,6 +547,13 @@ const resources = {
       yes: 'हाँ',
       no: 'नहीं',
       
+      // Navigation actions
+      switch_to_mobile_view: 'मोबाइल दृश्य पर स्विच करें',
+      switch_to_desktop_view: 'डेस्कटॉप दृश्य पर स्विच करें',
+      add_to_device_homescreen: 'डिवाइस होमस्क्रीन पर जोड़ें',
+      back_to_homepage: 'होमपेज पर वापस',
+      notifications: 'सूचनाएं',
+      
       // Browser actions
       clear_browsing_history: 'ब्राउज़िंग इतिहास साफ़ करें?',
       action_cannot_be_undone: 'यह क्रिया पूर्ववत नहीं की जा सकती।',
@@ -545,6 +564,15 @@ const resources = {
       receive: 'प्राप्त करें',
       wallet: 'वॉलेट',
       identity: 'पहचान',
+      
+      // Identity
+      manage_digital_identity: 'अपनी डिजिटल पहचान और प्रमाण पत्र प्रबंधित करें।',
+      identity_key: 'पहचान कुंजी:',
+      privileged_identity_key: 'विशेषाधिकार प्राप्त पहचान कुंजी:',
+      reveal_key: 'कुंजी प्रकट करें',
+      wallet_manager_not_available: 'वॉलेट प्रबंधक उपलब्ध नहीं',
+      failed_to_reveal_key: 'कुंजी प्रकट करने में विफल',
+      privileged_reason: 'अपनी रोजमर्रा की कुंजी के साथ अपनी विशेषाधिकार प्राप्त पहचान कुंजी प्रकट करें।',
       
       // Settings
       settings: 'सेटिंग्स',
@@ -671,6 +699,8 @@ const resources = {
     translation: {
       // Navigation
       search_placeholder: 'Buscar o ingresar nombre del sitio',
+      search_bookmarks: 'Buscar marcadores…',
+      search_results: 'Resultados de Búsqueda',
       new_tab: 'Nueva Pestaña',
       back: 'Atrás',
       forward: 'Adelante',
@@ -680,6 +710,7 @@ const resources = {
       // Bookmarks
       bookmark: 'Marcador',
       bookmarks: 'Marcadores',
+      add_bookmark: 'Agregar Marcador',
       remove_bookmark: 'Eliminar Marcador',
       delete_bookmark: 'Eliminar Marcador',
       recent_bookmarks: 'Marcadores Recientes',
@@ -778,6 +809,8 @@ const resources = {
     translation: {
       // Navigation
       search_placeholder: 'Rechercher ou saisir le nom du site',
+      search_bookmarks: 'Rechercher dans les signets…',
+      search_results: 'Résultats de Recherche',
       new_tab: 'Nouvel Onglet',
       back: 'Retour',
       forward: 'Suivant',
@@ -787,6 +820,7 @@ const resources = {
       // Bookmarks
       bookmark: 'Signet',
       bookmarks: 'Signets',
+      add_bookmark: 'Ajouter un Signet',
       remove_bookmark: 'Supprimer le Signet',
       delete_bookmark: 'Effacer le Signet',
       recent_bookmarks: 'Signets Récents',
@@ -817,6 +851,13 @@ const resources = {
       ok: 'OK',
       yes: 'Oui',
       no: 'Non',
+      
+      // Navigation actions
+      switch_to_mobile_view: 'Passer à la Vue Mobile',
+      switch_to_desktop_view: 'Passer à la Vue de Bureau',
+      add_to_device_homescreen: 'Ajouter à l\'Écran d\'Accueil',
+      back_to_homepage: 'Retour à la Page d\'Accueil',
+      notifications: 'Notifications',
       
       // Browser actions
       clear_browsing_history: 'Effacer l\'historique de navigation ?',
@@ -907,6 +948,8 @@ const resources = {
     translation: {
       // Navigation
       search_placeholder: 'ابحث أو أدخل اسم الموقع',
+      search_bookmarks: 'البحث في الإشارات المرجعية…',
+      search_results: 'نتائج البحث',
       new_tab: 'علامة تبويب جديدة',
       back: 'رجوع',
       forward: 'التالي',
@@ -916,6 +959,7 @@ const resources = {
       // Bookmarks
       bookmark: 'إشارة مرجعية',
       bookmarks: 'الإشارات المرجعية',
+      add_bookmark: 'إضافة إشارة مرجعية',
       remove_bookmark: 'إزالة الإشارة المرجعية',
       delete_bookmark: 'حذف الإشارة المرجعية',
       recent_bookmarks: 'الإشارات المرجعية الحديثة',
@@ -946,6 +990,13 @@ const resources = {
       ok: 'موافق',
       yes: 'نعم',
       no: 'لا',
+      
+      // Navigation actions
+      switch_to_mobile_view: 'التبديل إلى العرض المحمول',
+      switch_to_desktop_view: 'التبديل إلى عرض سطح المكتب',
+      add_to_device_homescreen: 'إضافة إلى الشاشة الرئيسية للجهاز',
+      back_to_homepage: 'العودة إلى الصفحة الرئيسية',
+      notifications: 'الإشعارات',
       
       // Browser actions
       clear_browsing_history: 'مسح تاريخ التصفح؟',
@@ -1029,6 +1080,8 @@ const resources = {
     translation: {
       // Navigation
       search_placeholder: 'Pesquisar ou digitar nome do site',
+      search_bookmarks: 'Pesquisar favoritos…',
+      search_results: 'Resultados da Pesquisa',
       new_tab: 'Nova Aba',
       back: 'Voltar',
       forward: 'Avançar',
@@ -1038,6 +1091,7 @@ const resources = {
       // Bookmarks
       bookmark: 'Favorito',
       bookmarks: 'Favoritos',
+      add_bookmark: 'Adicionar Favorito',
       remove_bookmark: 'Remover Favorito',
       delete_bookmark: 'Excluir Favorito',
       recent_bookmarks: 'Favoritos Recentes',
@@ -1068,6 +1122,13 @@ const resources = {
       ok: 'OK',
       yes: 'Sim',
       no: 'Não',
+      
+      // Navigation actions
+      switch_to_mobile_view: 'Alternar para Visualização Móvel',
+      switch_to_desktop_view: 'Alternar para Visualização Desktop',
+      add_to_device_homescreen: 'Adicionar à Tela Inicial do Dispositivo',
+      back_to_homepage: 'Voltar à Página Inicial',
+      notifications: 'Notificações',
       
       // Browser actions
       clear_browsing_history: 'Limpar histórico de navegação?',
@@ -1158,6 +1219,8 @@ const resources = {
     translation: {
       // Navigation
       search_placeholder: 'অনুসন্ধান করুন বা সাইটের নাম লিখুন',
+      search_bookmarks: 'বুকমার্ক অনুসন্ধান করুন…',
+      search_results: 'অনুসন্ধানের ফলাফল',
       new_tab: 'নতুন ট্যাব',
       back: 'পেছনে',
       forward: 'সামনে',
@@ -1167,6 +1230,7 @@ const resources = {
       // Bookmarks
       bookmark: 'বুকমার্ক',
       bookmarks: 'বুকমার্কসমূহ',
+      add_bookmark: 'বুকমার্ক যোগ করুন',
       remove_bookmark: 'বুকমার্ক সরান',
       delete_bookmark: 'বুকমার্ক মুছুন',
       recent_bookmarks: 'সাম্প্রতিক বুকমার্ক',
@@ -1184,6 +1248,7 @@ const resources = {
       recent: 'সাম্প্রতিক',
       recommended: 'প্রস্তাবিত',
       customize_homepage: 'হোমপেজ কাস্টমাইজ করুন',
+      customize_homepage_description: 'আপনার হোমপেজে বিভাগ দেখান বা লুকান',
       show_bookmarks: 'বুকমার্ক দেখান',
       show_recent_apps: 'সাম্প্রতিক অ্যাপস দেখান',
       show_recommended_apps: 'প্রস্তাবিত অ্যাপস দেখান',
@@ -1196,6 +1261,13 @@ const resources = {
       ok: 'ঠিক আছে',
       yes: 'হ্যাঁ',
       no: 'না',
+      
+      // Navigation actions
+      switch_to_mobile_view: 'মোবাইল ভিউতে পরিবর্তন করুন',
+      switch_to_desktop_view: 'ডেস্কটপ ভিউতে পরিবর্তন করুন',
+      add_to_device_homescreen: 'ডিভাইস হোমস্ক্রিনে যোগ করুন',
+      back_to_homepage: 'হোমপেজে ফিরে যান',
+      notifications: 'বিজ্ঞপ্তি',
       
       // Browser actions
       clear_browsing_history: 'ব্রাউজিং ইতিহাস মুছবেন?',
@@ -1279,6 +1351,8 @@ const resources = {
     translation: {
       // Navigation
       search_placeholder: 'Поиск или ввод названия сайта',
+      search_bookmarks: 'Поиск закладок…',
+      search_results: 'Результаты Поиска',
       new_tab: 'Новая Вкладка',
       back: 'Назад',
       forward: 'Вперед',
@@ -1288,6 +1362,7 @@ const resources = {
       // Bookmarks
       bookmark: 'Закладка',
       bookmarks: 'Закладки',
+      add_bookmark: 'Добавить Закладку',
       remove_bookmark: 'Удалить Закладку',
       delete_bookmark: 'Удалить Закладку',
       recent_bookmarks: 'Недавние Закладки',
@@ -1305,6 +1380,7 @@ const resources = {
       recent: 'Недавние',
       recommended: 'Рекомендуемые',
       customize_homepage: 'Настроить Главную Страницу',
+      customize_homepage_description: 'Показать или скрыть разделы на главной странице',
       show_bookmarks: 'Показать Закладки',
       show_recent_apps: 'Показать Недавние Приложения',
       show_recommended_apps: 'Показать Рекомендуемые Приложения',
@@ -1317,6 +1393,13 @@ const resources = {
       ok: 'OK',
       yes: 'Да',
       no: 'Нет',
+      
+      // Navigation actions
+      switch_to_mobile_view: 'Переключить на Мобильный Вид',
+      switch_to_desktop_view: 'Переключить на Вид Рабочего Стола',
+      add_to_device_homescreen: 'Добавить на Главный Экран Устройства',
+      back_to_homepage: 'Вернуться на Главную Страницу',
+      notifications: 'Уведомления',
       
       // Browser actions
       clear_browsing_history: 'Очистить историю браузера?',
@@ -1400,6 +1483,8 @@ const resources = {
     translation: {
       // Navigation
       search_placeholder: 'Cari atau masukkan nama situs',
+      search_bookmarks: 'Cari bookmark…',
+      search_results: 'Hasil Pencarian',
       new_tab: 'Tab Baru',
       back: 'Kembali',
       forward: 'Maju',
@@ -1409,6 +1494,7 @@ const resources = {
       // Bookmarks
       bookmark: 'Bookmark',
       bookmarks: 'Bookmark',
+      add_bookmark: 'Tambah Bookmark',
       remove_bookmark: 'Hapus Bookmark',
       delete_bookmark: 'Hapus Bookmark',
       recent_bookmarks: 'Bookmark Terbaru',
@@ -1426,6 +1512,7 @@ const resources = {
       recent: 'Terbaru',
       recommended: 'Direkomendasikan',
       customize_homepage: 'Sesuaikan Beranda',
+      customize_homepage_description: 'Tampilkan atau sembunyikan bagian di beranda Anda',
       show_bookmarks: 'Tampilkan Bookmark',
       show_recent_apps: 'Tampilkan Aplikasi Terbaru',
       show_recommended_apps: 'Tampilkan Aplikasi yang Direkomendasikan',
@@ -1438,6 +1525,13 @@ const resources = {
       ok: 'OK',
       yes: 'Ya',
       no: 'Tidak',
+      
+      // Navigation actions
+      switch_to_mobile_view: 'Beralih ke Tampilan Mobile',
+      switch_to_desktop_view: 'Beralih ke Tampilan Desktop',
+      add_to_device_homescreen: 'Tambahkan ke Layar Utama Perangkat',
+      back_to_homepage: 'Kembali ke Beranda',
+      notifications: 'Notifikasi',
       
       // Browser actions
       clear_browsing_history: 'Hapus riwayat penjelajahan?',
