@@ -143,6 +143,17 @@ const resources = {
       yes: 'Yes',
       no: 'No',
       
+      // Navigation actions
+      switch_to_mobile_view: 'Switch to Mobile View',
+      switch_to_desktop_view: 'Switch to Desktop View',
+      add_to_device_homescreen: 'Add to Device Homescreen',
+      back_to_homepage: 'Back to Homepage',
+      notifications: 'Notifications',
+      
+      // Browser actions
+      clear_browsing_history: 'Clear browsing history?',
+      action_cannot_be_undone: 'This action cannot be undone.',
+      
       // Wallet
       balance: 'Balance',
       send: 'Send',
@@ -150,23 +161,86 @@ const resources = {
       wallet: 'Wallet',
       identity: 'Identity',
       
+      // Identity
+      manage_digital_identity: 'Manage your digital identity and credentials.',
+      identity_key: 'Identity Key:',
+      privileged_identity_key: 'Privileged Identity Key:',
+      reveal_key: 'Reveal Key',
+      wallet_manager_not_available: 'Wallet manager not available',
+      failed_to_reveal_key: 'Failed to reveal key',
+      privileged_reason: 'Reveal your privileged identity key alongside your everyday one.',
+      
       // Settings
       settings: 'Settings',
       theme: 'Theme',
       currency_format: 'Currency Format',
       language: 'Language',
+      appearance: 'Appearance',
+      choose_theme_mode: 'Choose your preferred theme mode',
+      light: 'Light',
+      dark: 'Dark',
+      system_default: 'System Default',
+      account: 'Account',
+      logout: 'Logout',
+      
+      // Security
+      security: 'Security',
+      manage_password_recovery: 'Manage your password and recovery key.',
+      change_password: 'Change Password',
+      change_password_prompt: 'You will be prompted to enter your old password to confirm the change.',
+      new_password: 'New password',
+      retype_password: 'Retype password',
+      forgot_password: 'Forgot Password?',
+      forgot_password_flow: 'Forgot password flow',
+      change: 'Change',
+      recovery_key: 'Recovery Key',
+      recovery_key_description: 'You will need your recovery key if you forget your password or lose your phone.',
+      view: 'View',
+      change_recovery_key: 'Change recovery key (mock)',
+      password_too_short: 'Password too short',
+      passwords_do_not_match: 'Passwords do not match',
+      success: 'Success',
+      password_changed_mock: 'Password changed (mock)',
+      recovery_key_mock: '•••••••••••••• (mock)',
       
       // Notifications
       notification_permission: 'Notification Permission',
       allow_notifications: 'Allow notifications from this site?',
       allow: 'Allow',
       block: 'Block',
+      allow_notifications_question: 'Allow notifications?',
+      wants_to_send_notifications: 'wants to send you notifications',
+      can_send_notifications_about: 'This site can send you notifications about:',
+      breaking_news_updates: '• Breaking news and updates',
+      messages_activity: '• Messages and activity', 
+      reminders_alerts: '• Reminders and alerts',
+      change_in_settings: 'You can change this in Settings at any time.',
+      requesting: 'Requesting...',
       
       // Errors
       error_loading_page: 'Error loading page',
       no_internet: 'No internet connection',
       invalid_url: 'Invalid URL',
       something_went_wrong: 'Something went wrong',
+      error: 'Error',
+      configuration_error: 'Configuration Error',
+      could_not_fetch_wallet_config: 'Could not fetch wallet configuration:',
+      failed_to_save_config: 'Failed to save configuration. Please try again.',
+      
+      // Configuration
+      configuration: 'Configuration',
+      save: 'Save',
+      wallet_auth_backend: 'Wallet Authentication Backend (WAB)',
+      wab_description: 'Provides 2 of 3 backup and recovery functionality for your root key.',
+      wab_url: 'WAB URL',
+      enter_wab_url: 'Enter WAB URL',
+      refresh_info: 'Refresh Info',
+      phone_verification_service: 'Service which will be used to verify your phone number',
+      bsv_network: 'BSV Network',
+      wallet_storage_provider: 'Wallet Storage Provider',
+      storage_description: 'Used for your transactions and metadata storage.',
+      storage_url: 'Storage URL',
+      enter_storage_url: 'Enter Storage URL',
       
       // States
       loading: 'Loading...',
@@ -176,6 +250,45 @@ const resources = {
       // Units
       satoshis: 'satoshis',
       sats: 'sats',
+      
+      // Trust
+      trust_network: 'Trust Network',
+      trusted_origins: 'Trusted Origins',
+      manage_trust_relationships: 'Manage your trust relationships and certifier network.',
+      search_trusted_origins: 'Search trusted origins…',
+      no_trusted_origins: 'No trusted origins yet.',
+      trusted: 'Trusted',
+      
+      // Auth - Password
+      enter_password: 'Enter Password',
+      enter_password_continue: 'Please enter your password to continue',
+      password: 'Password',
+      password_min_chars: 'Password must be at least 6 characters',
+      continue: 'Continue',
+      forgot_password_link: 'Forgot password?',
+      auth_failed_maybe_password: 'Authentication failed, maybe password is incorrect?',
+      auth_failed_try_again: 'Authentication failed. Please try again.',
+      
+      // Auth - Phone
+      enter_phone_number: 'Enter your phone number',
+      send_verification_code: "We'll send you a verification code",
+      phone_number: 'Phone number',
+      select_country: 'Select Country',
+      terms_privacy_agree: 'By continuing, you agree to our Terms of Service and Privacy Policy',
+      
+      // Auth - OTP
+      verification_code: 'Verification Code',
+      enter_6_digit_code: 'Enter the 6-digit code sent to',
+      didnt_receive_code: "Didn't receive the code?",
+      resend_code: 'Resend Code',
+      resend_in: 'Resend in',
+      change_phone_number: 'Change Phone Number',
+      verification_failed: 'Verification Failed',
+      code_incorrect_try_again: 'The code you entered is incorrect. Please try again.',
+      code_sent: 'Code Sent',
+      new_verification_code_sent: 'A new verification code has been sent to your phone.',
+      failed_to_resend: 'Failed to resend verification code. Please try again.',
+      failed_resend_code: 'Failed to resend verification code. Please try again.',
     }
   },
   zh: {
@@ -223,6 +336,10 @@ const resources = {
       yes: '是',
       no: '否',
       
+      // Browser actions
+      clear_browsing_history: '清除浏览历史记录？',
+      action_cannot_be_undone: '此操作无法撤销。',
+      
       // Wallet
       balance: '余额',
       send: '发送',
@@ -247,6 +364,25 @@ const resources = {
       no_internet: '无网络连接',
       invalid_url: '无效网址',
       something_went_wrong: '出现错误',
+      error: '错误',
+      configuration_error: '配置错误',
+      could_not_fetch_wallet_config: '无法获取钱包配置：',
+      failed_to_save_config: '保存配置失败。请重试。',
+      
+      // Configuration
+      configuration: '配置',
+      save: '保存',
+      wallet_auth_backend: '钱包身份验证后端 (WAB)',
+      wab_description: '为您的根密钥提供2/3备份和恢复功能。',
+      wab_url: 'WAB URL',
+      enter_wab_url: '输入 WAB URL',
+      refresh_info: '刷新信息',
+      phone_verification_service: '将用于验证您电话号码的服务',
+      bsv_network: 'BSV 网络',
+      wallet_storage_provider: '钱包存储提供商',
+      storage_description: '用于您的交易和元数据存储。',
+      storage_url: '存储 URL',
+      enter_storage_url: '输入存储 URL',
       
       // States
       loading: '加载中...',
@@ -256,6 +392,104 @@ const resources = {
       // Units
       satoshis: '聪',
       sats: '聪',
+      
+      // Trust
+      trust_network: '信任网络',
+      trusted_origins: '可信来源',
+      manage_trust_relationships: '管理您的信任关系和认证网络。',
+      search_trusted_origins: '搜索可信来源…',
+      no_trusted_origins: '暂无可信来源。',
+      trusted: '可信',
+      
+      // Identity
+      manage_digital_identity: '管理您的数字身份和凭证。',
+      identity_key: '身份密钥：',
+      privileged_identity_key: '特权身份密钥：',
+      reveal_key: '显示密钥',
+      wallet_manager_not_available: '钱包管理器不可用',
+      failed_to_reveal_key: '显示密钥失败',
+      privileged_reason: '显示您的特权身份密钥和日常密钥。',
+      
+      // Security
+      security: '安全',
+      manage_password_recovery: '管理您的密码和恢复密钥。',
+      change_password: '更改密码',
+      change_password_prompt: '您将被提示输入旧密码以确认更改。',
+      new_password: '新密码',
+      retype_password: '重新输入密码',
+      forgot_password: '忘记密码？',
+      forgot_password_flow: '忘记密码流程',
+      change: '更改',
+      recovery_key: '恢复密钥',
+      recovery_key_description: '如果您忘记密码或丢失手机，您将需要恢复密钥。',
+      view: '查看',
+      change_recovery_key: '更改恢复密钥（模拟）',
+      password_too_short: '密码太短',
+      passwords_do_not_match: '密码不匹配',
+      success: '成功',
+      password_changed_mock: '密码已更改（模拟）',
+      recovery_key_mock: '•••••••••••••• （模拟）',
+      
+      // Settings (extended)
+      appearance: '外观',
+      choose_theme_mode: '选择您喜欢的主题模式',
+      light: '浅色',
+      dark: '深色',
+      system_default: '系统默认',
+      account: '账户',
+      logout: '退出登录',
+      
+      // Notifications (extended)
+      allow_notifications_question: '允许通知？',
+      wants_to_send_notifications: '想要向您发送通知',
+      can_send_notifications_about: '此网站可以向您发送以下通知：',
+      breaking_news_updates: '• 突发新闻和更新',
+      messages_activity: '• 消息和活动',
+      reminders_alerts: '• 提醒和警报',
+      change_in_settings: '您可以随时在设置中更改此选项。',
+      requesting: '请求中...',
+      
+      // Navigation (extended)
+      search_results: '搜索结果',
+      add_bookmark: '添加书签',
+      
+      // Navigation actions
+      switch_to_mobile_view: '切换到移动视图',
+      switch_to_desktop_view: '切换到桌面视图',
+      add_to_device_homescreen: '添加到设备主屏幕',
+      back_to_homepage: '返回主页',
+      notifications: '通知',
+      
+      // Auth - Password
+      enter_password: '输入密码',
+      enter_password_continue: '请输入您的密码以继续',
+      password: '密码',
+      password_min_chars: '密码必须至少6个字符',
+      continue: '继续',
+      forgot_password_link: '忘记密码？',
+      auth_failed_maybe_password: '验证失败，可能密码不正确？',
+      auth_failed_try_again: '验证失败。请重试。',
+      
+      // Auth - Phone
+      enter_phone_number: '输入您的电话号码',
+      send_verification_code: '我们将向您发送验证码',
+      phone_number: '电话号码',
+      select_country: '选择国家',
+      terms_privacy_agree: '继续即表示您同意我们的服务条款和隐私政策',
+      
+      // Auth - OTP
+      verification_code: '验证码',
+      enter_6_digit_code: '输入发送到以下号码的6位数字代码',
+      didnt_receive_code: '没有收到验证码？',
+      resend_code: '重新发送验证码',
+      resend_in: '重新发送时间',
+      change_phone_number: '更改电话号码',
+      verification_failed: '验证失败',
+      code_incorrect_try_again: '您输入的验证码不正确。请重试。',
+      code_sent: '验证码已发送',
+      new_verification_code_sent: '新的验证码已发送到您的手机。',
+      failed_to_resend: '重新发送验证码失败。请重试。',
+      failed_resend_code: '重新发送验证码失败。请重试。',
     }
   },
   hi: {
@@ -302,6 +536,10 @@ const resources = {
       yes: 'हाँ',
       no: 'नहीं',
       
+      // Browser actions
+      clear_browsing_history: 'ब्राउज़िंग इतिहास साफ़ करें?',
+      action_cannot_be_undone: 'यह क्रिया पूर्ववत नहीं की जा सकती।',
+      
       // Wallet
       balance: 'शेष राशि',
       send: 'भेजें',
@@ -335,6 +573,38 @@ const resources = {
       // Units
       satoshis: 'सातोशी',
       sats: 'सैट्स',
+      
+      // Trust
+      trust_network: 'विश्वास नेटवर्क',
+      trusted_origins: 'विश्वसनीय स्रोत',
+      manage_trust_relationships: 'अपने विश्वास संबंधों और प्रमाणक नेटवर्क का प्रबंधन करें।',
+      search_trusted_origins: 'विश्वसनीय स्रोत खोजें…',
+      no_trusted_origins: 'अभी तक कोई विश्वसनीय स्रोत नहीं।',
+      trusted: 'विश्वसनीय',
+      
+      // Auth - Password
+      enter_password: 'पासवर्ड दर्ज करें',
+      enter_password_continue: 'कृपया जारी रखने के लिए अपना पासवर्ड दर्ज करें',
+      password: 'पासवर्ड',
+      password_min_chars: 'पासवर्ड कम से कम 6 अक्षर का होना चाहिए',
+      continue: 'जारी रखें',
+      forgot_password_link: 'पासवर्ड भूल गए?',
+      auth_failed_maybe_password: 'प्रमाणीकरण विफल, शायद पासवर्ड गलत है?',
+      auth_failed_try_again: 'प्रमाणीकरण विफल। कृपया पुनः प्रयास करें।',
+      
+      // Auth - OTP
+      enter_verification_code: 'सत्यापन कोड दर्ज करें',
+      enter_6_digit_code: 'अपने फोन पर भेजा गया 6-अंकीय कोड दर्ज करें',
+      verify: 'सत्यापित करें',
+      resend_code: 'कोड पुनः भेजें',
+      invalid_code: 'अमान्य कोड',
+      
+      // Auth - Phone
+      enter_phone_number: 'फोन नंबर दर्ज करें',
+      phone_number_required: 'जारी रखने के लिए फोन नंबर आवश्यक है',
+      phone_number: 'फोन नंबर',
+      send_verification_code: 'सत्यापन कोड भेजें',
+      invalid_phone_number: 'अमान्य फोन नंबर',
     }
   },
   es: {
@@ -381,6 +651,17 @@ const resources = {
       yes: 'Sí',
       no: 'No',
       
+      // Navigation actions
+      switch_to_mobile_view: 'Cambiar a Vista Móvil',
+      switch_to_desktop_view: 'Cambiar a Vista de Escritorio',
+      add_to_device_homescreen: 'Agregar a Pantalla de Inicio',
+      back_to_homepage: 'Volver al Inicio',
+      notifications: 'Notificaciones',
+      
+      // Browser actions
+      clear_browsing_history: '¿Limpiar historial de navegación?',
+      action_cannot_be_undone: 'Esta acción no se puede deshacer.',
+      
       // Wallet
       balance: 'Saldo',
       send: 'Enviar',
@@ -414,6 +695,9 @@ const resources = {
       // Units
       satoshis: 'satoshis',
       sats: 'sats',
+      
+      // Trust
+      trust_network: 'Red de Confianza',
     }
   },
   fr: {
@@ -460,6 +744,10 @@ const resources = {
       yes: 'Oui',
       no: 'Non',
       
+      // Browser actions
+      clear_browsing_history: 'Effacer l\'historique de navigation ?',
+      action_cannot_be_undone: 'Cette action ne peut pas être annulée.',
+      
       // Wallet
       balance: 'Solde',
       send: 'Envoyer',
@@ -493,6 +781,38 @@ const resources = {
       // Units
       satoshis: 'satoshis',
       sats: 'sats',
+      
+      // Trust
+      trust_network: 'Réseau de Confiance',
+      trusted_origins: 'Origines de Confiance',
+      manage_trust_relationships: 'Gérez vos relations de confiance et votre réseau de certificateurs.',
+      search_trusted_origins: 'Rechercher les origines de confiance…',
+      no_trusted_origins: 'Aucune origine de confiance pour le moment.',
+      trusted: 'Approuvé',
+      
+      // Auth - Password
+      enter_password: 'Entrer le Mot de Passe',
+      enter_password_continue: 'Veuillez entrer votre mot de passe pour continuer',
+      password: 'Mot de Passe',
+      password_min_chars: 'Le mot de passe doit contenir au moins 6 caractères',
+      continue: 'Continuer',
+      forgot_password_link: 'Mot de passe oublié ?',
+      auth_failed_maybe_password: 'Échec de l\'authentification, le mot de passe est peut-être incorrect ?',
+      auth_failed_try_again: 'Échec de l\'authentification. Veuillez réessayer.',
+      
+      // Auth - OTP
+      enter_verification_code: 'Entrer le Code de Vérification',
+      enter_6_digit_code: 'Entrez le code à 6 chiffres envoyé à votre téléphone',
+      verify: 'Vérifier',
+      resend_code: 'Renvoyer le code',
+      invalid_code: 'Code invalide',
+      
+      // Auth - Phone
+      enter_phone_number: 'Entrer le Numéro de Téléphone',
+      phone_number_required: 'Un numéro de téléphone est requis pour continuer',
+      phone_number: 'Numéro de Téléphone',
+      send_verification_code: 'Envoyer le Code de Vérification',
+      invalid_phone_number: 'Numéro de téléphone invalide',
     }
   },
   ar: {
@@ -539,6 +859,10 @@ const resources = {
       yes: 'نعم',
       no: 'لا',
       
+      // Browser actions
+      clear_browsing_history: 'مسح تاريخ التصفح؟',
+      action_cannot_be_undone: 'لا يمكن التراجع عن هذا الإجراء.',
+      
       // Wallet
       balance: 'الرصيد',
       send: 'إرسال',
@@ -572,6 +896,38 @@ const resources = {
       // Units
       satoshis: 'ساتوشي',
       sats: 'ساتس',
+      
+      // Trust
+      trust_network: 'شبكة الثقة',
+      trusted_origins: 'المصادر الموثوقة',
+      manage_trust_relationships: 'إدارة علاقات الثقة وشبكة المصدقين الخاصة بك.',
+      search_trusted_origins: 'البحث في المصادر الموثوقة…',
+      no_trusted_origins: 'لا توجد مصادر موثوقة بعد.',
+      trusted: 'موثوق',
+      
+      // Auth - Password
+      enter_password: 'أدخل كلمة المرور',
+      enter_password_continue: 'يرجى إدخال كلمة المرور للمتابعة',
+      password: 'كلمة المرور',
+      password_min_chars: 'يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل',
+      continue: 'متابعة',
+      forgot_password_link: 'نسيت كلمة المرور؟',
+      auth_failed_maybe_password: 'فشل في المصادقة، ربما كلمة المرور غير صحيحة؟',
+      auth_failed_try_again: 'فشل في المصادقة. يرجى المحاولة مرة أخرى.',
+      
+      // Auth - OTP
+      enter_verification_code: 'أدخل رمز التحقق',
+      enter_6_digit_code: 'أدخل الرمز المكون من 6 أرقام المرسل إلى هاتفك',
+      verify: 'تحقق',
+      resend_code: 'إعادة إرسال الرمز',
+      invalid_code: 'رمز غير صالح',
+      
+      // Auth - Phone
+      enter_phone_number: 'أدخل رقم الهاتف',
+      phone_number_required: 'رقم الهاتف مطلوب للمتابعة',
+      phone_number: 'رقم الهاتف',
+      send_verification_code: 'إرسال رمز التحقق',
+      invalid_phone_number: 'رقم هاتف غير صالح',
     }
   },
   pt: {
@@ -618,6 +974,10 @@ const resources = {
       yes: 'Sim',
       no: 'Não',
       
+      // Browser actions
+      clear_browsing_history: 'Limpar histórico de navegação?',
+      action_cannot_be_undone: 'Esta ação não pode ser desfeita.',
+      
       // Wallet
       balance: 'Saldo',
       send: 'Enviar',
@@ -651,6 +1011,38 @@ const resources = {
       // Units
       satoshis: 'satoshis',
       sats: 'sats',
+      
+      // Trust
+      trust_network: 'Rede de Confiança',
+      trusted_origins: 'Origens Confiáveis',
+      manage_trust_relationships: 'Gerencie suas relações de confiança e rede de certificadores.',
+      search_trusted_origins: 'Pesquisar origens confiáveis…',
+      no_trusted_origins: 'Nenhuma origem confiável ainda.',
+      trusted: 'Confiável',
+      
+      // Auth - Password
+      enter_password: 'Digite a Senha',
+      enter_password_continue: 'Por favor, digite sua senha para continuar',
+      password: 'Senha',
+      password_min_chars: 'A senha deve ter pelo menos 6 caracteres',
+      continue: 'Continuar',
+      forgot_password_link: 'Esqueceu a senha?',
+      auth_failed_maybe_password: 'Falha na autenticação, talvez a senha esteja incorreta?',
+      auth_failed_try_again: 'Falha na autenticação. Tente novamente.',
+      
+      // Auth - OTP
+      enter_verification_code: 'Digite o Código de Verificação',
+      enter_6_digit_code: 'Digite o código de 6 dígitos enviado para seu telefone',
+      verify: 'Verificar',
+      resend_code: 'Reenviar código',
+      invalid_code: 'Código inválido',
+      
+      // Auth - Phone
+      enter_phone_number: 'Digite o Número do Telefone',
+      phone_number_required: 'Um número de telefone é necessário para continuar',
+      phone_number: 'Número do Telefone',
+      send_verification_code: 'Enviar Código de Verificação',
+      invalid_phone_number: 'Número de telefone inválido',
     }
   },
   bn: {
@@ -696,6 +1088,10 @@ const resources = {
       yes: 'হ্যাঁ',
       no: 'না',
       
+      // Browser actions
+      clear_browsing_history: 'ব্রাউজিং ইতিহাস মুছবেন?',
+      action_cannot_be_undone: 'এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।',
+      
       // Wallet
       balance: 'ব্যালেন্স',
       send: 'পাঠান',
@@ -729,6 +1125,38 @@ const resources = {
       // Units
       satoshis: 'সাতোশি',
       sats: 'স্যাটস',
+      
+      // Trust
+      trust_network: 'বিশ্বস্ত নেটওয়ার্ক',
+      trusted_origins: 'বিশ্বস্ত উৎস',
+      manage_trust_relationships: 'আপনার বিশ্বস্ততার সম্পর্ক এবং সার্টিফাইয়ার নেটওয়ার্ক পরিচালনা করুন।',
+      search_trusted_origins: 'বিশ্বস্ত উৎস অনুসন্ধান করুন…',
+      no_trusted_origins: 'এখনও কোন বিশ্বস্ত উৎস নেই।',
+      trusted: 'বিশ্বস্ত',
+      
+      // Auth - Password
+      enter_password: 'পাসওয়ার্ড লিখুন',
+      enter_password_continue: 'অনুগ্রহ করে চালিয়ে যেতে আপনার পাসওয়ার্ড লিখুন',
+      password: 'পাসওয়ার্ড',
+      password_min_chars: 'পাসওয়ার্ড কমপক্ষে ৬টি অক্ষর হতে হবে',
+      continue: 'চালিয়ে যান',
+      forgot_password_link: 'পাসওয়ার্ড ভুলে গেছেন?',
+      auth_failed_maybe_password: 'প্রমাণীকরণ ব্যর্থ, সম্ভবত পাসওয়ার্ড ভুল?',
+      auth_failed_try_again: 'প্রমাণীকরণ ব্যর্থ। আবার চেষ্টা করুন।',
+      
+      // Auth - OTP
+      enter_verification_code: 'যাচাইকরণ কোড লিখুন',
+      enter_6_digit_code: 'আপনার ফোনে পাঠানো ৬-সংখ্যার কোড লিখুন',
+      verify: 'যাচাই করুন',
+      resend_code: 'কোড পুনরায় পাঠান',
+      invalid_code: 'অবৈধ কোড',
+      
+      // Auth - Phone
+      enter_phone_number: 'ফোন নম্বর লিখুন',
+      phone_number_required: 'চালিয়ে যেতে একটি ফোন নম্বর প্রয়োজন',
+      phone_number: 'ফোন নম্বর',
+      send_verification_code: 'যাচাইকরণ কোড পাঠান',
+      invalid_phone_number: 'অবৈধ ফোন নম্বর',
     }
   },
   ru: {
@@ -774,6 +1202,10 @@ const resources = {
       yes: 'Да',
       no: 'Нет',
       
+      // Browser actions
+      clear_browsing_history: 'Очистить историю браузера?',
+      action_cannot_be_undone: 'Это действие нельзя отменить.',
+      
       // Wallet
       balance: 'Баланс',
       send: 'Отправить',
@@ -807,6 +1239,38 @@ const resources = {
       // Units
       satoshis: 'сатоши',
       sats: 'сатс',
+      
+      // Trust
+      trust_network: 'Сеть Доверия',
+      trusted_origins: 'Доверенные Источники',
+      manage_trust_relationships: 'Управляйте своими доверительными отношениями и сетью сертификаторов.',
+      search_trusted_origins: 'Поиск доверенных источников…',
+      no_trusted_origins: 'Пока нет доверенных источников.',
+      trusted: 'Доверенный',
+      
+      // Auth - Password
+      enter_password: 'Введите Пароль',
+      enter_password_continue: 'Пожалуйста, введите свой пароль для продолжения',
+      password: 'Пароль',
+      password_min_chars: 'Пароль должен содержать минимум 6 символов',
+      continue: 'Продолжить',
+      forgot_password_link: 'Забыли пароль?',
+      auth_failed_maybe_password: 'Ошибка аутентификации, возможно, неверный пароль?',
+      auth_failed_try_again: 'Ошибка аутентификации. Попробуйте снова.',
+      
+      // Auth - OTP
+      enter_verification_code: 'Введите Код Подтверждения',
+      enter_6_digit_code: 'Введите 6-значный код, отправленный на ваш телефон',
+      verify: 'Подтвердить',
+      resend_code: 'Отправить код повторно',
+      invalid_code: 'Неверный код',
+      
+      // Auth - Phone
+      enter_phone_number: 'Введите Номер Телефона',
+      phone_number_required: 'Для продолжения необходим номер телефона',
+      phone_number: 'Номер Телефона',
+      send_verification_code: 'Отправить Код Подтверждения',
+      invalid_phone_number: 'Неверный номер телефона',
     }
   },
   id: {
@@ -852,6 +1316,10 @@ const resources = {
       yes: 'Ya',
       no: 'Tidak',
       
+      // Browser actions
+      clear_browsing_history: 'Hapus riwayat penjelajahan?',
+      action_cannot_be_undone: 'Tindakan ini tidak dapat dibatalkan.',
+      
       // Wallet
       balance: 'Saldo',
       send: 'Kirim',
@@ -885,6 +1353,38 @@ const resources = {
       // Units
       satoshis: 'satoshi',
       sats: 'sats',
+      
+      // Trust
+      trust_network: 'Jaringan Kepercayaan',
+      trusted_origins: 'Sumber Terpercaya',
+      manage_trust_relationships: 'Kelola hubungan kepercayaan dan jaringan sertifikator Anda.',
+      search_trusted_origins: 'Cari sumber terpercaya…',
+      no_trusted_origins: 'Belum ada sumber terpercaya.',
+      trusted: 'Terpercaya',
+      
+      // Auth - Password
+      enter_password: 'Masukkan Kata Sandi',
+      enter_password_continue: 'Silakan masukkan kata sandi Anda untuk melanjutkan',
+      password: 'Kata Sandi',
+      password_min_chars: 'Kata sandi harus terdiri dari minimal 6 karakter',
+      continue: 'Lanjutkan',
+      forgot_password_link: 'Lupa kata sandi?',
+      auth_failed_maybe_password: 'Autentikasi gagal, mungkin kata sandi salah?',
+      auth_failed_try_again: 'Autentikasi gagal. Silakan coba lagi.',
+      
+      // Auth - OTP
+      enter_verification_code: 'Masukkan Kode Verifikasi',
+      enter_6_digit_code: 'Masukkan kode 6 digit yang dikirim ke telepon Anda',
+      verify: 'Verifikasi',
+      resend_code: 'Kirim ulang kode',
+      invalid_code: 'Kode tidak valid',
+      
+      // Auth - Phone
+      enter_phone_number: 'Masukkan Nomor Telepon',
+      phone_number_required: 'Nomor telepon diperlukan untuk melanjutkan',
+      phone_number: 'Nomor Telepon',
+      send_verification_code: 'Kirim Kode Verifikasi',
+      invalid_phone_number: 'Nomor telepon tidak valid',
     }
   }
 };

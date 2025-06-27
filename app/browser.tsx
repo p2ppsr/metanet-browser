@@ -1783,50 +1783,50 @@ const navFwd = useCallback(() => {
                   </Pressable>
                   {showBalance && <Balance />}
                   <DrawerItem
-                    label='Identity'
+                    label={t('identity')}
                     icon='person-circle-outline'
                     onPress={drawerHandlers.identity}
                   />
                   <DrawerItem
-                    label='Security'
+                    label={t('security')}
                     icon='lock-closed-outline'
                     onPress={drawerHandlers.security}
                   />
                   <DrawerItem
-                    label='Trust Network'
+                    label={t('trust_network')}
                     icon='shield-checkmark-outline'
                     onPress={drawerHandlers.trust}
                   />
                   <DrawerItem
-                    label='Settings'
+                    label={t('settings')}
                     icon='settings-outline'
                     onPress={drawerHandlers.settings}
                   />
                    <DrawerItem
-                    label='Notifications'
+                    label={t('notifications')}
                     icon='notifications-outline'
                     onPress={() => setInfoDrawerRoute('notifications')}
                   />
                   <View style={styles.divider} />
                   {activeTab.url !== kNEW_TAB_URL && (
                     <DrawerItem
-                      label={isDesktopView ? 'Switch to Mobile View' : 'Switch to Desktop View'}
+                      label={isDesktopView ? t('switch_to_mobile_view') : t('switch_to_desktop_view')}
                       icon={isDesktopView ? 'phone-portrait-outline' : 'desktop-outline'}
                       onPress={drawerHandlers.toggleDesktopView}
                     />
                   )}
                   <DrawerItem
-                    label='Add Bookmark'
+                    label={t('add_bookmark')}
                     icon='star-outline'
                     onPress={drawerHandlers.addBookmark}
                   />
                   <DrawerItem
-                    label='Add to Device Homescreen'
+                    label={t('add_to_device_homescreen')}
                     icon='home-outline'
                     onPress={drawerHandlers.addToHomeScreen}
                   />
                   <DrawerItem
-                    label='Back to Homepage'
+                    label={t('back_to_homepage')}
                     icon='apps-outline'
                     onPress={drawerHandlers.backToHomepage}
                   />
@@ -1856,10 +1856,10 @@ const navFwd = useCallback(() => {
               <View style={[styles.contextMenu, { backgroundColor: colors.background }]}>
                 <View style={[styles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
                   <Text style={[styles.contextMenuTitle, { color: colors.textPrimary }]}>
-                    Clear browsing history?
+                    {t('clear_browsing_history')}
                   </Text>
                   <Text style={[styles.contextMenuUrl, { color: colors.textSecondary }]}>
-                    This action cannot be undone.
+                    {t('action_cannot_be_undone')}
                   </Text>
                 </View>
                 
@@ -2171,6 +2171,7 @@ const SubDrawerView = React.memo(({
   onOpenNotificationSettings?: () => void;
 }) => {
   const { colors } = useTheme()
+  const { t } = useTranslation()
 
   const screens = useMemo(() => ({
     identity: <IdentityScreen />,
@@ -2188,11 +2189,11 @@ const SubDrawerView = React.memo(({
           delayPressIn={0}
         >
           <Text style={[styles.backBtn, { color: colors.primary }]}>
-            ‹ Back
+            ‹ {t('back')}
           </Text>
         </TouchableOpacity>
         <Text style={[styles.subDrawerTitle, { color: colors.textPrimary }]}>
-          {route[0].toUpperCase() + route.slice(1)}
+          {t(route)}
         </Text>
         <View style={{ width: 60 }} />
       </View>

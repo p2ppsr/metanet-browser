@@ -13,6 +13,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
@@ -20,6 +21,7 @@ import { Utils } from '@bsv/sdk';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 
 export default function PasswordScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const phoneNumber = params.phoneNumber as string;
   const { setSnap } = useLocalStorage()
@@ -59,11 +61,11 @@ export default function PasswordScreen() {
         router.dismissAll();          
         router.replace('/browser');
       } else {
-        Alert.alert('Error', 'Authentication failed, maybe password is incorrect?')
+        Alert.alert(t('error'), t('auth_failed_maybe_password'))
       }
     } catch (error) {
       console.error('Error authenticating:', error);
-      Alert.alert('Error', 'Authentication failed. Please try again.');
+      Alert.alert(t('error'), t('auth_failed_try_again'));
     } finally {
       setLoading(false);
     }
@@ -77,16 +79,16 @@ export default function PasswordScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>Enter Password</Text>
+          <Text style={styles.title}>{t('enter_password')}</Text>
           <Text style={styles.subtitle}>
-            Please enter your password to continue
+            {t('enter_password_subtitle')}
           </Text>
           
           <View style={styles.inputContainer}>
             <View style={styles.input}>
               <TextInput
                 style={styles.inputText}
-                placeholder="Password"
+                placeholder={t('password')}
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry={!showPassword}
                 value={password}
@@ -107,7 +109,7 @@ export default function PasswordScreen() {
             
             {password !== '' && !isValidPassword() && (
               <Text style={styles.validationError}>
-                Password must be at least 6 characters
+                {t('password_validation_error')}
               </Text>
             )}
           </View>
@@ -123,12 +125,12 @@ export default function PasswordScreen() {
             {loading ? (
               <ActivityIndicator color={colors.buttonText} />
             ) : (
-              <Text style={styles.buttonText}>Continue</Text>
+              <Text style={styles.buttonText}>{t('continue')}</Text>
             )}
           </TouchableOpacity>
           
           <TouchableOpacity style={{ marginTop: 15 }}>
-            <Text style={styles.link}>Forgot password?</Text>
+            <Text style={styles.link}>{t('forgot_password_link')}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

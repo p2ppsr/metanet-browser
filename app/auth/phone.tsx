@@ -14,12 +14,14 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 import { countryCodes } from '@/utils/countryCodes';
 
 export default function PhoneScreen() {
+  const { t } = useTranslation();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(countryCodes[222]);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
@@ -76,8 +78,8 @@ export default function PhoneScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>Enter your phone number</Text>
-          <Text style={styles.subtitle}>We'll send you a verification code</Text>
+          <Text style={styles.title}>{t('enter_phone_number')}</Text>
+          <Text style={styles.subtitle}>{t('send_verification_code')}</Text>
           
           <View style={styles.inputContainer}>
             <View style={[styles.input, { paddingLeft: 0 }]}>
@@ -103,7 +105,7 @@ export default function PhoneScreen() {
               {/* Phone number input */}
               <TextInput
                 style={styles.inputText}
-                placeholder="Phone number"
+                placeholder={t('phone_number')}
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="phone-pad"
                 value={phoneNumber}
@@ -138,7 +140,7 @@ export default function PhoneScreen() {
                     borderBottomWidth: 1,
                     borderBottomColor: colors.inputBorder,
                   }}>
-                    <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18 }]}>Select Country</Text>
+                    <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18 }]}>{t('select_country')}</Text>
                     <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
                       <Text style={{ fontSize: 18, color: colors.textSecondary }}>✕</Text>
                     </TouchableOpacity>
@@ -179,12 +181,12 @@ export default function PhoneScreen() {
             {loading ? (
               <ActivityIndicator color={colors.buttonText} />
             ) : (
-              <Text style={styles.buttonText}>Continue</Text>
+              <Text style={styles.buttonText}>{t('continue')}</Text>
             )}
           </TouchableOpacity>
           
           <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 10 }}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            {t('terms_privacy_agree')}
           </Text>
         </View>
       </KeyboardAvoidingView>

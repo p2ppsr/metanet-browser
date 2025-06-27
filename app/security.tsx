@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 
 export default function SecurityScreen() {
-  // Get theme colors
+  // Get theme colors and translation
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
 
@@ -15,35 +17,35 @@ export default function SecurityScreen() {
 
   const changePassword = () => {
     if (newPass.length < 6) {
-      Alert.alert('Password too short');
+      Alert.alert(t('password_too_short'));
       return;
     }
     if (newPass !== retype) {
-      Alert.alert('Passwords do not match');
+      Alert.alert(t('passwords_do_not_match'));
       return;
     }
-    Alert.alert('Success', 'Password changed (mock)');
+    Alert.alert(t('success'), t('password_changed_mock'));
     setNewPass('');
     setRetype('');
   };
 
-  const onViewKey = () => Alert.alert('Recovery Key', '•••••••••••••• (mock)');
+  const onViewKey = () => Alert.alert(t('recovery_key'), t('recovery_key_mock'));
 
   return (
     <SafeAreaView style={[themeStyles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ padding:16, flex:1 }}>
-        <Text style={[themeStyles.title, { color: colors.textPrimary, textAlign:'left', alignSelf:'flex-start' }]}>Security</Text>
-        <Text style={[themeStyles.textSecondary, { marginBottom: 20, textAlign:'left', alignSelf:'flex-start' }]}>Manage your password and recovery key.</Text>
+        <Text style={[themeStyles.title, { color: colors.textPrimary, textAlign:'left', alignSelf:'flex-start' }]}>{t('security')}</Text>
+        <Text style={[themeStyles.textSecondary, { marginBottom: 20, textAlign:'left', alignSelf:'flex-start' }]}>{t('manage_password_recovery')}</Text>
 
         {/* Change password card */}
         <View style={[styles.card, { borderColor: colors.inputBorder, backgroundColor: colors.paperBackground }]}>          
-          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Change Password</Text>
-          <Text style={[styles.cardCaption, { color: colors.textSecondary }]}>You will be prompted to enter your old password to confirm the change.</Text>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{t('change_password')}</Text>
+          <Text style={[styles.cardCaption, { color: colors.textSecondary }]}>{t('change_password_prompt')}</Text>
 
           <TextInput
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.inputBorder, color: colors.textPrimary }]}
-            placeholder="New password"
+            placeholder={t('new_password')}
             placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={newPass}
@@ -51,30 +53,30 @@ export default function SecurityScreen() {
           />
           <TextInput
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.inputBorder, color: colors.textPrimary }]}
-            placeholder="Retype password"
+            placeholder={t('retype_password')}
             placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={retype}
             onChangeText={setRetype}
           />
-          <TouchableOpacity onPress={() => Alert.alert('Forgot password flow')}>
-            <Text style={[styles.forgotText, { color: colors.secondary }]}>Forgot Password?</Text>
+          <TouchableOpacity onPress={() => Alert.alert(t('forgot_password_flow'))}>
+            <Text style={[styles.forgotText, { color: colors.secondary }]}>{t('forgot_password')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={changePassword}>
-            <Text style={{ color: colors.buttonText, fontWeight:'600' }}>Change</Text>
+            <Text style={{ color: colors.buttonText, fontWeight:'600' }}>{t('change')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Recovery key card */}
         <View style={[styles.card, { borderColor: colors.inputBorder, backgroundColor: colors.paperBackground }]}>          
-          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Recovery Key</Text>
-          <Text style={[styles.cardCaption, { color: colors.textSecondary }]}>You will need your recovery key if you forget your password or lose your phone.</Text>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{t('recovery_key')}</Text>
+          <Text style={[styles.cardCaption, { color: colors.textSecondary }]}>{t('recovery_key_description')}</Text>
           <TouchableOpacity style={styles.linkBtn} onPress={onViewKey}>
-            <Text style={{ color: colors.secondary }}>View</Text>
+            <Text style={{ color: colors.secondary }}>{t('view')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={() => Alert.alert('Change recovery key (mock)')}>
-            <Text style={{ color: colors.buttonText, fontWeight:'600' }}>Change</Text>
+          <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={() => Alert.alert(t('change_recovery_key'))}>
+            <Text style={{ color: colors.buttonText, fontWeight:'600' }}>{t('change')}</Text>
           </TouchableOpacity>
         </View>
       </View>
