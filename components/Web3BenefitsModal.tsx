@@ -30,33 +30,28 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
   const benefits = [
     {
       icon: 'key-outline' as const,
-      title: 'Never Login Again',
-      description: 'Your identity follows you everywhere. No more passwords, usernames, or forgotten credentials across Web3 apps.',
-    },
-    {
-      icon: 'wallet-outline' as const,
-      title: 'Instant Payments',
-      description: 'Send and receive payments instantly to anyone, anywhere. No banks, no delays, no hefty fees.',
-    },
-    {
-      icon: 'shield-checkmark-outline' as const,
-      title: 'Own Your Data',
-      description: 'Your personal information stays with you. No corporations harvesting and selling your data.',
+      title: 'Never login again',
+      description: 'One identity for every Web3 app. No more passwords or sign-ups.',
     },
     {
       icon: 'flash-outline' as const,
-      title: 'Lightning Fast',
-      description: 'Experience the web at the speed of thought. Web3 apps load instantly with your identity ready.',
+      title: 'Instant everything',
+      description: 'Payments, access, verification - all happen in seconds.',
     },
     {
-      icon: 'globe-outline' as const,
-      title: 'Universal Access',
-      description: 'One identity works across all Web3 platforms. Travel the decentralized web seamlessly.',
+      icon: 'shield-checkmark-outline' as const,
+      title: 'You own your data',
+      description: 'No companies tracking you or selling your information.',
+    },
+    {
+      icon: 'planet-outline' as const,
+      title: 'Works everywhere',
+      description: 'Access thousands of Web3 apps with the same identity.',
     },
     {
       icon: 'trending-up-outline' as const,
-      title: 'Future-Proof',
-      description: 'Join the next generation of the internet. Be part of the revolution before everyone else.',
+      title: 'Future-proof',
+      description: 'Be early to the next generation of the internet.',
     },
   ];
 
@@ -81,15 +76,18 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
 
           {/* Content */}
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              You're about to experience Web3 - but why not unlock its full power?
+            <Text style={[styles.subtitle, { color: colors.textPrimary }]}>
+              🎯 <Text style={{ fontWeight: 'bold', color: colors.primary }}>Here's what you'll unlock with Web3:</Text>
             </Text>
 
             <View style={styles.benefitsContainer}>
               {benefits.map((benefit, index) => (
-                <View key={index} style={[styles.benefitItem, { borderColor: colors.inputBorder }]}>
-                  <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
-                    <Ionicons name={benefit.icon} size={24} color={colors.primary} />
+                <View key={index} style={[styles.benefitItem, { 
+                  backgroundColor: colors.primary + '08',
+                  borderLeftColor: colors.primary,
+                }]}>
+                  <View style={[styles.iconContainer, { backgroundColor: colors.primary }]}>
+                    <Ionicons name={benefit.icon} size={22} color="#FFFFFF" />
                   </View>
                   <View style={styles.benefitText}>
                     <Text style={[styles.benefitTitle, { color: colors.textPrimary }]}>
@@ -103,10 +101,13 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
               ))}
             </View>
 
-            <View style={[styles.highlightBox, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
+            <View style={[styles.highlightBox, { 
+              backgroundColor: colors.primary + '15', 
+              borderColor: colors.primary,
+            }]}>
               <Text style={[styles.highlightText, { color: colors.textPrimary }]}>
-                ✨ <Text style={{ fontWeight: 'bold' }}>Pro Tip:</Text> Setting up your Web3 identity takes just 30 seconds and works forever. 
-                It's like getting a universal key to the entire decentralized internet!
+                ⚡ <Text style={{ fontWeight: '800', color: colors.primary }}>Ready in 30 seconds!</Text> Your Web3 identity works everywhere instantly. 
+                Join millions already using the future of the internet.
               </Text>
             </View>
           </ScrollView>
@@ -118,16 +119,16 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
               onPress={onGoToLogin}
             >
               <Text style={[styles.primaryButtonText, { color: colors.buttonText }]}>
-                🔑 Get My Web3 Identity (30s)
+                � Get My Web3 Identity (30s)
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.secondaryButton, { borderColor: colors.inputBorder }]}
+              style={styles.secondaryButton}
               onPress={onContinueWithoutLogin}
             >
               <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
-                Continue without Web3 (limited experience)
+                Maybe later
               </Text>
             </TouchableOpacity>
           </View>
@@ -180,34 +181,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 17,
     marginBottom: 24,
-    lineHeight: 22,
+    lineHeight: 24,
+    fontWeight: '600',
   },
   benefitsContainer: {
     marginBottom: 20,
   },
   benefitItem: {
     flexDirection: 'row',
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    marginBottom: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'flex-start',
+    borderRadius: 8,
+    borderLeftWidth: 3,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
+    marginTop: 2,
   },
   benefitText: {
     flex: 1,
   },
   benefitTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 4,
   },
   benefitDescription: {
@@ -215,14 +220,15 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   highlightBox: {
-    padding: 16,
+    padding: 20,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 2,
     marginBottom: 20,
   },
   highlightText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 22,
   },
   buttonContainer: {
     padding: 20,
@@ -248,15 +254,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    borderWidth: 1,
+    alignSelf: 'center',
+    marginTop: 8,
   },
   secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '300',
+    opacity: 0.5,
   },
 });
 
