@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useLocalStorage } from './LocalStorageProvider';
+import { useWallet } from './WalletContext';
 
 interface BrowserModeContextType {
   isWeb2Mode: boolean;
@@ -41,7 +42,7 @@ interface BrowserModeProviderProps {
 }
 
 export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ children }) => {
-  const [isWeb2Mode, setIsWeb2Mode] = useState(false);
+  const [manualMode, setManualMode] = useState<'web2' | 'web3' | null>(null); // Manual override
   const [web3BenefitsVisible, setWeb3BenefitsVisible] = useState(false);
   const [web3BenefitsCallbacks, setWeb3BenefitsCallbacks] = useState<{
     onContinue: (() => void) | null;
@@ -51,27 +52,36 @@ export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ childr
     onGoToLogin: null,
   });
   const { getItem, setItem } = useLocalStorage();
+  const { managers } = useWallet();
   const params = useLocalSearchParams();
+
+  // Auto-detect Web2 mode based on wallet authentication
+  const isWeb2Mode = manualMode === 'web2' || (!manualMode && !managers?.walletManager?.authenticated);
 
   // Initialize mode from URL params or stored preference
   useEffect(() => {
     const initializeMode = async () => {
       // Check if mode is specified in URL params
       if (params.mode === 'web2') {
-        setIsWeb2Mode(true);
+        setManualMode('web2');
         // Store this preference
         await setItem('browserMode', 'web2');
       } else if (params.mode === 'web3') {
-        setIsWeb2Mode(false);
+        setManualMode('web3');
         await setItem('browserMode', 'web3');
       } else {
         // Load from stored preference
         try {
           const storedMode = await getItem('browserMode');
-          setIsWeb2Mode(storedMode === 'web2');
+          if (storedMode === 'web2' || storedMode === 'web3') {
+            setManualMode(storedMode);
+          } else {
+            // No manual override stored, let auto-detection handle it
+            setManualMode(null);
+          }
         } catch (error) {
-          console.log('No stored browser mode, defaulting to web3');
-          setIsWeb2Mode(false);
+          console.log('No stored browser mode, using auto-detection');
+          setManualMode(null);
         }
       }
     };
@@ -80,14 +90,15 @@ export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ childr
   }, [params.mode, getItem, setItem]);
 
   const setWeb2Mode = async (enabled: boolean) => {
-    setIsWeb2Mode(enabled);
-    await setItem('browserMode', enabled ? 'web2' : 'web3');
+    const newMode = enabled ? 'web2' : 'web3';
+    setManualMode(newMode);
+    await setItem('browserMode', newMode);
   };
 
   const toggleMode = async () => {
-    const newMode = !isWeb2Mode;
-    setIsWeb2Mode(newMode);
-    await setItem('browserMode', newMode ? 'web2' : 'web3');
+    const newMode = isWeb2Mode ? 'web3' : 'web2';
+    setManualMode(newMode);
+    await setItem('browserMode', newMode);
   };
 
   const showWeb3Benefits = (onContinue: () => void, onGoToLogin: () => void) => {
