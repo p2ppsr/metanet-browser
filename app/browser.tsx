@@ -34,6 +34,7 @@ import Fuse from 'fuse.js'
 import * as Linking from 'expo-linking'
 import { Ionicons } from '@expo/vector-icons'
 import { observer } from 'mobx-react-lite'
+import { router } from 'expo-router'
 
 import { useTheme } from '@/context/theme/ThemeContext'
 import { useWallet } from '@/context/WalletContext'
@@ -49,6 +50,7 @@ import bookmarkStore from '@/stores/BookmarkStore'
 import SettingsScreen from './settings'
 import IdentityScreen from './identity'
 import { useTranslation } from 'react-i18next'
+import { useBrowserMode } from '@/context/BrowserModeContext'
 import { useLanguage } from '@/utils/translations'
 import SecurityScreen from './security'
 import TrustScreen from './trust'
@@ -158,6 +160,7 @@ function Browser() {
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
   const { t, i18n } = useTranslation()
+  const { isWeb2Mode } = useBrowserMode()
 
   /* ----------------------------- language headers ----------------------------- */
   // Map i18n language codes to proper HTTP Accept-Language header values
@@ -183,9 +186,13 @@ function Browser() {
   const { managers } = useWallet()
   const [wallet, setWallet] = useState<WalletInterface | undefined>()
   useEffect(() => {
-    if (managers?.walletManager?.authenticated)
+    // Only initialize wallet if not in web2 mode
+    if (!isWeb2Mode && managers?.walletManager?.authenticated) {
       setWallet(managers.walletManager)
-  }, [managers])
+    } else if (isWeb2Mode) {
+      setWallet(undefined)
+    }
+  }, [managers, isWeb2Mode])
 
   /* ---------------------------- storage helpers ----------------------------- */
   const { getItem, setItem } = useLocalStorage()
@@ -1039,9 +1046,9 @@ const navFwd = useCallback(() => {
         return;
       }
 
-     // Handleing of wallet before api call.
-      if (msg.call && !wallet) {
-        // console.log('Wallet not ready, ignoring call:', msg.call);
+     // Handling of wallet before api call.
+      if (msg.call && (!wallet || isWeb2Mode)) {
+        // console.log('Wallet not ready or in web2 mode, ignoring call:', msg.call);
         return;
       }
 
@@ -1362,7 +1369,7 @@ const navFwd = useCallback(() => {
 
     const drawerHandlers = useMemo(() => ({
       identity: () => setInfoDrawerRoute('identity'),
-            security: () => setInfoDrawerRoute('security'),
+      security: () => setInfoDrawerRoute('security'),
       trust: () => setInfoDrawerRoute('trust'),
       settings: () => setInfoDrawerRoute('settings'),
       toggleDesktopView: () => {
@@ -1389,6 +1396,11 @@ const navFwd = useCallback(() => {
       backToHomepage: () => {
         updateActiveTab({ url: kNEW_TAB_URL })
         setAddressText(kNEW_TAB_URL)
+        toggleInfoDrawer(false)
+      },
+      goToLogin: () => {
+        // Navigate back to the main route for login
+        router.replace('/')
         toggleInfoDrawer(false)
       }
     }), [activeTab.url, activeTab.title, addBookmark, toggleInfoDrawer, updateActiveTab, setAddressText, addToHomeScreen, toggleDesktopView])
@@ -1787,33 +1799,37 @@ const navFwd = useCallback(() => {
                   >
                     <View style={styles.handleBar} />
                   </Pressable>
-                  {showBalance && <Balance />}
-                  <DrawerItem
-                    label={t('identity')}
-                    icon='person-circle-outline'
-                    onPress={drawerHandlers.identity}
-                  />
-                  <DrawerItem
-                    label={t('security')}
-                    icon='lock-closed-outline'
-                    onPress={drawerHandlers.security}
-                  />
-                  <DrawerItem
-                    label={t('trust_network')}
-                    icon='shield-checkmark-outline'
-                    onPress={drawerHandlers.trust}
-                  />
-                  <DrawerItem
-                    label={t('settings')}
-                    icon='settings-outline'
-                    onPress={drawerHandlers.settings}
-                  />
-                   <DrawerItem
-                    label={t('notifications')}
-                    icon='notifications-outline'
-                    onPress={() => setInfoDrawerRoute('notifications')}
-                  />
-                  <View style={styles.divider} />
+                  {!isWeb2Mode && showBalance && <Balance />}
+                  {!isWeb2Mode && (
+                    <>
+                      <DrawerItem
+                        label={t('identity')}
+                        icon='person-circle-outline'
+                        onPress={drawerHandlers.identity}
+                      />
+                      <DrawerItem
+                        label={t('security')}
+                        icon='lock-closed-outline'
+                        onPress={drawerHandlers.security}
+                      />
+                      <DrawerItem
+                        label={t('trust_network')}
+                        icon='shield-checkmark-outline'
+                        onPress={drawerHandlers.trust}
+                      />
+                      <DrawerItem
+                        label={t('settings')}
+                        icon='settings-outline'
+                        onPress={drawerHandlers.settings}
+                      />
+                       <DrawerItem
+                        label={t('notifications')}
+                        icon='notifications-outline'
+                        onPress={() => setInfoDrawerRoute('notifications')}
+                      />
+                      <View style={styles.divider} />
+                    </>
+                  )}
                   {activeTab.url !== kNEW_TAB_URL && (
                     <DrawerItem
                       label={isDesktopView ? t('switch_to_mobile_view') : t('switch_to_desktop_view')}
@@ -1836,6 +1852,17 @@ const navFwd = useCallback(() => {
                     icon='apps-outline'
                     onPress={drawerHandlers.backToHomepage}
                   />
+                  {/* Login button for web2 mode users */}
+                  {isWeb2Mode && (
+                    <>
+                      <View style={styles.divider} />
+                      <DrawerItem
+                        label='Login to unlock Web3 features'
+                        icon='log-in-outline'
+                        onPress={drawerHandlers.goToLogin}
+                      />
+                    </>
+                  )}
                 </ScrollView>
               )}
 
@@ -2178,6 +2205,7 @@ const SubDrawerView = React.memo(({
 }) => {
   const { colors } = useTheme()
   const { t } = useTranslation()
+  const { isWeb2Mode } = useBrowserMode()
 
   const screens = useMemo(() => ({
     identity: <IdentityScreen />,
@@ -2229,7 +2257,8 @@ const SubDrawerView = React.memo(({
             </TouchableOpacity>
           </View>
         ) : (
-          screens[route]
+          // Only show web3 screens when not in web2 mode
+          !isWeb2Mode && screens[route]
         )}
       </View>
     </View>  )

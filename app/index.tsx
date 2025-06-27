@@ -10,6 +10,7 @@ import { useWallet } from '@/context/WalletContext';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 import { Utils } from '@bsv/sdk';
 import { useTranslation } from 'react-i18next';
+import { useBrowserMode } from '@/context/BrowserModeContext';
 
 export default function LoginScreen() {
   // Get theme colors
@@ -17,6 +18,7 @@ export default function LoginScreen() {
   const { managers, selectedWabUrl, selectedStorageUrl, selectedMethod, selectedNetwork, finalizeConfig } = useWallet();
   const { getSnap, setItem, getItem } = useLocalStorage();
   const { t } = useTranslation();
+  const { showWeb3Benefits } = useBrowserMode();
   const [loading, setLoading] = React.useState(false);
   const [initializing, setInitializing] = useState(true)
 
@@ -136,6 +138,33 @@ export default function LoginScreen() {
           disabled={loading}
         >
           <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>{t('get_started')}</Text>
+        </TouchableOpacity>
+        
+        {/* Skip Login Button for Web2 Mode */}
+        <TouchableOpacity 
+          style={[
+            styles.getStartedButton, 
+            { 
+              backgroundColor: colors.paperBackground, 
+              borderWidth: 1, 
+              borderColor: colors.inputBorder,
+              marginTop: 12
+            }
+          ]} 
+          onPress={() => {
+            showWeb3Benefits(
+              // onContinue - if they still want to skip
+              () => {
+                router.replace({ pathname: '/browser', params: { mode: 'web2' } });
+              },
+              // onGoToLogin - if they decide to get Web3 identity
+              () => {
+                handleGetStarted();
+              }
+            );
+          }}
+        >
+          <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>Continue without login</Text>
         </TouchableOpacity>
         
         <Text style={[styles.termsText, { color: colors.textSecondary }]}>

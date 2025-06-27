@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
+import { useBrowserMode } from '@/context/BrowserModeContext';
 import { countryCodes } from '@/utils/countryCodes';
 
 export default function PhoneScreen() {
@@ -27,6 +28,7 @@ export default function PhoneScreen() {
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const { managers } = useWallet();
+  const { showWeb3Benefits } = useBrowserMode();
   
   // Get theme styles and colors
   const { colors, isDark } = useTheme();
@@ -69,6 +71,24 @@ export default function PhoneScreen() {
       setLoading(false);
     }
   }, [managers?.walletManager, formattedNumber]);
+
+  // Handle skip login for web2 mode
+  const handleSkipLogin = useCallback(() => {
+    // Show the benefits modal first
+    showWeb3Benefits(
+      // onContinue - if they still want to skip
+      () => {
+        router.replace({
+          pathname: '/browser',
+          params: { mode: 'web2' }
+        });
+      },
+      // onGoToLogin - if they decide to get Web3 identity
+      () => {
+        // Just close the modal, they're already on the phone screen
+      }
+    );
+  }, [showWeb3Benefits]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -183,6 +203,21 @@ export default function PhoneScreen() {
             ) : (
               <Text style={styles.buttonText}>{t('continue')}</Text>
             )}
+          </TouchableOpacity>
+
+          {/* Skip login button for web2 mode */}
+          <TouchableOpacity 
+            style={[
+              styles.button, 
+              { backgroundColor: colors.paperBackground, borderWidth: 1, borderColor: colors.inputBorder },
+              loading && { opacity: 0.7 }
+            ]} 
+            onPress={handleSkipLogin}
+            disabled={loading}
+          >
+            <Text style={[styles.buttonText, { color: colors.textPrimary }]}>
+              Continue without login
+            </Text>
           </TouchableOpacity>
           
           <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 10 }}>
