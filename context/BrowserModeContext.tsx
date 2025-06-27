@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useLocalStorage } from './LocalStorageProvider';
+import { useWallet } from './WalletContext';
 
 interface BrowserModeContextType {
   isWeb2Mode: boolean;
@@ -13,6 +14,7 @@ interface BrowserModeContextType {
     onContinue: (() => void) | null;
     onGoToLogin: (() => void) | null;
   };
+  isAuthenticated: boolean;
 }
 
 const BrowserModeContext = createContext<BrowserModeContextType>({
@@ -26,6 +28,7 @@ const BrowserModeContext = createContext<BrowserModeContextType>({
     onContinue: null,
     onGoToLogin: null,
   },
+  isAuthenticated: false,
 });
 
 export const useBrowserMode = () => {
@@ -51,7 +54,11 @@ export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ childr
     onGoToLogin: null,
   });
   const { getItem, setItem } = useLocalStorage();
+  const { managers } = useWallet();
   const params = useLocalSearchParams();
+
+  // Check if user is authenticated (logged in with Web3 identity)
+  const isAuthenticated = !!(managers?.walletManager?.authenticated);
 
   // Initialize mode from URL params or stored preference
   useEffect(() => {
@@ -78,6 +85,23 @@ export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ childr
 
     initializeMode();
   }, [params.mode, getItem, setItem]);
+
+  // Auto-switch to web3 mode when user logs in, web2 mode when they log out
+  useEffect(() => {
+    const updateModeBasedOnAuth = async () => {
+      if (isAuthenticated) {
+        // User is logged in with Web3 identity, switch to web3 mode
+        setIsWeb2Mode(false);
+        await setItem('browserMode', 'web3');
+      } else {
+        // User is not logged in, switch to web2 mode
+        setIsWeb2Mode(true);
+        await setItem('browserMode', 'web2');
+      }
+    };
+
+    updateModeBasedOnAuth();
+  }, [isAuthenticated, setItem]);
 
   const setWeb2Mode = async (enabled: boolean) => {
     setIsWeb2Mode(enabled);
@@ -108,6 +132,7 @@ export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ childr
     hideWeb3Benefits,
     web3BenefitsVisible,
     web3BenefitsCallbacks,
+    isAuthenticated,
   };
 
   return (

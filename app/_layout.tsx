@@ -63,45 +63,45 @@ export default function RootLayout() {
   return (
     <LanguageProvider>
       <LocalStorageProvider>
-        <BrowserModeProvider>
-          <UserContextProvider
-            nativeHandlers={nativeHandlers}
-            appVersion={packageJson.version}
-            appName="Metanet"
-          >
-            <ExchangeRateContextProvider>
-              <WalletContextProvider>              
+        <UserContextProvider
+          nativeHandlers={nativeHandlers}
+          appVersion={packageJson.version}
+          appName="Metanet"
+        >
+          <ExchangeRateContextProvider>
+            <WalletContextProvider>              
+              <BrowserModeProvider>
                 <ThemeProvider>
                   <DeepLinkHandler />
                   <Web3BenefitsModalHandler />
                   {/* <TranslationTester /> */}
                   <DefaultBrowserPrompt />
-                <PasswordHandler />
-                <RecoveryKeySaver />
-                <ProtocolAccessModal />
-                <BasketAccessModal />
-                <CertificateAccessModal />
-                <SpendingAuthorizationModal />
-                <Stack
-                  screenOptions={{
-                    animation: 'slide_from_right',
-                    headerShown: false
-                  }}
-                >
-                  <Stack.Screen name="index" />
-                  <Stack.Screen name="browser" />
-                  <Stack.Screen name="config" options={{
-                    headerShown: false,
-                    animation: 'slide_from_bottom',
-                    presentation: 'modal'
-                  }} />
-                </Stack>
-              </ThemeProvider>
+                  <PasswordHandler />
+                  <RecoveryKeySaver />
+                  <ProtocolAccessModal />
+                  <BasketAccessModal />
+                  <CertificateAccessModal />
+                  <SpendingAuthorizationModal />
+                  <Stack
+                    screenOptions={{
+                      animation: 'slide_from_right',
+                      headerShown: false
+                    }}
+                  >
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="browser" />
+                    <Stack.Screen name="config" options={{
+                      headerShown: false,
+                      animation: 'slide_from_bottom',
+                      presentation: 'modal'
+                    }} />
+                  </Stack>
+                </ThemeProvider>
+              </BrowserModeProvider>
             </WalletContextProvider>
           </ExchangeRateContextProvider>
         </UserContextProvider>
-      </BrowserModeProvider>
-    </LocalStorageProvider>
+      </LocalStorageProvider>
     </LanguageProvider>
   );
 }
