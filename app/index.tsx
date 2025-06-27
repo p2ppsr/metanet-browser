@@ -9,12 +9,14 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 import { Utils } from '@bsv/sdk';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
   const { managers, selectedWabUrl, selectedStorageUrl, selectedMethod, selectedNetwork, finalizeConfig } = useWallet();
   const { getSnap, setItem, getItem } = useLocalStorage();
+  const { t } = useTranslation();
   const [loading, setLoading] = React.useState(false);
   const [initializing, setInitializing] = useState(true)
 
@@ -123,9 +125,9 @@ export default function LoginScreen() {
         </View>
         {!initializing && (
           <>
-        <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>Metanet</Text>
+        <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>{t('metanet')}</Text>
         <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
-          Browser with identity and payments built in
+          {t('browser_with_identity_payments')}
         </Text>
         
         <TouchableOpacity 
@@ -133,11 +135,11 @@ export default function LoginScreen() {
           onPress={handleGetStarted}
           disabled={loading}
         >
-          <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>Get Started</Text>
+          <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>{t('get_started')}</Text>
         </TouchableOpacity>
         
         <Text style={[styles.termsText, { color: colors.textSecondary }]}>
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          {t('terms_privacy_agreement')}
         </Text>
         
         <TouchableOpacity 
@@ -146,7 +148,7 @@ export default function LoginScreen() {
         >
           <View style={styles.configIconContainer}>
             <Ionicons name="settings-outline" size={20} color={colors.secondary} />
-            <Text style={styles.configButtonText}>Configure Providers</Text>
+            <Text style={styles.configButtonText}>{t('configure_providers')}</Text>
           </View>
         </TouchableOpacity>
 

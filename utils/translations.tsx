@@ -289,6 +289,13 @@ const resources = {
       new_verification_code_sent: 'A new verification code has been sent to your phone.',
       failed_to_resend: 'Failed to resend verification code. Please try again.',
       failed_resend_code: 'Failed to resend verification code. Please try again.',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'Browser with identity and payments built in',
+      get_started: 'Get Started',
+      terms_privacy_agreement: 'By continuing, you agree to our Terms of Service and Privacy Policy',
+      configure_providers: 'Configure Providers',
     }
   },
   zh: {
@@ -475,6 +482,13 @@ const resources = {
       new_verification_code_sent: '新的验证码已发送到您的手机。',
       failed_to_resend: '重新发送验证码失败。请重试。',
       failed_resend_code: '重新发送验证码失败。请重试。',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: '内置身份和支付功能的浏览器',
+      get_started: '开始使用',
+      terms_privacy_agreement: '继续即表示您同意我们的服务条款和隐私政策',
+      configure_providers: '配置提供商',
     }
   },
   hi: {
@@ -644,6 +658,13 @@ const resources = {
       phone_number: 'फोन नंबर',
       send_verification_code: 'सत्यापन कोड भेजें',
       invalid_phone_number: 'अमान्य फोन नंबर',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'पहचान और भुगतान सुविधा के साथ ब्राउज़र',
+      get_started: 'शुरू करें',
+      terms_privacy_agreement: 'जारी रखकर, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
+      configure_providers: 'प्रदाता कॉन्फ़िगर करें',
     }
   },
   es: {
@@ -744,6 +765,13 @@ const resources = {
       
       // Trust
       trust_network: 'Red de Confianza',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'Navegador con identidad y pagos integrados',
+      get_started: 'Comenzar',
+      terms_privacy_agreement: 'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad',
+      configure_providers: 'Configurar Proveedores',
     }
   },
   fr: {
@@ -866,6 +894,13 @@ const resources = {
       phone_number: 'Numéro de Téléphone',
       send_verification_code: 'Envoyer le Code de Vérification',
       invalid_phone_number: 'Numéro de téléphone invalide',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'Navigateur avec identité et paiements intégrés',
+      get_started: 'Commencer',
+      terms_privacy_agreement: 'En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité',
+      configure_providers: 'Configurer les Fournisseurs',
     }
   },
   ar: {
@@ -981,6 +1016,13 @@ const resources = {
       phone_number: 'رقم الهاتف',
       send_verification_code: 'إرسال رمز التحقق',
       invalid_phone_number: 'رقم هاتف غير صالح',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'متصفح مع الهوية والمدفوعات المدمجة',
+      get_started: 'ابدأ',
+      terms_privacy_agreement: 'من خلال المتابعة، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا',
+      configure_providers: 'تكوين موفري الخدمة',
     }
   },
   pt: {
@@ -1103,6 +1145,13 @@ const resources = {
       phone_number: 'Número do Telefone',
       send_verification_code: 'Enviar Código de Verificação',
       invalid_phone_number: 'Número de telefone inválido',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'Navegador com identidade e pagamentos integrados',
+      get_started: 'Começar',
+      terms_privacy_agreement: 'Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade',
+      configure_providers: 'Configurar Provedores',
     }
   },
   bn: {
@@ -1217,6 +1266,13 @@ const resources = {
       phone_number: 'ফোন নম্বর',
       send_verification_code: 'যাচাইকরণ কোড পাঠান',
       invalid_phone_number: 'অবৈধ ফোন নম্বর',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'পরিচয় এবং পেমেন্ট সুবিধা সহ ব্রাউজার',
+      get_started: 'শুরু করুন',
+      terms_privacy_agreement: 'চালিয়ে যেতে, আপনি আমাদের সেবার শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মত হচ্ছেন',
+      configure_providers: 'প্রদানকারী কনফিগার করুন',
     }
   },
   ru: {
@@ -1331,6 +1387,13 @@ const resources = {
       phone_number: 'Номер Телефона',
       send_verification_code: 'Отправить Код Подтверждения',
       invalid_phone_number: 'Неверный номер телефона',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'Браузер со встроенной идентификацией и платежами',
+      get_started: 'Начать',
+      terms_privacy_agreement: 'Продолжая, вы соглашаетесь с нашими Условиями обслуживания и Политикой конфиденциальности',
+      configure_providers: 'Настроить Провайдеров',
     }
   },
   id: {
@@ -1445,6 +1508,13 @@ const resources = {
       phone_number: 'Nomor Telepon',
       send_verification_code: 'Kirim Kode Verifikasi',
       invalid_phone_number: 'Nomor telepon tidak valid',
+      
+      // Login/Welcome Screen
+      metanet: 'Metanet',
+      browser_with_identity_payments: 'Browser dengan identitas dan pembayaran terintegrasi',
+      get_started: 'Mulai',
+      terms_privacy_agreement: 'Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi kami',
+      configure_providers: 'Konfigurasi Penyedia',
     }
   }
 };
