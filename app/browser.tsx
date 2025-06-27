@@ -159,6 +159,26 @@ function Browser() {
   const insets = useSafeAreaInsets()
   const { t, i18n } = useTranslation()
 
+  /* ----------------------------- language headers ----------------------------- */
+  // Map i18n language codes to proper HTTP Accept-Language header values
+  const getAcceptLanguageHeader = useCallback(() => {
+    const languageMap: Record<string, string> = {
+      'en': 'en-US,en;q=0.9',
+      'zh': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'es': 'es-ES,es;q=0.9,en;q=0.8',
+      'hi': 'hi-IN,hi;q=0.9,en;q=0.8',
+      'fr': 'fr-FR,fr;q=0.9,en;q=0.8',
+      'ar': 'ar-SA,ar;q=0.9,en;q=0.8',
+      'pt': 'pt-BR,pt;q=0.9,en;q=0.8',
+      'bn': 'bn-BD,bn;q=0.9,en;q=0.8',
+      'ru': 'ru-RU,ru;q=0.9,en;q=0.8',
+      'id': 'id-ID,id;q=0.9,en;q=0.8'
+    };
+    
+    const currentLanguage = i18n.language || 'en';
+    return languageMap[currentLanguage] || 'en-US,en;q=0.9';
+  }, [i18n.language]);
+
   /* ----------------------------- wallet context ----------------------------- */
   const { managers } = useWallet()
   const [wallet, setWallet] = useState<WalletInterface | undefined>()
@@ -417,6 +437,14 @@ function Browser() {
     };
   }, [activeTab.url, activeTab.isLoading]);
 
+  // Language change useEffect - reload WebView when language changes
+  useEffect(() => {
+    if (activeTab.webviewRef.current && activeTab.url !== kNEW_TAB_URL) {
+      // Force reload WebView with new language headers
+      activeTab.webviewRef.current.reload();
+    }
+  }, [i18n.language, activeTab.webviewRef, activeTab.url]);
+
   /* -------------------------------------------------------------------------- */
   /*                                 UTILITIES                                  */
   /* -------------------------------------------------------------------------- */
@@ -558,7 +586,7 @@ const navFwd = useCallback(() => {
   /* -------------------------------------------------------------------------- */
 
   // === 1. Injected JS ============================================
-  const injectedJavaScript = `
+  const injectedJavaScript = useMemo(() => `
   // Push Notification API polyfill
   (function() {
     // Check if Notification API already exists
@@ -784,9 +812,49 @@ const navFwd = useCallback(() => {
         args: args
       }));
     };
+
+    // Intercept fetch requests to add Accept-Language header
+    const originalFetch = window.fetch;
+    window.fetch = function(input, init = {}) {
+      // Get current language header from React Native
+      const acceptLanguage = '${getAcceptLanguageHeader()}';
+      
+      // Merge headers
+      const headers = new Headers(init.headers);
+      if (!headers.has('Accept-Language')) {
+        headers.set('Accept-Language', acceptLanguage);
+      }
+      
+      // Update init with new headers
+      const newInit = {
+        ...init,
+        headers: headers
+      };
+      
+      return originalFetch.call(this, input, newInit);
+    };
+
+    // Also intercept XMLHttpRequest for older APIs
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    const originalXHRSend = XMLHttpRequest.prototype.send;
+    
+    XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+      this._method = method;
+      this._url = url;
+      return originalXHROpen.call(this, method, url, async, user, password);
+    };
+    
+    XMLHttpRequest.prototype.send = function(data) {
+      // Add Accept-Language header if not already set
+      if (!this.getRequestHeader('Accept-Language')) {
+        const acceptLanguage = '${getAcceptLanguageHeader()}';
+        this.setRequestHeader('Accept-Language', acceptLanguage);
+      }
+      return originalXHRSend.call(this, data);
+    };
   })();
   true;
-`;
+`, [getAcceptLanguageHeader]);
 
   // === 2. RN ⇄ WebView message bridge ========================================
 
@@ -1447,7 +1515,12 @@ const navFwd = useCallback(() => {
               )}
               <WebView
                 ref={activeTab.webviewRef}
-                source={{ uri: activeTab.url }}
+                source={{ 
+                  uri: activeTab.url,
+                  headers: {
+                    'Accept-Language': getAcceptLanguageHeader()
+                  }
+                }}
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
                 injectedJavaScript={injectedJavaScript}
@@ -1582,73 +1655,6 @@ const navFwd = useCallback(() => {
               </TouchableOpacity>
             )}
           </View>
-          )}
-          
-          {/* Debug Language Switcher - Only in development */}
-          {__DEV__ && (
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'center',
-              paddingVertical: 5,
-              backgroundColor: colors.inputBackground
-            }}>
-              <TouchableOpacity
-                onPress={() => {
-                  console.log('🔧 Manually switching to Spanish...');
-                  i18n.changeLanguage('es').then(() => {
-                    console.log('✅ Language changed to Spanish');
-                    console.log('🧪 Test "new_tab":', i18n.t('new_tab'));
-                    console.log('🧪 Test "bookmarks":', i18n.t('bookmarks'));
-                  });
-                }}
-                style={{
-                  backgroundColor: colors.primary,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  borderRadius: 4,
-                  marginHorizontal: 4
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 12 }}>ES</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  console.log('🔧 Manually switching to English...');
-                  i18n.changeLanguage('en').then(() => {
-                    console.log('✅ Language changed to English');
-                    console.log('🧪 Test "new_tab":', i18n.t('new_tab'));
-                    console.log('🧪 Test "bookmarks":', i18n.t('bookmarks'));
-                  });
-                }}
-                style={{
-                  backgroundColor: colors.primary,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  borderRadius: 4,
-                  marginHorizontal: 4
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 12 }}>EN</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  console.log('🔍 Current i18n language:', i18n.language);
-                  console.log('🧪 Current translations:');
-                  console.log('  new_tab:', i18n.t('new_tab'));
-                  console.log('  bookmarks:', i18n.t('bookmarks'));
-                  console.log('  settings:', i18n.t('settings'));
-                }}
-                style={{
-                  backgroundColor: colors.textSecondary,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  borderRadius: 4,
-                  marginHorizontal: 4
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 12 }}>DEBUG</Text>
-              </TouchableOpacity>
-            </View>
           )}
           
           {!isFullscreen && addressFocused && addressSuggestions.length > 0 && (
@@ -2341,9 +2347,6 @@ const styles = StyleSheet.create({
   },
   addressInput: {
     paddingHorizontal: 8,
-    paddingVertical: Platform.OS === 'ios' ? 6 : 2,
-    borderRadius: 6,
-    fontSize: 15
   },
   addressBarIcon: { paddingHorizontal: 6 },
   padlock: { marginRight: 4 },
