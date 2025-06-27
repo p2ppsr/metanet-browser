@@ -347,17 +347,61 @@ const resources = {
       wallet: '钱包',
       identity: '身份',
       
+      // Identity
+      manage_digital_identity: '管理您的数字身份和凭证。',
+      identity_key: '身份密钥：',
+      privileged_identity_key: '特权身份密钥：',
+      reveal_key: '显示密钥',
+      wallet_manager_not_available: '钱包管理器不可用',
+      failed_to_reveal_key: '显示密钥失败',
+      privileged_reason: '显示您的特权身份密钥和日常密钥。',
+      
       // Settings
       settings: '设置',
       theme: '主题',
       currency_format: '货币格式',
       language: '语言',
+      appearance: '外观',
+      choose_theme_mode: '选择您喜欢的主题模式',
+      light: '浅色',
+      dark: '深色',
+      system_default: '系统默认',
+      account: '账户',
+      logout: '退出登录',
+      
+      // Security
+      security: '安全',
+      manage_password_recovery: '管理您的密码和恢复密钥。',
+      change_password: '更改密码',
+      change_password_prompt: '您将被提示输入旧密码以确认更改。',
+      new_password: '新密码',
+      retype_password: '重新输入密码',
+      forgot_password: '忘记密码？',
+      forgot_password_flow: '忘记密码流程',
+      change: '更改',
+      recovery_key: '恢复密钥',
+      recovery_key_description: '如果您忘记密码或丢失手机，您将需要恢复密钥。',
+      view: '查看',
+      change_recovery_key: '更改恢复密钥（模拟）',
+      password_too_short: '密码太短',
+      passwords_do_not_match: '密码不匹配',
+      success: '成功',
+      password_changed_mock: '密码已更改（模拟）',
+      recovery_key_mock: '•••••••••••••• （模拟）',
       
       // Notifications
       notification_permission: '通知权限',
       allow_notifications: '允许此网站发送通知？',
       allow: '允许',
       block: '阻止',
+      allow_notifications_question: '允许通知？',
+      wants_to_send_notifications: '想要向您发送通知',
+      can_send_notifications_about: '此网站可以向您发送以下通知：',
+      breaking_news_updates: '• 突发新闻和更新',
+      messages_activity: '• 消息和活动',
+      reminders_alerts: '• 提醒和警报',
+      change_in_settings: '您可以随时在设置中更改此选项。',
+      requesting: '请求中...',
       
       // Errors
       error_loading_page: '页面加载错误',
@@ -400,65 +444,6 @@ const resources = {
       search_trusted_origins: '搜索可信来源…',
       no_trusted_origins: '暂无可信来源。',
       trusted: '可信',
-      
-      // Identity
-      manage_digital_identity: '管理您的数字身份和凭证。',
-      identity_key: '身份密钥：',
-      privileged_identity_key: '特权身份密钥：',
-      reveal_key: '显示密钥',
-      wallet_manager_not_available: '钱包管理器不可用',
-      failed_to_reveal_key: '显示密钥失败',
-      privileged_reason: '显示您的特权身份密钥和日常密钥。',
-      
-      // Security
-      security: '安全',
-      manage_password_recovery: '管理您的密码和恢复密钥。',
-      change_password: '更改密码',
-      change_password_prompt: '您将被提示输入旧密码以确认更改。',
-      new_password: '新密码',
-      retype_password: '重新输入密码',
-      forgot_password: '忘记密码？',
-      forgot_password_flow: '忘记密码流程',
-      change: '更改',
-      recovery_key: '恢复密钥',
-      recovery_key_description: '如果您忘记密码或丢失手机，您将需要恢复密钥。',
-      view: '查看',
-      change_recovery_key: '更改恢复密钥（模拟）',
-      password_too_short: '密码太短',
-      passwords_do_not_match: '密码不匹配',
-      success: '成功',
-      password_changed_mock: '密码已更改（模拟）',
-      recovery_key_mock: '•••••••••••••• （模拟）',
-      
-      // Settings (extended)
-      appearance: '外观',
-      choose_theme_mode: '选择您喜欢的主题模式',
-      light: '浅色',
-      dark: '深色',
-      system_default: '系统默认',
-      account: '账户',
-      logout: '退出登录',
-      
-      // Notifications (extended)
-      allow_notifications_question: '允许通知？',
-      wants_to_send_notifications: '想要向您发送通知',
-      can_send_notifications_about: '此网站可以向您发送以下通知：',
-      breaking_news_updates: '• 突发新闻和更新',
-      messages_activity: '• 消息和活动',
-      reminders_alerts: '• 提醒和警报',
-      change_in_settings: '您可以随时在设置中更改此选项。',
-      requesting: '请求中...',
-      
-      // Navigation (extended)
-      search_results: '搜索结果',
-      add_bookmark: '添加书签',
-      
-      // Navigation actions
-      switch_to_mobile_view: '切换到移动视图',
-      switch_to_desktop_view: '切换到桌面视图',
-      add_to_device_homescreen: '添加到设备主屏幕',
-      back_to_homepage: '返回主页',
-      notifications: '通知',
       
       // Auth - Password
       enter_password: '输入密码',
@@ -552,18 +537,72 @@ const resources = {
       theme: 'थीम',
       currency_format: 'मुद्रा प्रारूप',
       language: 'भाषा',
+      appearance: 'दृश्य',
+      choose_theme_mode: 'अपने पसंदीदा थीम मोड का चयन करें',
+      light: 'हल्का',
+      dark: 'गहरा',
+      system_default: 'सिस्टम डिफ़ॉल्ट',
+      account: 'खाता',
+      logout: 'लॉगआउट',
+      
+      // Security
+      security: 'सुरक्षा',
+      manage_password_recovery: 'अपने पासवर्ड और पुनर्प्राप्ति कुंजी का प्रबंधन करें।',
+      change_password: 'पासवर्ड बदलें',
+      change_password_prompt: 'आपको परिवर्तन की पुष्टि करने के लिए अपना पुराना पासवर्ड दर्ज करने के लिए कहा जाएगा।',
+      new_password: 'नया पासवर्ड',
+      retype_password: 'पासवर्ड फिर से टाइप करें',
+      forgot_password: 'पासवर्ड भूल गए?',
+      forgot_password_flow: 'पासवर्ड भूल गए प्रक्रिया',
+      change: 'बदलें',
+      recovery_key: 'पुनर्प्राप्ति कुंजी',
+      recovery_key_description: 'यदि आप अपना पासवर्ड भूल जाते हैं या अपना फोन खो देते हैं, तो आपको पुनर्प्राप्ति कुंजी की आवश्यकता होगी।',
+      view: 'देखें',
+      change_recovery_key: 'पुनर्प्राप्ति कुंजी बदलें (नकली)',
+      password_too_short: 'पासवर्ड बहुत छोटा है',
+      passwords_do_not_match: 'पासवर्ड मेल नहीं खाते',
+      success: 'सफलता',
+      password_changed_mock: 'पासवर्ड बदल गया (नकली)',
+      recovery_key_mock: '•••••••••••••• (नकली)',
       
       // Notifications
-      notification_permission: 'अधिसूचना अनुमति',
-      allow_notifications: 'इस साइट से अधिसूचनाओं की अनुमति दें?',
+      notification_permission: 'सूचना अनुमति',
+      allow_notifications: 'क्या इस साइट से सूचनाएँ अनुमति दें?',
       allow: 'अनुमति दें',
       block: 'ब्लॉक करें',
+      allow_notifications_question: 'क्या सूचनाएँ अनुमति दें?',
+      wants_to_send_notifications: 'आपको सूचनाएँ भेजना चाहता है',
+      can_send_notifications_about: 'यह साइट आपको निम्नलिखित के बारे में सूचनाएँ भेज सकती है:',
+      breaking_news_updates: '• ब्रेकिंग न्यूज और अपडेट',
+      messages_activity: '• संदेश और गतिविधि',
+      reminders_alerts: '• अनुस्मारक और अलर्ट',
+      change_in_settings: 'आप कभी भी सेटिंग्स में इसे बदल सकते हैं।',
+      requesting: 'अनुरोध कर रहा है...',
       
       // Errors
-      error_loading_page: 'पेज लोड करने में त्रुटि',
+      error_loading_page: 'पृष्ठ लोड करने में त्रुटि',
       no_internet: 'इंटरनेट कनेक्शन नहीं',
       invalid_url: 'अमान्य URL',
       something_went_wrong: 'कुछ गलत हुआ',
+      error: 'त्रुटि',
+      configuration_error: 'कॉन्फ़िगरेशन त्रुटि',
+      could_not_fetch_wallet_config: 'वॉलेट कॉन्फ़िगरेशन प्राप्त करने में असफल:',
+      failed_to_save_config: 'कॉन्फ़िगरेशन सहेजने में विफल। कृपया फिर से प्रयास करें।',
+      
+      // Configuration
+      configuration: 'कॉन्फ़िगरेशन',
+      save: 'सहेजें',
+      wallet_auth_backend: 'वॉलेट प्रमाणीकरण बैकएंड (WAB)',
+      wab_description: 'आपकी रूट कुंजी के लिए 2/3 बैकअप और पुनर्प्राप्ति कार्यक्षमता प्रदान करता है।',
+      wab_url: 'WAB URL',
+      enter_wab_url: 'WAB URL दर्ज करें',
+      refresh_info: 'जानकारी ताज़ा करें',
+      phone_verification_service: 'सेवा जिसका उपयोग आपके फोन नंबर की पुष्टि के लिए किया जाएगा',
+      bsv_network: 'BSV नेटवर्क',
+      wallet_storage_provider: 'वॉलेट स्टोरेज प्रदाता',
+      storage_description: 'आपके लेनदेन और मेटाडेटा स्टोरेज के लिए उपयोग किया जाता है।',
+      storage_url: 'स्टोरेज URL',
+      enter_storage_url: 'स्टोरेज URL दर्ज करें',
       
       // States
       loading: 'लोड हो रहा है...',
@@ -674,6 +713,13 @@ const resources = {
       theme: 'Tema',
       currency_format: 'Formato de Moneda',
       language: 'Idioma',
+      appearance: 'Apariencia',
+      choose_theme_mode: 'Elige tu modo de tema preferido',
+      light: 'Claro',
+      dark: 'Oscuro',
+      system_default: 'Predeterminado del sistema',
+      account: 'Cuenta',
+      logout: 'Cerrar sesión',
       
       // Notifications
       notification_permission: 'Permiso de Notificación',
@@ -760,6 +806,13 @@ const resources = {
       theme: 'Thème',
       currency_format: 'Format de Devise',
       language: 'Langue',
+      appearance: 'Apparence',
+      choose_theme_mode: 'Choisissez votre mode de thème préféré',
+      light: 'Clair',
+      dark: 'Sombre',
+      system_default: 'Par défaut du système',
+      account: 'Compte',
+      logout: 'Déconnexion',
       
       // Notifications
       notification_permission: 'Autorisation de Notification',
@@ -990,6 +1043,13 @@ const resources = {
       theme: 'Tema',
       currency_format: 'Formato de Moeda',
       language: 'Idioma',
+      appearance: 'Aparência',
+      choose_theme_mode: 'Escolha seu modo de tema preferido',
+      light: 'Claro',
+      dark: 'Escuro',
+      system_default: 'Padrão do sistema',
+      account: 'Conta',
+      logout: 'Sair',
       
       // Notifications
       notification_permission: 'Permissão de Notificação',
@@ -1472,98 +1532,5 @@ export const useLanguage = (): LanguageContextType => useContext(LanguageContext
 
 export type TranslationKey = keyof typeof resources.en.translation;
 
-// Test function to verify translations are working
-export const testTranslations = () => {
-  console.log('🧪 Testing translations...');
-  console.log('Current language:', i18n.language);
-  console.log('Test translation (new_tab):', i18n.t('new_tab'));
-  console.log('Test translation (bookmarks):', i18n.t('bookmarks'));
-  console.log('Test translation (settings):', i18n.t('settings'));
-  
-  // Test if the translation exists
-  const testKey = 'new_tab';
-  const translation = i18n.t(testKey);
-  if (translation === testKey) {
-    console.warn('⚠️ Translation not found for key:', testKey);
-  } else {
-    console.log('✅ Translation working correctly');
-  }
-};
-
-// Advanced debug function to check language detection and translation state
-export const debugLanguageDetection = () => {
-  console.log('🔍 === LANGUAGE DETECTION DEBUG ===');
-  
-  try {
-    // Check expo-localization first
-    const Localization = require('expo-localization');
-    const locales = Localization.getLocales();
-    console.log('🌍 expo-localization locales:', locales);
-    console.log('🔤 expo-localization language code:', locales?.[0]?.languageCode);
-  } catch (e) {
-    console.log('⚠️ expo-localization not available:', e.message);
-  }
-  
-  try {
-    // Check react-native-localize
-    const { getLocales } = require('react-native-localize');
-    const locales = getLocales();
-    console.log('🌍 react-native-localize locales:', locales);
-  } catch (e) {
-    console.log('⚠️ react-native-localize not available');
-  }
-  
-  try {
-    // Check platform-specific settings
-    const { Platform, NativeModules } = require('react-native');
-    console.log('📱 Platform:', Platform.OS);
-    
-    if (Platform.OS === 'ios') {
-      console.log('🍎 iOS SettingsManager:', NativeModules.SettingsManager?.settings);
-      
-      const { I18nManager } = require('react-native');
-      console.log('🍎 iOS I18nManager:', {
-        localeIdentifier: I18nManager.localeIdentifier,
-        isRTL: I18nManager.isRTL
-      });
-    }
-  } catch (e) {
-    console.log('⚠️ Platform detection failed:', e.message);
-  }
-  
-  // Current i18n state
-  console.log('🎯 i18n current language:', i18n.language);
-  console.log('📋 i18n available languages:', Object.keys(resources));
-  console.log('🔙 i18n fallback language:', i18n.options.fallbackLng);
-  
-  // Test translations in current language
-  const testKeys = ['new_tab', 'bookmarks', 'settings', 'search_placeholder'];
-  testKeys.forEach(key => {
-    const translation = i18n.t(key);
-    console.log(`🧪 "${key}" -> "${translation}"`);
-  });
-  
-  console.log('🔍 === END DEBUG ===');
-};
-
-// Manual test function to force language change for debugging
-export const forceLanguage = (language: string) => {
-  console.log('🔧 Manually forcing language change to:', language);
-  return i18n.changeLanguage(language).then(() => {
-    console.log('✅ Language manually changed to:', i18n.language);
-    // Test a few translations
-    console.log('🧪 Test "new_tab":', i18n.t('new_tab'));
-    console.log('🧪 Test "bookmarks":', i18n.t('bookmarks'));
-    console.log('🧪 Test "settings":', i18n.t('settings'));
-    return i18n.language;
-  }).catch((error) => {
-    console.error('❌ Failed to manually change language:', error);
-    throw error;
-  });
-};
-
-// Global helper for quick Spanish test
-(global as any).testSpanish = () => forceLanguage('es');
-(global as any).testEnglish = () => forceLanguage('en');
 
 export default i18n;
