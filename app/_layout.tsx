@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { UserContextProvider, NativeHandlers } from '../context/UserContext';
 import packageJson from '../package.json';
@@ -15,6 +15,10 @@ import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal'
 import { useDeepLinking } from '@/hooks/useDeepLinking';
 import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt';
 import * as Notifications from 'expo-notifications';
+import { LanguageProvider, debugLanguageDetection } from '@/utils/translations';
+import { useTranslation } from 'react-i18next';
+// Import the i18n instance to test translations
+import '@/utils/translations';
 
 const nativeHandlers: NativeHandlers = {
   isFocused: async () => false,
@@ -55,19 +59,48 @@ function DeepLinkHandler() {
   return null;
 }
 
+// Translation test component
+function TranslationTester() {
+  const { t, i18n } = useTranslation();
+  
+  useEffect(() => {
+    const runTests = () => {
+      try {
+        console.log('🧪 Testing translations in component...');
+        console.log('Current language:', i18n.language);
+        console.log('Test translation (new_tab):', t('new_tab'));
+        console.log('Test translation (bookmarks):', t('bookmarks'));
+        console.log('Test translation (settings):', t('settings'));
+        console.log('✅ Translation component test completed');
+        
+        // Run comprehensive debug
+        debugLanguageDetection();
+      } catch (error) {
+        console.error('❌ Translation test failed:', error);
+      }
+    };
+    
+    // Run test after a short delay to ensure i18n is initialized
+    setTimeout(runTests, 2000);
+  }, [t, i18n]);
+  
+  return null;
+}
+
 export default function RootLayout() {
   return (
-    <LocalStorageProvider>
-      <UserContextProvider
-        nativeHandlers={nativeHandlers}
-        appVersion={packageJson.version}
-        appName="Metanet"
-      >
-        <ExchangeRateContextProvider>
-          <WalletContextProvider>
-            <ThemeProvider>
-              <DeepLinkHandler />
-              <DefaultBrowserPrompt />
+    <LanguageProvider>
+      <LocalStorageProvider>
+        <UserContextProvider
+          nativeHandlers={nativeHandlers}
+          appVersion={packageJson.version}
+          appName="Metanet"
+        >
+          <ExchangeRateContextProvider>
+            <WalletContextProvider>              <ThemeProvider>
+                <DeepLinkHandler />
+                <TranslationTester />
+                <DefaultBrowserPrompt />
               <PasswordHandler />
               <RecoveryKeySaver />
               <ProtocolAccessModal />
@@ -93,5 +126,6 @@ export default function RootLayout() {
         </ExchangeRateContextProvider>
       </UserContextProvider>
     </LocalStorageProvider>
+    </LanguageProvider>
   );
 }
