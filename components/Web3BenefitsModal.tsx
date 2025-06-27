@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/theme/ThemeContext';
@@ -67,50 +66,35 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>
-              🚀 Welcome to the Future
+              Are you sure?
             </Text>
             <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
-          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.subtitle, { color: colors.textPrimary }]}>
-              🎯 <Text style={{ fontWeight: 'bold', color: colors.primary }}>Here's what you'll unlock with Web3:</Text>
+          {/* Content - Simple approach */}
+          <View style={{ padding: 20 }}>
+            <Text style={[{ fontSize: 16, marginBottom: 16, color: colors.textPrimary }]}>
+              The benefits of web3 are as follows:
             </Text>
 
-            <View style={styles.benefitsContainer}>
-              {benefits.map((benefit, index) => (
-                <View key={index} style={[styles.benefitItem, { 
-                  backgroundColor: colors.primary + '08',
-                  borderLeftColor: colors.primary,
-                }]}>
-                  <View style={[styles.iconContainer, { backgroundColor: colors.primary }]}>
-                    <Ionicons name={benefit.icon} size={22} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.benefitText}>
-                    <Text style={[styles.benefitTitle, { color: colors.textPrimary }]}>
-                      {benefit.title}
-                    </Text>
-                    <Text style={[styles.benefitDescription, { color: colors.textSecondary }]}>
-                      {benefit.description}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-
-            <View style={[styles.highlightBox, { 
-              backgroundColor: colors.primary + '15', 
-              borderColor: colors.primary,
-            }]}>
-              <Text style={[styles.highlightText, { color: colors.textPrimary }]}>
-                ⚡ <Text style={{ fontWeight: '800', color: colors.primary }}>Ready in 30 seconds!</Text> Your Web3 identity works everywhere instantly. 
-                Join millions already using the future of the internet.
-              </Text>
-            </View>
-          </ScrollView>
+            <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
+              • Never login again - One identity for every Web3 app. No more passwords or sign-ups.
+            </Text>
+            <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
+              • Instant everything - Payments, access, verification - all happen in seconds.
+            </Text>
+            <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
+              • You own your data - No companies tracking you or selling your information.
+            </Text>
+            <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
+              • Works everywhere - Access thousands of Web3 apps with the same identity.
+            </Text>
+            <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 20, color: colors.textPrimary }]}>
+              • Future-proof - Be early to the next generation of the internet.
+            </Text>
+          </View>
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
@@ -119,7 +103,7 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
               onPress={onGoToLogin}
             >
               <Text style={[styles.primaryButtonText, { color: colors.buttonText }]}>
-                � Get My Web3 Identity (30s)
+                🚀 Get My Web3 Identity (30s)
               </Text>
             </TouchableOpacity>
 
@@ -148,10 +132,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '100%',
-    maxWidth: 400,
-    maxHeight: '90%',
+    maxWidth: 350,
     borderRadius: 20,
-    padding: 0,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -175,60 +157,6 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 5,
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  subtitle: {
-    fontSize: 17,
-    marginBottom: 24,
-    lineHeight: 24,
-    fontWeight: '600',
-  },
-  benefitsContainer: {
-    marginBottom: 20,
-  },
-  benefitItem: {
-    flexDirection: 'row',
-    marginBottom: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: 'flex-start',
-    borderRadius: 8,
-    borderLeftWidth: 3,
-  },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-    marginTop: 2,
-  },
-  benefitText: {
-    flex: 1,
-  },
-  benefitTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  benefitDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  highlightBox: {
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 2,
-    marginBottom: 20,
-  },
-  highlightText: {
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 22,
   },
   buttonContainer: {
     padding: 20,
