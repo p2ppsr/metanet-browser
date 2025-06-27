@@ -33,18 +33,16 @@
           "defaultChannel": "default"
         }
       ],
+      "@react-native-firebase/app",
       [
-        "@react-native-firebase/app",
-        [
-          "expo-build-properties",
-          {
-            "ios": {
-              "useFrameworks": "static"
-            }
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "useModularHeaders": true
           }
-        ]
-      ],
-      "expo-build-properties"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

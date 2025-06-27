@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import ConfigModal from '@/components/ConfigModal';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,20 +9,34 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 import { Utils } from '@bsv/sdk';
-import analytics from '@react-native-firebase/analytics';
+import { getAnalytics } from '@react-native-firebase/analytics';
+import { getRemoteConfig } from '@react-native-firebase/remote-config';
 
 export default function LoginScreen() {
   // Get theme colors
   const { colors, isDark } = useTheme();
   const { managers, selectedWabUrl, selectedStorageUrl, selectedMethod, selectedNetwork, finalizeConfig } = useWallet();
   const { getSnap, setItem, getItem } = useLocalStorage();
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
+  const [startButtonText, setStartButtonText] = useState('Get Started');
   const [initializing, setInitializing] = useState(true)
+
+  useEffect(() => {
+    // Get the button text from Remote Config
+    const remoteConfigInstance = getRemoteConfig();    
+    const value = remoteConfigInstance.getValue('start_button_text');
+    
+    // Use the remote value if it's not the static default
+    if (value.getSource() !== 'static') {
+      setStartButtonText(value.asString());
+    }
+  }, []);
 
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
     try {
-      await analytics().logEvent('get_started_tapped', {
+      const analyticsInstance = getAnalytics();
+      await analyticsInstance.logEvent('start_button_tapped', {
         screen: 'browser', variant: 'A'
       });
     } catch (error) {
@@ -139,7 +153,7 @@ export default function LoginScreen() {
               onPress={handleGetStarted}
               disabled={loading}
             >
-              <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>Get Started</Text>
+              <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>{loading ? <ActivityIndicator color='#fff' /> : startButtonText}</Text>
             </TouchableOpacity>
 
             <Text style={[styles.termsText, { color: colors.textSecondary }]}>
