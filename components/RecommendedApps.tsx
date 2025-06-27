@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Fuse from 'fuse.js';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
+import { useTranslation } from 'react-i18next';
 
 interface App {
   domain: string;
@@ -104,6 +105,7 @@ export const RecommendedApps = ({
 }: RecommendedAppsProps) => {
   const { colors } = useTheme();
   const { recentApps } = useWallet();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [isDesktopView, setIsDesktopView] = useState(false);
@@ -268,7 +270,7 @@ export const RecommendedApps = ({
                 borderColor: colors.inputBorder,
               },
             ]}
-            placeholder="Search bookmarks…"
+            placeholder={t('search_bookmarks')}
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -281,7 +283,7 @@ export const RecommendedApps = ({
           // Show search results
           <View style={componentStyles.section}>
             <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>
-              Search Results ({searchResults.length})
+              {t('search_results')} ({searchResults.length})
             </Text>
             <FlatList
               data={searchResults}
@@ -311,12 +313,12 @@ export const RecommendedApps = ({
               // Show all sections based on homepage settings
               <>
                 {(homepageSettings?.showBookmarks !== false) && renderSection(
-                  limitBookmarks ? `Recent Bookmarks` : 'Bookmarks', 
+                  limitBookmarks ? t('recent_bookmarks') : t('bookmarks'), 
                   processedBookmarks, 
                   'bookmarks'
                 )}
-                {(homepageSettings?.showRecentApps !== false) && renderSection('Recent', processedRecentApps, 'recent')}
-                {(homepageSettings?.showRecommendedApps !== false) && renderSection('Recommended', filteredDefaultApps, 'default')}
+                {(homepageSettings?.showRecentApps !== false) && renderSection(t('recent'), processedRecentApps, 'recent')}
+                {(homepageSettings?.showRecommendedApps !== false) && renderSection(t('recommended'), filteredDefaultApps, 'default')}
               </>
             )}
           </>
@@ -331,7 +333,7 @@ export const RecommendedApps = ({
             >
               <Ionicons name="options-outline" size={20} color={colors.textSecondary} />
               <Text style={[componentStyles.customizeButtonText, { color: colors.textSecondary }]}>
-                Customize Homepage
+                {t('customize_homepage')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -353,10 +355,10 @@ export const RecommendedApps = ({
             <View style={[componentStyles.customizeModal, { backgroundColor: colors.background }]}>
               <View style={[componentStyles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
                 <Text style={[componentStyles.contextMenuTitle, { color: colors.textPrimary }]}>
-                  Customize Homepage
+                  {t('customize_homepage')}
                 </Text>
                 <Text style={[componentStyles.contextMenuUrl, { color: colors.textSecondary }]}>
-                  Show or hide sections on your homepage
+                  {t('customize_homepage_description')}
                 </Text>
               </View>
               
@@ -372,7 +374,7 @@ export const RecommendedApps = ({
                     color={homepageSettings.showBookmarks ? colors.primary : colors.textSecondary} 
                   />
                   <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
-                    Recent Bookmarks
+                    {t('recent_bookmarks')}
                   </Text>
                 </TouchableOpacity>
 
@@ -387,7 +389,7 @@ export const RecommendedApps = ({
                     color={homepageSettings.showRecentApps ? colors.primary : colors.textSecondary} 
                   />
                   <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
-                    Recent
+                    {t('recent')}
                   </Text>
                 </TouchableOpacity>
 
@@ -402,7 +404,7 @@ export const RecommendedApps = ({
                     color={homepageSettings.showRecommendedApps ? colors.primary : colors.textSecondary} 
                   />
                   <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
-                    Recommended
+                    {t('recommended')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -423,7 +425,7 @@ export const RecommendedApps = ({
                 >
                   <Ionicons name="refresh-outline" size={18} color={colors.textSecondary} />
                   <Text style={[componentStyles.customizeActionText, { color: colors.textSecondary }]}>
-                    Reset
+                    {t('reset')}
                   </Text>
                 </TouchableOpacity>
 
@@ -434,7 +436,7 @@ export const RecommendedApps = ({
                 >
                   <Ionicons name="checkmark-outline" size={18} color={colors.background} />
                   <Text style={[componentStyles.customizeActionText, { color: colors.background }]}>
-                    Done
+                    {t('done')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -472,7 +474,7 @@ export const RecommendedApps = ({
               >
                 <Ionicons name="trash-outline" size={22} color="#FF3B30" style={componentStyles.contextMenuIcon} />
                 <Text style={[componentStyles.contextMenuText, { color: '#FF3B30' }]}>
-                  {selectedApp && isBookmark(selectedApp) ? 'Delete Bookmark' : 'Hide App'}
+                  {selectedApp && isBookmark(selectedApp) ? t('delete_bookmark') : t('hide_app')}
                 </Text>
               </TouchableOpacity>
               
@@ -483,7 +485,7 @@ export const RecommendedApps = ({
               >
                 <Ionicons name="close-outline" size={22} color={colors.textSecondary} style={componentStyles.contextMenuIcon} />
                 <Text style={[componentStyles.contextMenuText, { color: colors.textSecondary }]}>
-                  Cancel
+                  {t('cancel')}
                 </Text>
               </TouchableOpacity>
             </View>

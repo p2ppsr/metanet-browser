@@ -48,6 +48,8 @@ import tabStore from '../stores/TabStore'
 import bookmarkStore from '@/stores/BookmarkStore'
 import SettingsScreen from './settings'
 import IdentityScreen from './identity'
+import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/utils/translations'
 import SecurityScreen from './security'
 import TrustScreen from './trust'
 
@@ -100,10 +102,11 @@ function StarDrawer({
   index: number;
   setIndex: (index: number) => void;
 }) {
+  const { t } = useTranslation()
   const routes = useMemo(() => [
-    { key: 'bookmarks', title: 'Bookmarks' },
-    { key: 'history', title: 'History' }
-  ], []);
+    { key: 'bookmarks', title: t('bookmarks') },
+    { key: 'history', title: t('history') }
+  ], [t]);
   const renderScene = useMemo(() => SceneMap({
     bookmarks: BookmarksScene,
     history: HistoryScene
@@ -154,6 +157,7 @@ function Browser() {
   /* --------------------------- theme / basic hooks -------------------------- */
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
+  const { t, i18n } = useTranslation()
 
   /* ----------------------------- wallet context ----------------------------- */
   const { managers } = useWallet()
@@ -946,7 +950,7 @@ const navFwd = useCallback(() => {
             // Show notification immediately
             await Notifications.scheduleNotificationAsync({
               content: {
-                title: msg.title || 'Website Notification',
+                title: msg.title || t('website_notification'),
                 body: msg.body || '',
                 data: {
                   origin: activeTab.url,
@@ -1304,7 +1308,7 @@ const navFwd = useCallback(() => {
             isValidUrl(activeTab.url) && 
             !activeTab.url.includes('about:blank')) {
           addBookmark(
-            activeTab.title || 'Untitled',
+            activeTab.title || t('untitled'),
             activeTab.url
           )
           toggleInfoDrawer(false)
@@ -1548,7 +1552,7 @@ const navFwd = useCallback(() => {
                   textAlign: addressFocused ? 'left' : 'center'
                 }
               ]}
-              placeholder='Search or enter site name'
+              placeholder={t('search_placeholder')}
               placeholderTextColor={colors.textSecondary}
             />
 
@@ -1579,6 +1583,74 @@ const navFwd = useCallback(() => {
             )}
           </View>
           )}
+          
+          {/* Debug Language Switcher - Only in development */}
+          {__DEV__ && (
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              paddingVertical: 5,
+              backgroundColor: colors.inputBackground
+            }}>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log('🔧 Manually switching to Spanish...');
+                  i18n.changeLanguage('es').then(() => {
+                    console.log('✅ Language changed to Spanish');
+                    console.log('🧪 Test "new_tab":', i18n.t('new_tab'));
+                    console.log('🧪 Test "bookmarks":', i18n.t('bookmarks'));
+                  });
+                }}
+                style={{
+                  backgroundColor: colors.primary,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 4,
+                  marginHorizontal: 4
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 12 }}>ES</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log('🔧 Manually switching to English...');
+                  i18n.changeLanguage('en').then(() => {
+                    console.log('✅ Language changed to English');
+                    console.log('🧪 Test "new_tab":', i18n.t('new_tab'));
+                    console.log('🧪 Test "bookmarks":', i18n.t('bookmarks'));
+                  });
+                }}
+                style={{
+                  backgroundColor: colors.primary,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 4,
+                  marginHorizontal: 4
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 12 }}>EN</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log('🔍 Current i18n language:', i18n.language);
+                  console.log('🧪 Current translations:');
+                  console.log('  new_tab:', i18n.t('new_tab'));
+                  console.log('  bookmarks:', i18n.t('bookmarks'));
+                  console.log('  settings:', i18n.t('settings'));
+                }}
+                style={{
+                  backgroundColor: colors.textSecondary,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 4,
+                  marginHorizontal: 4
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 12 }}>DEBUG</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          
           {!isFullscreen && addressFocused && addressSuggestions.length > 0 && (
             <View
               style={[
@@ -1798,7 +1870,7 @@ const navFwd = useCallback(() => {
                 >
                   <Ionicons name="trash-outline" size={22} color="#FF3B30" style={styles.contextMenuIcon} />
                   <Text style={[styles.contextMenuText, { color: '#FF3B30' }]}>
-                    Clear
+                    {t('clear')}
                   </Text>
                 </TouchableOpacity>
                 
@@ -1809,7 +1881,7 @@ const navFwd = useCallback(() => {
                 >
                   <Ionicons name="close-outline" size={22} color={colors.textSecondary} style={styles.contextMenuIcon} />
                   <Text style={[styles.contextMenuText, { color: colors.textSecondary }]}>
-                    Cancel
+                    {t('cancel')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1849,6 +1921,7 @@ const TabsViewBase = ({
   setAddressText: (text: string) => void
   colors: any
 }) => {
+  const { t } = useTranslation()
   // Use the imported tabStore directly
   const screen = Dimensions.get('window')
   const ITEM_W = screen.width * 0.42
@@ -1962,7 +2035,7 @@ const TabsViewBase = ({
           {item.url === kNEW_TAB_URL ? (
             <View style={styles.tabPreviewEmpty}>
               <Text style={{ fontSize: 16, color: colors.textSecondary }}>
-                New Tab
+                {t('new_tab')}
               </Text>
             </View>
           ) : (
@@ -2052,7 +2125,7 @@ const TabsViewBase = ({
           onPress={onDismiss}
         >
           <Text style={[styles.doneButtonText, { color: colors.background }]}>
-            Done
+            {t('done')}
           </Text>
         </TouchableOpacity>
       </View>
