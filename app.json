@@ -50,7 +50,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "2b1d03e5-6b5f-4e6c-8d32-4906aa4a436a"
+        "projectId": "cc9c250b-48f3-4b79-8243-1e27fcd1548d"
       }
     },
     "android": {
@@ -152,6 +152,7 @@
       "iosDisplayInForeground": true,
       "androidMode": "default",
       "androidCollapsedTitle": "#{unread_notifications} new interactions"
-    }
+    },
+    "owner": "jackielu"
   }
 }
