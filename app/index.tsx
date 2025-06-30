@@ -9,8 +9,7 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 import { Utils } from '@bsv/sdk';
-import { getAnalytics } from '@react-native-firebase/analytics';
-import { getRemoteConfig } from '@react-native-firebase/remote-config';
+import { remoteConfig, analytics } from '@/utils/firebase';
 
 export default function LoginScreen() {
   // Get theme colors
@@ -23,8 +22,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     // Get the button text from Remote Config
-    const remoteConfigInstance = getRemoteConfig();    
-    const value = remoteConfigInstance.getValue('start_button_text');
+    const value = remoteConfig.getValue('start_button_text');
     
     // Use the remote value if it's not the static default
     if (value.getSource() !== 'static') {
@@ -35,8 +33,7 @@ export default function LoginScreen() {
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
     try {
-      const analyticsInstance = getAnalytics();
-      await analyticsInstance.logEvent('start_button_tapped', {
+      await analytics.logEvent('start_button_tapped', {
         screen: 'browser', variant: 'A'
       });
     } catch (error) {
