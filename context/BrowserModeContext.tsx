@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useLocalStorage } from './LocalStorageProvider';
 import { useWallet } from './WalletContext';
@@ -60,24 +61,40 @@ export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ childr
   // Check if user is authenticated (logged in with Web3 identity)
   const isAuthenticated = !!(managers?.walletManager?.authenticated);
 
+  // Debug logging for authentication state changes
+  useEffect(() => {
+    console.log('[BrowserMode] Authentication state changed:', {
+      isAuthenticated,
+      walletManager: !!managers?.walletManager,
+      authenticated: managers?.walletManager?.authenticated,
+      isWeb2Mode,
+      platform: Platform.OS
+    });
+  }, [isAuthenticated, managers?.walletManager, managers?.walletManager?.authenticated, isWeb2Mode]);
+
   // Initialize mode from URL params or stored preference
   useEffect(() => {
     const initializeMode = async () => {
+      console.log('[BrowserMode] Initializing mode with params:', params.mode);
+      
       // Check if mode is specified in URL params
       if (params.mode === 'web2') {
+        console.log('[BrowserMode] Setting web2 mode from URL params');
         setIsWeb2Mode(true);
         // Store this preference
         await setItem('browserMode', 'web2');
       } else if (params.mode === 'web3') {
+        console.log('[BrowserMode] Setting web3 mode from URL params');
         setIsWeb2Mode(false);
         await setItem('browserMode', 'web3');
       } else {
         // Load from stored preference
         try {
           const storedMode = await getItem('browserMode');
+          console.log('[BrowserMode] Loaded stored mode:', storedMode);
           setIsWeb2Mode(storedMode === 'web2');
         } catch (error) {
-          console.log('No stored browser mode, defaulting to web3');
+          console.log('[BrowserMode] No stored browser mode, defaulting to web3');
           setIsWeb2Mode(false);
         }
       }
@@ -86,18 +103,18 @@ export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ childr
     initializeMode();
   }, [params.mode, getItem, setItem]);
 
-  // Auto-switch to web3 mode when user logs in, web2 mode when they log out
+  // Auto-switch to web3 mode when user logs in
+  // Note: Don't auto-switch to web2 when logged out, respect user's choice
   useEffect(() => {
     const updateModeBasedOnAuth = async () => {
       if (isAuthenticated) {
         // User is logged in with Web3 identity, switch to web3 mode
+        console.log('[BrowserMode] User authenticated, switching to web3 mode');
         setIsWeb2Mode(false);
         await setItem('browserMode', 'web3');
-      } else {
-        // User is not logged in, switch to web2 mode
-        setIsWeb2Mode(true);
-        await setItem('browserMode', 'web2');
       }
+      // Don't automatically switch to web2 mode when not authenticated
+      // This allows users who chose "Continue without login" to stay in their chosen mode
     };
 
     updateModeBasedOnAuth();

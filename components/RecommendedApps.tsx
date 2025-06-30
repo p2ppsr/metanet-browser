@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Fuse from 'fuse.js';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
+import { useBrowserMode } from '@/context/BrowserModeContext';
 import { useTranslation } from 'react-i18next';
 
 interface App {
@@ -105,6 +106,7 @@ export const RecommendedApps = ({
 }: RecommendedAppsProps) => {
   const { colors } = useTheme();
   const { recentApps } = useWallet();
+  const { isWeb2Mode } = useBrowserMode();
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
@@ -155,15 +157,19 @@ export const RecommendedApps = ({
     if (showOnlyBookmarks) return [];
     // Use homepage settings to determine if recommended apps should be shown
     if (homepageSettings && !homepageSettings.showRecommendedApps) return [];
+    // In web2 mode, don't show any default web3 apps
+    if (isWeb2Mode) return [];
     return defaultApps.filter(app => !removedDefaultApps.includes(app.domain));
-  }, [removedDefaultApps, showOnlyBookmarks, homepageSettings]);
+  }, [removedDefaultApps, showOnlyBookmarks, homepageSettings, isWeb2Mode]);
 
   const processedRecentApps = useMemo(() => {
     if (showOnlyBookmarks) return [];
     // Use homepage settings to determine if recent apps should be shown
     if (homepageSettings && !homepageSettings.showRecentApps) return [];
+    // In web2 mode, don't show recent web3 apps
+    if (isWeb2Mode) return [];
     return recentApps.map(a => ({ ...a, appIconImageUrl: a.appIconImageUrl }));
-  }, [recentApps, showOnlyBookmarks, homepageSettings]);
+  }, [recentApps, showOnlyBookmarks, homepageSettings, isWeb2Mode]);
 
   const processedBookmarks = useMemo(() => {
     const bookmarks = includeBookmarks.map(bm => ({
@@ -319,6 +325,21 @@ export const RecommendedApps = ({
                 )}
                 {(homepageSettings?.showRecentApps !== false) && renderSection(t('recent'), processedRecentApps, 'recent')}
                 {(homepageSettings?.showRecommendedApps !== false) && renderSection(t('recommended'), filteredDefaultApps, 'default')}
+                
+                {/* Web2 mode message */}
+                {/* {isWeb2Mode && (
+                  <View style={[componentStyles.section, { paddingVertical: 20 }]}>
+                    <View style={[componentStyles.web2Message, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+                      <Ionicons name="rocket-outline" size={24} color={colors.primary} style={{ marginBottom: 8 }} />
+                      <Text style={[componentStyles.web2MessageTitle, { color: colors.textPrimary }]}>
+                        {t('unlock_web3_features')}
+                      </Text>
+                      <Text style={[componentStyles.web2MessageText, { color: colors.textSecondary }]}>
+                        {t('get_web3_identity_to_access_apps')}
+                      </Text>
+                    </View>
+                  </View>
+                )} */}
               </>
             )}
           </>
