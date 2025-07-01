@@ -261,6 +261,7 @@ const resources = {
       
       // Auth - Password
       enter_password: 'Enter Password',
+      enter_password_subtitle: 'Please enter your password to access your wallet',
       enter_password_continue: 'Please enter your password to continue',
       password: 'Password',
       password_min_chars: 'Password must be at least 6 characters',
@@ -463,6 +464,7 @@ const resources = {
       
       // Auth - Password
       enter_password: '输入密码',
+      enter_password_subtitle: '请输入您的密码以访问您的钱包',
       enter_password_continue: '请输入您的密码以继续',
       password: '密码',
       password_min_chars: '密码必须至少6个字符',
@@ -665,6 +667,7 @@ const resources = {
       
       // Auth - Password
       enter_password: 'पासवर्ड दर्ज करें',
+      enter_password_subtitle: 'अपने वॉलेट तक पहुंचने के लिए कृपया अपना पासवर्ड दर्ज करें',
       enter_password_continue: 'कृपया जारी रखने के लिए अपना पासवर्ड दर्ज करें',
       password: 'पासवर्ड',
       password_min_chars: 'पासवर्ड कम से कम 6 अक्षर का होना चाहिए',
@@ -797,6 +800,17 @@ const resources = {
       // Trust
       trust_network: 'Red de Confianza',
       
+      // Auth - Password
+      enter_password: 'Ingresa tu Contraseña',
+      enter_password_subtitle: 'Por favor ingresa tu contraseña para acceder a tu billetera',
+      enter_password_continue: 'Por favor ingresa tu contraseña para continuar',
+      password: 'Contraseña',
+      password_min_chars: 'La contraseña debe tener al menos 6 caracteres',
+      continue: 'Continuar',
+      forgot_password_link: '¿Olvidaste tu contraseña?',
+      auth_failed_maybe_password: 'La autenticación falló, ¿quizás la contraseña es incorrecta?',
+      auth_failed_try_again: 'La autenticación falló. Por favor, inténtalo de nuevo.',
+      
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Navegador con identidad y pagos integrados',
@@ -914,6 +928,7 @@ const resources = {
       
       // Auth - Password
       enter_password: 'Entrer le Mot de Passe',
+      enter_password_subtitle: 'Veuillez entrer votre mot de passe pour accéder à votre portefeuille',
       enter_password_continue: 'Veuillez entrer votre mot de passe pour continuer',
       password: 'Mot de Passe',
       password_min_chars: 'Le mot de passe doit contenir au moins 6 caractères',
@@ -1046,6 +1061,7 @@ const resources = {
       
       // Auth - Password
       enter_password: 'أدخل كلمة المرور',
+      enter_password_subtitle: 'يرجى إدخال كلمة المرور للوصول إلى محفظتك',
       enter_password_continue: 'يرجى إدخال كلمة المرور للمتابعة',
       password: 'كلمة المرور',
       password_min_chars: 'يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل',
@@ -1185,6 +1201,7 @@ const resources = {
       
       // Auth - Password
       enter_password: 'Digite a Senha',
+      enter_password_subtitle: 'Por favor, digite sua senha para acessar sua carteira',
       enter_password_continue: 'Por favor, digite sua senha para continuar',
       password: 'Senha',
       password_min_chars: 'A senha deve ter pelo menos 6 caracteres',
@@ -1317,6 +1334,7 @@ const resources = {
       
       // Auth - Password
       enter_password: 'পাসওয়ার্ড লিখুন',
+      enter_password_subtitle: 'আপনার ওয়ালেট অ্যাক্সেস করতে অনুগ্রহ করে আপনার পাসওয়ার্ড লিখুন',
       enter_password_continue: 'অনুগ্রহ করে চালিয়ে যেতে আপনার পাসওয়ার্ড লিখুন',
       password: 'পাসওয়ার্ড',
       password_min_chars: 'পাসওয়ার্ড কমপক্ষে ৬টি অক্ষর হতে হবে',
@@ -1449,6 +1467,7 @@ const resources = {
       
       // Auth - Password
       enter_password: 'Введите Пароль',
+      enter_password_subtitle: 'Пожалуйста, введите свой пароль для доступа к кошельку',
       enter_password_continue: 'Пожалуйста, введите свой пароль для продолжения',
       password: 'Пароль',
       password_min_chars: 'Пароль должен содержать минимум 6 символов',
@@ -1581,6 +1600,7 @@ const resources = {
       
       // Auth - Password
       enter_password: 'Masukkan Kata Sandi',
+      enter_password_subtitle: 'Silakan masukkan kata sandi Anda untuk mengakses dompet Anda',
       enter_password_continue: 'Silakan masukkan kata sandi Anda untuk melanjutkan',
       password: 'Kata Sandi',
       password_min_chars: 'Kata sandi harus terdiri dari minimal 6 karakter',

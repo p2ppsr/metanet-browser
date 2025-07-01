@@ -25,6 +25,13 @@ export class TabStore {
     if (this.tabs.length === 0) {
       this.loadTabs().catch(console.error)
     }
+    
+    // Ensure we always have at least one tab after construction
+    setTimeout(() => {
+      if (this.tabs.length === 0) {
+        this.newTab()
+      }
+    }, 0)
   }
 
   createTab(url: string = kNEW_TAB_URL): Tab {
@@ -60,8 +67,22 @@ export class TabStore {
   this.saveTabs()
 }
 
-  get activeTab(): Tab | undefined {
-    return this.tabs.find(t => t.id === this.activeTabId)
+  get activeTab(): Tab | null {
+    const tab = this.tabs.find(t => t.id === this.activeTabId)
+    
+    // If no tab found but we have tabs, fix the activeTabId to point to the first tab
+    if (!tab && this.tabs.length > 0) {
+      this.activeTabId = this.tabs[0].id
+      return this.tabs[0]
+    }
+    
+    // If no tabs at all, create one
+    if (!tab && this.tabs.length === 0) {
+      this.newTab()
+      return this.tabs[0] || null
+    }
+    
+    return tab || null
   }
 
  setActiveTab(id: number) {
@@ -215,9 +236,22 @@ export class TabStore {
         webviewRef: createRef<WebView>()
       }))
       this.tabs = parsedTabs
-      this.activeTabId = parsedTabs.length > 0 ? parsedTabs[0].id : 1
+      
+      // Update nextId to be higher than any existing tab id
+      const maxId = Math.max(...parsedTabs.map((t: Tab) => t.id), 0)
+      this.nextId = maxId + 1
+      
+      // Ensure activeTabId points to a valid tab
+      if (parsedTabs.length > 0) {
+        const activeTabExists = parsedTabs.some((t: Tab) => t.id === this.activeTabId)
+        if (!activeTabExists) {
+          this.activeTabId = parsedTabs[0].id
+        }
+      }
     } else {
-      this.tabs = [this.createTab()] // Ensure at least one tab
+      // No saved tabs, create initial tab
+      this.tabs = []
+      this.newTab() // This will create a tab and set it as active
     }
   }
 }

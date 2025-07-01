@@ -19,7 +19,7 @@ interface BrowserModeContextType {
 }
 
 const BrowserModeContext = createContext<BrowserModeContextType>({
-  isWeb2Mode: false,
+  isWeb2Mode: true,
   setWeb2Mode: () => {},
   toggleMode: () => {},
   showWeb3Benefits: () => {},
@@ -45,7 +45,7 @@ interface BrowserModeProviderProps {
 }
 
 export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ children }) => {
-  const [isWeb2Mode, setIsWeb2Mode] = useState(false);
+  const [isWeb2Mode, setIsWeb2Mode] = useState(true);
   const [web3BenefitsVisible, setWeb3BenefitsVisible] = useState(false);
   const [web3BenefitsCallbacks, setWeb3BenefitsCallbacks] = useState<{
     onContinue: (() => void) | null;
@@ -92,10 +92,10 @@ export const BrowserModeProvider: React.FC<BrowserModeProviderProps> = ({ childr
         try {
           const storedMode = await getItem('browserMode');
           console.log('[BrowserMode] Loaded stored mode:', storedMode);
-          setIsWeb2Mode(storedMode === 'web2');
+          setIsWeb2Mode(true);
         } catch (error) {
           console.log('[BrowserMode] No stored browser mode, defaulting to web3');
-          setIsWeb2Mode(false);
+          setIsWeb2Mode(true);
         }
       }
     };

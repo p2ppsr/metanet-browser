@@ -297,7 +297,8 @@ function Browser() {
   }, []);
 
   /* ---------------------------------- tabs --------------------------------- */
-  const activeTab = tabStore.activeTab!
+  /* ---------------------------------- tabs --------------------------------- */
+  const activeTab = tabStore.activeTab // Should never be null due to TabStore guarantees
 
   /* -------------------------- ui / animation state -------------------------- */
   const addressEditing = useRef(false)
@@ -324,6 +325,15 @@ function Browser() {
   const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();
   const [showBalance, setShowBalance] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Safety check - if somehow activeTab is null, force create a new tab
+  // This is done after all hooks to avoid violating Rules of Hooks
+  useEffect(() => {
+    if (!activeTab) {
+      console.warn('activeTab is null, creating new tab')
+      tabStore.newTab()
+    }
+  }, [activeTab])
 
   // Balance handling - only delay on first open
   useEffect(() => {
@@ -396,6 +406,8 @@ function Browser() {
 
   // Manifest checking useEffect 
   useEffect(() => {
+    if (!activeTab) return;
+    
     let isCancelled = false;
 
     const handleManifest = async () => {
@@ -433,7 +445,7 @@ function Browser() {
     };
 
     const timeoutId = setTimeout(() => {
-      if (!activeTab.isLoading && activeTab.url !== kNEW_TAB_URL && activeTab.url.startsWith('http')) {
+      if (activeTab && !activeTab.isLoading && activeTab.url !== kNEW_TAB_URL && activeTab.url.startsWith('http')) {
         handleManifest();
       }
     }, 1000);
@@ -442,15 +454,15 @@ function Browser() {
       isCancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [activeTab.url, activeTab.isLoading]);
+  }, [activeTab]);
 
   // Language change useEffect - reload WebView when language changes
   useEffect(() => {
-    if (activeTab.webviewRef.current && activeTab.url !== kNEW_TAB_URL) {
+    if (activeTab && activeTab.webviewRef?.current && activeTab.url !== kNEW_TAB_URL) {
       // Force reload WebView with new language headers
       activeTab.webviewRef.current.reload();
     }
-  }, [i18n.language, activeTab.webviewRef, activeTab.url]);
+  }, [i18n.language, activeTab]);
 
   /* -------------------------------------------------------------------------- */
   /*                                 UTILITIES                                  */
@@ -497,48 +509,50 @@ function Browser() {
   /*                               TAB NAVIGATION                               */
   /* -------------------------------------------------------------------------- */
  const navBack = useCallback(() => {
-  if (activeTab.canGoBack) {
-    tabStore.goBack(activeTab.id)
+  const currentTab = tabStore.activeTab
+  if (currentTab && currentTab.canGoBack) {
+    tabStore.goBack(currentTab.id)
   }
-}, [activeTab.canGoBack, activeTab.id])
+}, [])
 
 const navFwd = useCallback(() => {
-  if (activeTab.canGoForward) {
-    tabStore.goForward(activeTab.id)
+  const currentTab = tabStore.activeTab
+  if (currentTab && currentTab.canGoForward) {
+    tabStore.goForward(currentTab.id)
   }
-}, [activeTab.canGoForward, activeTab.id])
+}, [])
 
-  const navReloadOrStop = useCallback(() =>
-    activeTab.isLoading
-      ? activeTab.webviewRef.current?.stopLoading()
-      : activeTab.webviewRef.current?.reload(), [activeTab.isLoading, activeTab.webviewRef])
+  const navReloadOrStop = useCallback(() => {
+    const currentTab = tabStore.activeTab
+    if (!currentTab) return;
+    return currentTab.isLoading
+      ? currentTab.webviewRef?.current?.stopLoading()
+      : currentTab.webviewRef?.current?.reload();
+  }, [])
 
   const toggleDesktopView = useCallback(() => {
     // Prevent multiple rapid presses during cooldown
     if (isToggleDesktopCooldown) return
     
+    const currentTab = tabStore.activeTab
+    
     setIsToggleDesktopCooldown(true)
     setIsDesktopView(prev => !prev)
     
     // Reload the current page to apply the new user agent
-    if (activeTab.url !== kNEW_TAB_URL) {
-      activeTab.webviewRef.current?.reload()
+    if (currentTab && currentTab.url !== kNEW_TAB_URL) {
+      currentTab.webviewRef?.current?.reload()
     }
     
     // Reset cooldown after reload animation/loading time
     setTimeout(() => {
       setIsToggleDesktopCooldown(false)
     }, 1500) // 1.5 second cooldown to allow for reload
-  }, [activeTab.url, activeTab.webviewRef, isToggleDesktopCooldown])
+  }, [isToggleDesktopCooldown])
 
   // User agent strings
   const mobileUserAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
   const desktopUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
-
-  function closeTab(id: number) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    tabStore.closeTab(id)
-  }
 
   useEffect(() => {
     if (tabStore.tabs.length === 0) {
@@ -549,7 +563,7 @@ const navFwd = useCallback(() => {
     if (activeTab && !addressEditing.current) {
       setAddressText(activeTab.url)
     }
-  }, [activeTab.id, activeTab.url])
+  }, [activeTab])
 
 
   const dismissKeyboard = useCallback(() => {
@@ -867,7 +881,15 @@ const navFwd = useCallback(() => {
 
   const handleMessage = useCallback(
     async (event: WebViewMessageEvent) => {
+      // Safety check - if activeTab is undefined, we cannot process messages
+      if (!activeTab) {
+        console.warn('Cannot process WebView message: activeTab is undefined');
+        return;
+      }
+
       const sendResponseToWebView = (id: string, result: any) => {
+        if (!activeTab || !activeTab.webviewRef?.current) return;
+        
         const message = {
           type: 'CWI',
           id,
@@ -876,7 +898,7 @@ const navFwd = useCallback(() => {
           status: 'ok'
         };
 
-        activeTab.webviewRef.current?.injectJavaScript(
+        activeTab.webviewRef.current.injectJavaScript(
           getInjectableJSMessage(message)
         );
       };
@@ -918,20 +940,22 @@ const navFwd = useCallback(() => {
         setIsFullscreen(true);
         
         // Send success response back to webview
-        activeTab.webviewRef.current?.injectJavaScript(`
-          window.dispatchEvent(new MessageEvent('message', {
-            data: JSON.stringify({
-              type: 'FULLSCREEN_RESPONSE',
-              success: true
-            })
-          }));
-          window.dispatchEvent(new MessageEvent('message', {
-            data: JSON.stringify({
-              type: 'FULLSCREEN_CHANGE',
-              isFullscreen: true
-            })
-          }));
-        `);
+        if (activeTab.webviewRef?.current) {
+          activeTab.webviewRef.current.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'FULLSCREEN_RESPONSE',
+                success: true
+              })
+            }));
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'FULLSCREEN_CHANGE',
+                isFullscreen: true
+              })
+            }));
+          `);
+        }
         return;
       }
 
@@ -941,20 +965,22 @@ const navFwd = useCallback(() => {
         setIsFullscreen(false);
         
         // Send response back to webview
-        activeTab.webviewRef.current?.injectJavaScript(`
-          window.dispatchEvent(new MessageEvent('message', {
-            data: JSON.stringify({
-              type: 'FULLSCREEN_RESPONSE',
-              success: true
-            })
-          }));
-          window.dispatchEvent(new MessageEvent('message', {
-            data: JSON.stringify({
-              type: 'FULLSCREEN_CHANGE',
-              isFullscreen: false
-            })
-          }));
-        `);
+        if (activeTab.webviewRef?.current) {
+          activeTab.webviewRef.current.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'FULLSCREEN_RESPONSE',
+                success: true
+              })
+            }));
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'FULLSCREEN_CHANGE',
+                isFullscreen: false
+              })
+            }));
+          `);
+        }
         return;
       }
 
@@ -962,15 +988,17 @@ const navFwd = useCallback(() => {
       if (msg.type === 'REQUEST_NOTIFICATION_PERMISSION') {
         const permission = await handleNotificationPermissionRequest(activeTab.url);
 
-        activeTab.webviewRef.current?.injectJavaScript(`
-            window.Notification.permission = '${permission}';
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'NOTIFICATION_PERMISSION_RESPONSE',
-                permission: '${permission}'
-              })
-            }));
-          `);
+        if (activeTab.webviewRef?.current) {
+          activeTab.webviewRef.current.injectJavaScript(`
+              window.Notification.permission = '${permission}';
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'NOTIFICATION_PERMISSION_RESPONSE',
+                  permission: '${permission}'
+                })
+              }));
+            `);
+        }
         return;
       }
 
@@ -979,25 +1007,29 @@ const navFwd = useCallback(() => {
         try {
           const subscription = await createPushSubscription(activeTab.url, msg.options?.applicationServerKey);
 
-          activeTab.webviewRef.current?.injectJavaScript(`
-              window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                  subscription: ${JSON.stringify(subscription)}
-                })
-              }));
-            `);
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify({
+                    type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                    subscription: ${JSON.stringify(subscription)}
+                  })
+                }));
+              `);
+          }
         } catch (error) {
           console.error('Error creating push subscription:', error);
-          activeTab.webviewRef.current?.injectJavaScript(`
-              window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                  subscription: null,
-                  error: '${error}'
-                })
-              }));
-            `);
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify({
+                    type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                    subscription: null,
+                    error: '${error}'
+                  })
+                }));
+              `);
+          }
         }
         return;
       }
@@ -1006,14 +1038,16 @@ const navFwd = useCallback(() => {
       if (msg.type === 'GET_PUSH_SUBSCRIPTION') {
         const subscription = getSubscription(activeTab.url);
 
-        activeTab.webviewRef.current?.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                subscription: ${JSON.stringify(subscription)}
-              })
-            }));
-          `);
+        if (activeTab.webviewRef?.current) {
+          activeTab.webviewRef.current.injectJavaScript(`
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                  subscription: ${JSON.stringify(subscription)}
+                })
+              }));
+            `);
+        }
         return;
       }
 
@@ -1096,13 +1130,19 @@ const navFwd = useCallback(() => {
         console.error('Error processing wallet API call:', msg.call, error);
       }
     },
-    [activeTab.url, activeTab.webviewRef, wallet, createPushSubscription, getSubscription, getPermission, handleNotificationPermissionRequest]
+    [activeTab, wallet, createPushSubscription, getSubscription, getPermission, handleNotificationPermissionRequest, t]
   );
 
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
   /* -------------------------------------------------------------------------- */  
   const handleNavStateChange = (navState: WebViewNavigation) => {
+  // Safety check - if activeTab is undefined, we cannot process navigation
+  if (!activeTab) {
+    console.warn('Cannot handle navigation state change: activeTab is undefined');
+    return;
+  }
+    
   // Ignore favicon requests for about:blank
   if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
     return;
@@ -1126,12 +1166,15 @@ const navFwd = useCallback(() => {
   /*                          SHARE / HOMESCREEN SHORTCUT                       */
   /* -------------------------------------------------------------------------- */
   const shareCurrent = useCallback(async () => {
+    const currentTab = tabStore.activeTab
+    if (!currentTab) return;
+    
     try {
-      await Share.share({ message: activeTab.url })
+      await Share.share({ message: currentTab.url })
     } catch (err) {
       console.warn('Share cancelled/failed', err)
     }
-  }, [activeTab.url])
+  }, [])
   const addToHomeScreen = useCallback(async () => {
     try {
       if (Platform.OS === 'android') {
@@ -1377,8 +1420,9 @@ const navFwd = useCallback(() => {
         toggleInfoDrawer(false)
       },
       addBookmark: () => {
-        // Only add bookmark if URL is valid and not new tab page
-        if (activeTab.url && 
+        // Only add bookmark if activeTab exists and URL is valid and not new tab page
+        if (activeTab && 
+            activeTab.url && 
             activeTab.url !== kNEW_TAB_URL && 
             isValidUrl(activeTab.url) && 
             !activeTab.url.includes('about:blank')) {
@@ -1403,7 +1447,7 @@ const navFwd = useCallback(() => {
         router.replace('/')
         toggleInfoDrawer(false)
       }
-    }), [activeTab.url, activeTab.title, addBookmark, toggleInfoDrawer, updateActiveTab, setAddressText, addToHomeScreen, toggleDesktopView])
+    }), [activeTab, addBookmark, toggleInfoDrawer, updateActiveTab, setAddressText, addToHomeScreen, toggleDesktopView, t])
 
   /* -------------------------------------------------------------------------- */
   /*                                  RENDER                                    */
@@ -1418,7 +1462,7 @@ const navFwd = useCallback(() => {
       const backHandler = () => {
         setIsFullscreen(false);
         // Notify webview that fullscreen exited
-        activeTab.webviewRef.current?.injectJavaScript(`
+        activeTab?.webviewRef.current?.injectJavaScript(`
           window.dispatchEvent(new MessageEvent('message', {
             data: JSON.stringify({
               type: 'FULLSCREEN_CHANGE',
@@ -1435,7 +1479,7 @@ const navFwd = useCallback(() => {
         return () => subscription.remove();
       }
     }
-  }, [isFullscreen, activeTab.webviewRef]);
+  }, [isFullscreen, activeTab?.webviewRef]);
 
   const starDrawerAnimatedStyle = useMemo(() => ([
     styles.starDrawer,
@@ -1475,7 +1519,7 @@ const navFwd = useCallback(() => {
         >
           <StatusBar style={isDark ? 'light' : 'dark'} hidden={isFullscreen} />
 
-          {activeTab.url === kNEW_TAB_URL ? (
+          {activeTab?.url === kNEW_TAB_URL ? (
             <RecommendedApps
             includeBookmarks={bookmarkStore.bookmarks.filter(bookmark => {
               return bookmark.url && 
@@ -1491,7 +1535,7 @@ const navFwd = useCallback(() => {
             homepageSettings={homepageSettings}
             onUpdateHomepageSettings={updateHomepageSettings}
           />
-        ) : (
+        ) : activeTab ? (
             <View
               style={{ flex: 1 }}
               {...responderProps}
@@ -1512,7 +1556,7 @@ const navFwd = useCallback(() => {
                   }}
                   onPress={() => {
                     setIsFullscreen(false);
-                    activeTab.webviewRef.current?.injectJavaScript(`
+                    activeTab?.webviewRef.current?.injectJavaScript(`
                       window.dispatchEvent(new MessageEvent('message', {
                         data: JSON.stringify({
                           type: 'FULLSCREEN_CHANGE',
@@ -1526,9 +1570,9 @@ const navFwd = useCallback(() => {
                 </TouchableOpacity>
               )}
               <WebView
-                ref={activeTab.webviewRef}
+                ref={activeTab?.webviewRef}
                 source={{ 
-                  uri: activeTab.url,
+                  uri: activeTab?.url,
                   headers: {
                     'Accept-Language': getAcceptLanguageHeader()
                   }
@@ -1541,7 +1585,7 @@ const navFwd = useCallback(() => {
                 onError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent;
                   // Ignore favicon errors for about:blank
-                  if (nativeEvent.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
+                  if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
                     return;
                   }
                   console.warn('WebView error:', nativeEvent);
@@ -1549,7 +1593,7 @@ const navFwd = useCallback(() => {
                 onHttpError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent;
                   // Ignore favicon errors for about:blank
-                  if (nativeEvent.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
+                  if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
                     return;
                   }
                   console.warn('WebView HTTP error:', nativeEvent);
@@ -1561,7 +1605,7 @@ const navFwd = useCallback(() => {
                 style={{ flex: 1 }}
               />
             </View>
-          )}
+          ) : null}
           {!isFullscreen && (
             <View
               onLayout={(e) => setAddressBarHeight(e.nativeEvent.layout.height)}
@@ -1584,8 +1628,8 @@ const navFwd = useCallback(() => {
             )}
 
             {!addressFocused &&
-              !activeTab.isLoading &&
-              activeTab.url.startsWith('https') && (
+              !activeTab?.isLoading &&
+              activeTab?.url.startsWith('https') && (
                 <Ionicons
                   name='lock-closed'
                   size={16}
@@ -1605,11 +1649,11 @@ const navFwd = useCallback(() => {
                 addressEditing.current = true
                 setAddressFocused(true)
                 // Set the text to empty if it's the new tab URL
-                if (activeTab.url === kNEW_TAB_URL) {
+                if (activeTab?.url === kNEW_TAB_URL) {
                   setAddressText('')
                 }
                 setTimeout(() => {
-                  const textToSelect = activeTab.url === kNEW_TAB_URL ? '' : addressText
+                  const textToSelect = activeTab?.url === kNEW_TAB_URL ? '' : addressText
                   addressInputRef.current?.setNativeProps({
                     selection: { start: 0, end: textToSelect.length }
                   })
@@ -1621,7 +1665,7 @@ const navFwd = useCallback(() => {
                 setAddressSuggestions([])
                 // Reset to the actual URL when losing focus
                 if (!addressEditing.current) {
-                  setAddressText(activeTab.url)
+                  setAddressText(activeTab?.url ? activeTab.url : kNEW_TAB_URL)
                 }
               }}
               onSubmitEditing={onAddressSubmit}
@@ -1648,13 +1692,13 @@ const navFwd = useCallback(() => {
               style={styles.addressBarIcon}
             >
               <Ionicons
-                name={addressFocused || activeTab.isLoading ? 'close-circle' : 'refresh'}
+                name={addressFocused || activeTab?.isLoading ? 'close-circle' : 'refresh'}
                 size={22}
                 color={colors.textSecondary}
               />
             </TouchableOpacity>
 
-            {!addressFocused && activeTab.url !== kNEW_TAB_URL && (
+            {!addressFocused && activeTab?.url !== kNEW_TAB_URL && (
               <TouchableOpacity
                 onPress={toggleDesktopView}
                 style={styles.addressBarIcon}
@@ -1754,7 +1798,7 @@ const navFwd = useCallback(() => {
                 </View>
               </Animated.View>
             </View>          )}
-          {!isFullscreen && showBottomBar && (
+          {!isFullscreen && showBottomBar && activeTab && (
             <BottomToolbar
               activeTab={activeTab}
               colors={colors}
@@ -1830,7 +1874,7 @@ const navFwd = useCallback(() => {
                       <View style={styles.divider} />
                     </>
                   )}
-                  {activeTab.url !== kNEW_TAB_URL && (
+                  {activeTab?.url !== kNEW_TAB_URL && (
                     <DrawerItem
                       label={isDesktopView ? t('switch_to_mobile_view') : t('switch_to_desktop_view')}
                       icon={isDesktopView ? 'phone-portrait-outline' : 'desktop-outline'}
