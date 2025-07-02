@@ -511,23 +511,62 @@ function Browser() {
  const navBack = useCallback(() => {
   const currentTab = tabStore.activeTab
   if (currentTab && currentTab.canGoBack) {
+    console.log('⬅️ Navigating Back:', {
+      currentUrl: currentTab.url,
+      canGoBack: currentTab.canGoBack,
+      canGoForward: currentTab.canGoForward,
+      timestamp: new Date().toISOString()
+    });
     tabStore.goBack(currentTab.id)
+  } else {
+    console.log('⬅️ Cannot Navigate Back:', {
+      currentUrl: currentTab?.url || 'No active tab',
+      canGoBack: currentTab?.canGoBack || false,
+      timestamp: new Date().toISOString()
+    });
   }
 }, [])
 
 const navFwd = useCallback(() => {
   const currentTab = tabStore.activeTab
   if (currentTab && currentTab.canGoForward) {
+    console.log('➡️ Navigating Forward:', {
+      currentUrl: currentTab.url,
+      canGoBack: currentTab.canGoBack,
+      canGoForward: currentTab.canGoForward,
+      timestamp: new Date().toISOString()
+    });
     tabStore.goForward(currentTab.id)
+  } else {
+    console.log('➡️ Cannot Navigate Forward:', {
+      currentUrl: currentTab?.url || 'No active tab',
+      canGoForward: currentTab?.canGoForward || false,
+      timestamp: new Date().toISOString()
+    });
   }
 }, [])
 
   const navReloadOrStop = useCallback(() => {
     const currentTab = tabStore.activeTab
     if (!currentTab) return;
-    return currentTab.isLoading
-      ? currentTab.webviewRef?.current?.stopLoading()
-      : currentTab.webviewRef?.current?.reload();
+    
+    if (currentTab.isLoading) {
+      console.log('🛑 Stopping Page Load:', {
+        url: currentTab.url,
+        canGoBack: currentTab.canGoBack,
+        canGoForward: currentTab.canGoForward,
+        timestamp: new Date().toISOString()
+      });
+      return currentTab.webviewRef?.current?.stopLoading()
+    } else {
+      console.log('🔄 Reloading Page:', {
+        url: currentTab.url,
+        canGoBack: currentTab.canGoBack,
+        canGoForward: currentTab.canGoForward,
+        timestamp: new Date().toISOString()
+      });
+      return currentTab.webviewRef?.current?.reload();
+    }
   }, [])
 
   const toggleDesktopView = useCallback(() => {
@@ -1148,12 +1187,30 @@ const navFwd = useCallback(() => {
     return;
   }
   
+  // Log navigation state changes with back/forward capabilities
+  console.log('🌐 Navigation State Change:', {
+    url: navState.url,
+    title: navState.title,
+    loading: navState.loading,
+    canGoBack: navState.canGoBack,
+    canGoForward: navState.canGoForward,
+    timestamp: new Date().toISOString()
+  });
+  
   // Make sure we're updating the correct tab's navigation state
   tabStore.handleNavigationStateChange(activeTab.id, navState)
   
   if (!addressEditing.current) setAddressText(navState.url)
 
   if (!navState.loading && navState.url !== kNEW_TAB_URL) {
+    console.log('📄 Webpage Loaded:', {
+      url: navState.url,
+      title: navState.title,
+      canGoBack: navState.canGoBack,
+      canGoForward: navState.canGoForward,
+      timestamp: new Date().toISOString()
+    });
+    
     pushHistory({
       title: navState.title || navState.url,
       url: navState.url,
@@ -2333,7 +2390,7 @@ const SubDrawerView = React.memo(({
 /*                              BOTTOM TOOLBAR                               */
 /* -------------------------------------------------------------------------- */
 
-const BottomToolbar = React.memo(({
+const BottomToolbar = ({
   activeTab,
   colors,
   styles,
@@ -2355,6 +2412,31 @@ const BottomToolbar = React.memo(({
   const handleStarPress = useCallback(() => toggleStarDrawer(true), [toggleStarDrawer])
   const handleTabsPress = useCallback(() => setShowTabsView(true), [setShowTabsView])
 
+  // Debug: Log activeTab state on every render
+  useEffect(() => {
+    console.log('🔧 BottomToolbar activeTab state:', {
+      id: activeTab.id,
+      url: activeTab.url,
+      canGoBack: activeTab.canGoBack,
+      canGoForward: activeTab.canGoForward,
+      isNewTab: activeTab.url === kNEW_TAB_URL,
+      kNEW_TAB_URL: kNEW_TAB_URL,
+      backButtonDisabled: !activeTab.canGoBack || activeTab.url === kNEW_TAB_URL
+    });
+  });
+
+  // Calculate disabled state
+  const isBackDisabled = !activeTab.canGoBack || activeTab.url === kNEW_TAB_URL;
+  const isForwardDisabled = !activeTab.canGoForward || activeTab.url === kNEW_TAB_URL;
+  
+  console.log('🔧 BottomToolbar Button States:', {
+    isBackDisabled,
+    isForwardDisabled,
+    canGoBack: activeTab.canGoBack,
+    url: activeTab.url,
+    isNewTab: activeTab.url === kNEW_TAB_URL
+  });;
+
   return (
     <View
       style={[
@@ -2364,31 +2446,47 @@ const BottomToolbar = React.memo(({
           paddingBottom: 0
         }
       ]}
-    >      
-    <TouchableOpacity
+    >    
+      <TouchableOpacity
         style={styles.toolbarButton}
-        onPress={navBack}
-        disabled={!activeTab.canGoBack || activeTab.url === kNEW_TAB_URL}
+        onPress={() => {
+          console.log('🔘 Back Button Pressed:', {
+            canGoBack: activeTab.canGoBack,
+            url: activeTab.url,
+            isNewTab: activeTab.url === kNEW_TAB_URL,
+            disabled: isBackDisabled
+          });
+          navBack();
+        }}
+        disabled={isBackDisabled}
         activeOpacity={0.6}
         delayPressIn={0}
       >
         <Ionicons
           name='arrow-back'
           size={24}
-          color={activeTab.canGoBack && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
+          color={!isBackDisabled ? colors.textPrimary : '#cccccc'}
         />
-      </TouchableOpacity>      
+      </TouchableOpacity>
       <TouchableOpacity
         style={styles.toolbarButton}
-        onPress={navFwd}
-        disabled={!activeTab.canGoForward || activeTab.url === kNEW_TAB_URL}
+        onPress={() => {
+          console.log('🔘 Forward Button Pressed:', {
+            canGoForward: activeTab.canGoForward,
+            url: activeTab.url,
+            isNewTab: activeTab.url === kNEW_TAB_URL,
+            disabled: isForwardDisabled
+          });
+          navFwd();
+        }}
+        disabled={isForwardDisabled}
         activeOpacity={0.6}
         delayPressIn={0}
       >
         <Ionicons
           name='arrow-forward'
           size={24}
-          color={activeTab.canGoForward && activeTab.url !== kNEW_TAB_URL ? colors.textPrimary : '#cccccc'}
+          color={!isForwardDisabled ? colors.textPrimary : '#cccccc'}
         />
       </TouchableOpacity>
 
@@ -2425,7 +2523,7 @@ const BottomToolbar = React.memo(({
       </TouchableOpacity>
     </View>
   )
-})
+};
 
 /* -------------------------------------------------------------------------- */
 /*                                    CSS                                     */

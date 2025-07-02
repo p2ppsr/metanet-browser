@@ -49,23 +49,23 @@ export class TabStore {
   }
 
   newTab = (initialUrl: string = kNEW_TAB_URL) => {
-  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-  const newTab = this.createTab(initialUrl)
-  this.tabs.push(newTab)
-  this.activeTabId = newTab.id
-  
-  // Initialize navigation history for new tab - only add valid URLs to history
-  if (initialUrl && initialUrl !== kNEW_TAB_URL && initialUrl !== 'about:blank' && isValidUrl(initialUrl)) {
-    this.tabNavigationHistories[newTab.id] = [initialUrl]
-    this.tabHistoryIndexes[newTab.id] = 0
-  } else {
-    // For new tabs with blank URLs, start with empty history
-    this.tabNavigationHistories[newTab.id] = []
-    this.tabHistoryIndexes[newTab.id] = -1
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    const newTab = this.createTab(initialUrl)
+    this.tabs.push(newTab)
+    this.activeTabId = newTab.id
+    
+    // Initialize navigation history for new tab - only add valid URLs to history
+    if (initialUrl && initialUrl !== kNEW_TAB_URL && initialUrl !== 'about:blank' && isValidUrl(initialUrl)) {
+      this.tabNavigationHistories[newTab.id] = [initialUrl]
+      this.tabHistoryIndexes[newTab.id] = 0
+    } else {
+      // For new tabs with blank URLs, start with empty history
+      this.tabNavigationHistories[newTab.id] = []
+      this.tabHistoryIndexes[newTab.id] = -1
+    }
+    
+    this.saveTabs()
   }
-  
-  this.saveTabs()
-}
 
   get activeTab(): Tab | null {
     const tab = this.tabs.find(t => t.id === this.activeTabId)
@@ -116,17 +116,26 @@ export class TabStore {
     const tab = this.tabs.find(t => t.id === tabId)
     const history = this.tabNavigationHistories[tabId]
     const currentIndex = this.tabHistoryIndexes[tabId]
-    console.log(`goBack(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history}`)
+    console.log(`goBack(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoBack=${tab?.canGoBack}`)
+    
     if (tab && history && currentIndex > 0) {
       const newIndex = currentIndex - 1
       const url = history[newIndex]
       
+      console.log(`🔙 Going back to: ${url} (index ${newIndex})`)
+      
       this.tabHistoryIndexes[tabId] = newIndex
+      
+      // Update tab's canGoBack/canGoForward based on new position
+      tab.canGoBack = newIndex > 0
+      tab.canGoForward = newIndex < history.length - 1
       
       // Navigate WebView to the URL
       if (tab.webviewRef.current) {
         tab.webviewRef.current.injectJavaScript(`window.location.href = "${url}";`)
       }
+    } else {
+      console.log(`Cannot go back: tab=${!!tab}, history=${history?.length}, currentIndex=${currentIndex}`)
     }
   }
 
@@ -134,17 +143,26 @@ export class TabStore {
     const tab = this.tabs.find(t => t.id === tabId)
     const history = this.tabNavigationHistories[tabId]
     const currentIndex = this.tabHistoryIndexes[tabId]
-    console.log(`goForward(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history}`)
+    console.log(`goForward(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoForward=${tab?.canGoForward}`)
+    
     if (tab && history && currentIndex < history.length - 1) {
       const newIndex = currentIndex + 1
       const url = history[newIndex]
       
+      console.log(`🔜 Going forward to: ${url} (index ${newIndex})`)
+      
       this.tabHistoryIndexes[tabId] = newIndex
+      
+      // Update tab's canGoBack/canGoForward based on new position
+      tab.canGoBack = newIndex > 0
+      tab.canGoForward = newIndex < history.length - 1
       
       // Navigate WebView to the URL
       if (tab.webviewRef.current) {
         tab.webviewRef.current.injectJavaScript(`window.location.href = "${url}";`)
       }
+    } else {
+      console.log(`Cannot go forward: tab=${!!tab}, history=${history?.length}, currentIndex=${currentIndex}`)
     }
   }
 
@@ -171,54 +189,69 @@ export class TabStore {
   }
 
   handleNavigationStateChange(tabId: number, navState: WebViewNavigation) {
-  const tab = this.tabs.find(t => t.id === tabId)
-  
-  // Only process navigation events for the currently active tab
-  if (!tab || tabId !== this.activeTabId || this.isSwitchingTabs) {
-    return
-  }
-
-  // Always update loading state (this doesn't affect history)
-  tab.isLoading = navState.loading
-
-  // Only update navigation state and history when navigation completes
-  // and exclude about:blank URLs from history
-  if (!navState.loading && navState.url && 
-      navState.url !== 'about:blank' && 
-      navState.url !== kNEW_TAB_URL &&
-      isValidUrl(navState.url)) {
-    const history = this.tabNavigationHistories[tabId] || []
-    const currentIndex = this.tabHistoryIndexes[tabId] ?? -1
+    const tab = this.tabs.find(t => t.id === tabId)
     
-    // If this is a new URL (not going back/forward)
-    if (navState.url !== history[currentIndex]) {
-      // Check if this is a back/forward navigation
-      const urlIndex = history.indexOf(navState.url)
-      
-      if (urlIndex !== -1) {
-        // This is back/forward navigation - update index
-        this.tabHistoryIndexes[tabId] = urlIndex
-      } else {
-        // This is new navigation - add to history
-        const newHistory = currentIndex >= 0 ? history.slice(0, currentIndex + 1) : []
-        newHistory.push(navState.url)
-        this.tabNavigationHistories[tabId] = newHistory
-        this.tabHistoryIndexes[tabId] = newHistory.length - 1
-      }
+    // Only process navigation events for the currently active tab
+    if (!tab || tabId !== this.activeTabId || this.isSwitchingTabs) {
+      return
     }
 
-    // Update tab state based on our tracked history
-    const currentHistory = this.tabNavigationHistories[tabId] || []
-    const currentIdx = this.tabHistoryIndexes[tabId] ?? -1
-    
-    tab.canGoBack = currentIdx > 0
-    tab.canGoForward = currentIdx < currentHistory.length - 1
+    console.log(`handleNavigationStateChange(): tabId=${tabId}, url=${navState.url}, webview_canGoBack=${navState.canGoBack}, webview_canGoForward=${navState.canGoForward}`)
+
+    // Always update loading state and basic tab info
+    tab.isLoading = navState.loading
     tab.url = navState.url
     tab.title = navState.title || navState.url
-    
-    this.saveTabs()
+
+    // Only update navigation state and history when navigation completes
+    // and exclude about:blank URLs from history
+    if (!navState.loading && navState.url && 
+        navState.url !== 'about:blank' && 
+        navState.url !== kNEW_TAB_URL &&
+        isValidUrl(navState.url)) {
+      
+      const history = this.tabNavigationHistories[tabId] || []
+      const currentIndex = this.tabHistoryIndexes[tabId] ?? -1
+      
+      // Check if this URL is already in our history at the current position
+      if (navState.url !== history[currentIndex]) {
+        // Check if this is a back/forward navigation within our tracked history
+        const urlIndex = history.indexOf(navState.url)
+        
+        if (urlIndex !== -1) {
+          // This is back/forward navigation - update index
+          console.log(`📍 Found URL in history at index ${urlIndex}, updating position`)
+          this.tabHistoryIndexes[tabId] = urlIndex
+        } else {
+          // This is new navigation - add to history
+          console.log(`📝 Adding new URL to history: ${navState.url}`)
+          const newHistory = currentIndex >= 0 ? history.slice(0, currentIndex + 1) : []
+          newHistory.push(navState.url)
+          this.tabNavigationHistories[tabId] = newHistory
+          this.tabHistoryIndexes[tabId] = newHistory.length - 1
+        }
+      }
+
+      // Update tab's canGoBack/canGoForward based on our tracked history
+      const currentHistory = this.tabNavigationHistories[tabId] || []
+      const currentIdx = this.tabHistoryIndexes[tabId] ?? -1
+      
+      const prevCanGoBack = tab.canGoBack
+      const prevCanGoForward = tab.canGoForward
+      
+      tab.canGoBack = currentIdx > 0
+      tab.canGoForward = currentIdx < currentHistory.length - 1
+      
+      console.log(`🧭 Navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}, historyIndex=${currentIdx}/${currentHistory.length - 1}`)
+      
+      // Log state changes
+      if (prevCanGoBack !== tab.canGoBack || prevCanGoForward !== tab.canGoForward) {
+        console.log(`🔄 Navigation state changed: canGoBack: ${prevCanGoBack} → ${tab.canGoBack}, canGoForward: ${prevCanGoForward} → ${tab.canGoForward}`)
+      }
+      
+      this.saveTabs()
+    }
   }
-}
 
   async saveTabs() {
     if (!this.tabs) this.tabs = [] // Prevent undefined
