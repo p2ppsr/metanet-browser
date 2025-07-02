@@ -10,9 +10,18 @@ let installations: () => any;
 // Conditionally load Firebase modules or set up mocks.
 if (config.useFirebase) {
   try {
-    analytics = require('@react-native-firebase/analytics').default;
-    remoteConfig = require('@react-native-firebase/remote-config').default;
-    installations = require('@react-native-firebase/installations').default;
+    const analyticsModular = require('@react-native-firebase/analytics');
+    const remoteConfigModular = require('@react-native-firebase/remote-config');
+    const installationsModular = require('@react-native-firebase/installations');
+
+    const analyticsInstance = analyticsModular.getAnalytics();
+    const remoteConfigInstance = remoteConfigModular.getRemoteConfig();
+    const installationsInstance = installationsModular.getInstallations();
+    
+    analytics = () => analyticsInstance;
+    remoteConfig = () => remoteConfigInstance;
+    installations = () => installationsInstance;
+    
   } catch (error) {
     console.error("Failed to load Firebase modules. Running in mock mode.", error);
     // Fallback to mock mode if modules fail to load, ensuring app doesn't crash.

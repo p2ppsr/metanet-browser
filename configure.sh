@@ -6,7 +6,7 @@ echo "Select the build environment:"
 select build_type in "Development Build" "Expo Go"; do
     case $build_type in
     "Development Build")
-        read -p "Do you want to include Firebase/Google Analytics? (y/n): " include_firebase
+        read -p $'\nDo you want to include Firebase/Google Analytics?\nThis requires google-services.json and GoogleService-Info.plist\n(y/n): ' include_firebase
         if [[ "$include_firebase" == "y" || "$include_firebase" == "Y" ]]; then
             USE_FIREBASE="true"
             cp app.json.dev-template app.json
@@ -16,35 +16,6 @@ select build_type in "Development Build" "Expo Go"; do
             cp app.json.expo-template app.json
             echo "Using Development Build configuration with Firebase DISABLED."
         fi
-
-        # Prompt for user-specific configuration that isn't handled by EAS CLI
-        read -p "Enter your Expo username (this will be the 'owner' field in app.json): " EXPO_OWNER
-        if [[ "$(uname)" == "Darwin" ]]; then
-            read -p "Enter your Apple Team ID (optional, for iOS builds): " APPLE_TEAM_ID
-        fi
-
-        # Use Node.js to inject these values into app.json
-        export EXPO_OWNER
-        export APPLE_TEAM_ID
-        node -e "
-    const fs = require('fs');
-    const appConfigPath = 'app.json';
-    try {
-        let appConfig = JSON.parse(fs.readFileSync(appConfigPath));
-        if (process.env.EXPO_OWNER) {
-            appConfig.expo.owner = process.env.EXPO_OWNER;
-            console.log('Set owner to:', process.env.EXPO_OWNER);
-        }
-        if (process.env.APPLE_TEAM_ID) {
-            if (!appConfig.expo.ios) appConfig.expo.ios = {};
-            appConfig.expo.ios.appleTeamId = process.env.APPLE_TEAM_ID;
-            console.log('Set Apple Team ID to:', process.env.APPLE_TEAM_ID);
-        }
-        fs.writeFileSync(appConfigPath, JSON.stringify(appConfig, null, 2) + '\\n');
-    } catch (e) {
-        console.error('Could not modify app.json with owner/team ID:', e.message);
-    }
-"
 
         # Use node to safely read the current project ID
         CURRENT_PROJECT_ID=$(node -e "

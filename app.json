@@ -48,9 +48,6 @@
     },
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "cc9c250b-48f3-4b79-8243-1e27fcd1548d"
-      },
       "useFirebase": false
     },
     "android": {
@@ -149,7 +146,6 @@
       "iosDisplayInForeground": true,
       "androidMode": "default",
       "androidCollapsedTitle": "#{unread_notifications} new interactions"
-    },
-    "owner": "jackielu"
+    }
   }
 }

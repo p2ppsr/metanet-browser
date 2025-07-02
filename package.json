@@ -11,7 +11,8 @@
     "android": "expo start --dev-client --android",
     "ios": "expo start --dev-client --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "configure": "./configure.sh"
   },
   "dependencies": {
     "@bsv/sdk": "^1.6.0",
