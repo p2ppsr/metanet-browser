@@ -14,17 +14,21 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
+import { useBrowserMode } from '@/context/BrowserModeContext';
 import { countryCodes } from '@/utils/countryCodes';
 
 export default function PhoneScreen() {
+  const { t } = useTranslation();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(countryCodes[222]);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const { managers } = useWallet();
+  const { showWeb3Benefits } = useBrowserMode();
   
   // Get theme styles and colors
   const { colors, isDark } = useTheme();
@@ -68,6 +72,24 @@ export default function PhoneScreen() {
     }
   }, [managers?.walletManager, formattedNumber]);
 
+  // Handle skip login for web2 mode
+  const handleSkipLogin = useCallback(() => {
+    // Show the benefits modal first
+    showWeb3Benefits(
+      // onContinue - if they still want to skip
+      () => {
+        router.replace({
+          pathname: '/browser',
+          params: { mode: 'web2' }
+        });
+      },
+      // onGoToLogin - if they decide to get Web3 identity
+      () => {
+        // Just close the modal, they're already on the phone screen
+      }
+    );
+  }, [showWeb3Benefits]);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -76,8 +98,8 @@ export default function PhoneScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>Enter your phone number</Text>
-          <Text style={styles.subtitle}>We'll send you a verification code</Text>
+          <Text style={styles.title}>{t('enter_phone_number')}</Text>
+          <Text style={styles.subtitle}>{t('send_verification_code')}</Text>
           
           <View style={styles.inputContainer}>
             <View style={[styles.input, { paddingLeft: 0 }]}>
@@ -103,7 +125,7 @@ export default function PhoneScreen() {
               {/* Phone number input */}
               <TextInput
                 style={styles.inputText}
-                placeholder="Phone number"
+                placeholder={t('phone_number')}
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="phone-pad"
                 value={phoneNumber}
@@ -138,7 +160,7 @@ export default function PhoneScreen() {
                     borderBottomWidth: 1,
                     borderBottomColor: colors.inputBorder,
                   }}>
-                    <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18 }]}>Select Country</Text>
+                    <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18 }]}>{t('select_country')}</Text>
                     <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
                       <Text style={{ fontSize: 18, color: colors.textSecondary }}>✕</Text>
                     </TouchableOpacity>
@@ -179,12 +201,27 @@ export default function PhoneScreen() {
             {loading ? (
               <ActivityIndicator color={colors.buttonText} />
             ) : (
-              <Text style={styles.buttonText}>Continue</Text>
+              <Text style={styles.buttonText}>{t('continue')}</Text>
             )}
+          </TouchableOpacity>
+
+          {/* Skip login button for web2 mode */}
+          <TouchableOpacity 
+            style={[
+              styles.button, 
+              { backgroundColor: colors.paperBackground, borderWidth: 1, borderColor: colors.inputBorder },
+              loading && { opacity: 0.7 }
+            ]} 
+            onPress={handleSkipLogin}
+            disabled={loading}
+          >
+            <Text style={[styles.buttonText, { color: colors.textPrimary }]}>
+              Continue without login
+            </Text>
           </TouchableOpacity>
           
           <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 10 }}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            {t('terms_privacy_agree')}
           </Text>
         </View>
       </KeyboardAvoidingView>

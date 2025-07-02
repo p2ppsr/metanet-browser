@@ -28,6 +28,7 @@ import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { DEFAULT_WAB_URL, DEFAULT_STORAGE_URL, DEFAULT_CHAIN, ADMIN_ORIGINATOR } from './config'
 import { UserContext } from './UserContext'
+import { useBrowserMode } from './BrowserModeContext'
 import isImageUrl from '../utils/isImageUrl'
 import parseAppManifest from '../utils/parseAppManifest'
 import { useLocalStorage } from "@/context/LocalStorageProvider";
@@ -175,6 +176,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   const [walletBuilt, setWalletBuilt] = useState<boolean>(false)
 
   const { getSnap, deleteSnap, getItem, setItem } = useLocalStorage()
+  const { setWeb2Mode } = useBrowserMode()
 
   const { isFocused, onFocusRequested, onFocusRelinquished, setBasketAccessModalOpen, setCertificateAccessModalOpen, setProtocolAccessModalOpen, setSpendingAuthorizationModalOpen } = useContext(UserContext);
 
@@ -751,7 +753,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
   const logout = useCallback(() => {
     // Clear localStorage to prevent auto-login
     logWithTimestamp(F, 'Initiating logout process');
-    deleteSnap().then(() => {
+    deleteSnap().then(async () => {
       // Reset manager state
       setManagers({});
       logWithTimestamp(F, 'Managers reset');
@@ -761,11 +763,26 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({
       setSnapshotLoaded(false);
       setWalletBuilt(false);
       logWithTimestamp(F, 'Configuration and state reset');
-
+      
+      // Clear recent apps (web3-specific data)
+      setRecentApps([]);
+      
+      // Set mode back to web2 when logging out
+      setWeb2Mode(true);
+      
+      // Clear web3-related data from localStorage to ensure clean state
+      try {
+        await setItem('browserMode', 'web2');
+        await setItem('recentApps', JSON.stringify([])); // Clear recent web3 apps
+      } catch (error) {
+        console.warn('Failed to clear browser mode from localStorage:', error);
+      }
+      
+      router.dismissAll()
       router.replace('/')
       logWithTimestamp(F, 'Logout completed, navigating to root');
     })
-  }, [deleteSnap]);
+  }, [deleteSnap, setWeb2Mode, setItem]);
 
   const resolveAppDataFromDomain = async ({ appDomains }: { appDomains: string[] }) => {
     const dataPromises = appDomains.map(async (domain, index) => {
