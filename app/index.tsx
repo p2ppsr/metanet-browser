@@ -33,8 +33,8 @@ export default function LoginScreen() {
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
     try {
-      await analytics().logEvent('start_button_tapped', {
-        screen: 'browser', variant: 'A'
+      await analytics().logEvent('get_started_tapped', {
+        screen: 'onboarding'
       });
     } catch (error) {
       console.error('Failed to log event', error);
