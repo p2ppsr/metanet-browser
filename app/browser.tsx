@@ -2043,32 +2043,53 @@ const TabsViewBase = ({
   }, [newTabScale, onDismiss, setAddressText, isCreatingTab])
 
   const renderItem = ({ item }: { item: Tab }) => {
-  const renderRightActions = (
-    progress: Animated.AnimatedInterpolation<number>,
-    dragX: Animated.AnimatedInterpolation<number>
-  ) => {
-    const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
-      inputRange: [-101, 0],
-      outputRange: [0, 1],
-      extrapolate: 'clamp'
-    })
-    return (
-      <Animated.View
-        style={[
-          styles.swipeDelete,
-        ]}
-      >
-      </Animated.View>
-    )
-  }
+    const renderRightActions = (
+      progress: Animated.AnimatedInterpolation<number>,
+      dragX: Animated.AnimatedInterpolation<number>
+    ) => {
+      const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
+        inputRange: [-101, 0],
+        outputRange: [0, 1],
+        extrapolate: 'clamp'
+      })
+      return (
+        <Animated.View
+          style={[
+            styles.swipeDelete,
+          ]}
+        >
+        </Animated.View>
+      ) 
+    }
+    const renderLeftActions = (
+      progress: Animated.AnimatedInterpolation<number>,
+      dragX: Animated.AnimatedInterpolation<number>
+    ) => {
+      const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
+        inputRange: [0, 101],
+        outputRange: [1, 0],
+        extrapolate: 'clamp'
+      })
+      return (
+        <Animated.View
+          style={[
+            styles.swipeDelete,
+          ]}
+        >
+        </Animated.View>
+      )
+    }
 
-  return (
-    <Swipeable
-      renderRightActions={renderRightActions}
-      onSwipeableRightOpen={() => tabStore.closeTab(item.id)}
-      friction={2}
-      rightThreshold={40}
-    >
+    return (
+      <Swipeable
+        renderRightActions={renderRightActions}
+        renderLeftActions={renderLeftActions}
+        onSwipeableRightOpen={() => tabStore.closeTab(item.id)}
+        onSwipeableLeftOpen={() => tabStore.closeTab(item.id)}
+        friction={2}
+        rightThreshold={40}
+        leftThreshold={40}
+      >
       <Pressable
         style={[
           styles.tabPreview,
