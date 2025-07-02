@@ -32,4 +32,5 @@ expo-env.d.ts
 .expo
 
 android/
+*.apk
 ios/

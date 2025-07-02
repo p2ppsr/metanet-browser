@@ -7,6 +7,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Modal from 'react-native-modal';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
@@ -23,6 +24,7 @@ export default function NotificationPermissionModal({
   onDismiss,
   onResponse,
 }: NotificationPermissionModalProps) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { requestNotificationPermission, getPermission } = usePushNotifications();
   const [isRequesting, setIsRequesting] = useState(false);
@@ -81,30 +83,30 @@ export default function NotificationPermissionModal({
             <Text style={styles.icon}>🔔</Text>
           </View>
           <Text style={[styles.title, { color: colors.textPrimary }]}>
-            Allow notifications?
+            {t('allow_notifications_question')}
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            <Text style={{ fontWeight: '600' }}>{domainName}</Text> wants to send you notifications
+            <Text style={{ fontWeight: '600' }}>{domainName}</Text> {t('wants_to_send_notifications')}
           </Text>
         </View>
 
         <View style={styles.content}>
           <Text style={[styles.description, { color: colors.textSecondary }]}>
-            This site can send you notifications about:
+            {t('can_send_notifications_about')}
           </Text>
           <View style={styles.featuresList}>
             <Text style={[styles.feature, { color: colors.textSecondary }]}>
-              • Breaking news and updates
+              {t('breaking_news_updates')}
             </Text>
             <Text style={[styles.feature, { color: colors.textSecondary }]}>
-              • Messages and activity
+              {t('messages_activity')}
             </Text>
             <Text style={[styles.feature, { color: colors.textSecondary }]}>
-              • Reminders and alerts
+              {t('reminders_alerts')}
             </Text>
           </View>
           <Text style={[styles.note, { color: colors.textSecondary }]}>
-            You can change this in Settings at any time.
+            {t('change_in_settings')}
           </Text>
         </View>
 
@@ -119,7 +121,7 @@ export default function NotificationPermissionModal({
             disabled={isRequesting}
           >
             <Text style={[styles.buttonText, { color: colors.textPrimary }]}>
-              Block
+              {t('block')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -135,7 +137,7 @@ export default function NotificationPermissionModal({
             disabled={isRequesting}
           >
             <Text style={[styles.buttonText, { color: colors.buttonText }]}>
-              {isRequesting ? 'Requesting...' : 'Allow'}
+              {isRequesting ? t('requesting') : t('allow')}
             </Text>
           </TouchableOpacity>
         </View>

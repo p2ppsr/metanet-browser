@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { UserContextProvider, NativeHandlers } from '../context/UserContext';
 import packageJson from '../package.json';
@@ -15,6 +15,10 @@ import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal'
 import { useDeepLinking } from '@/hooks/useDeepLinking';
 import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt';
 import * as Notifications from 'expo-notifications';
+import { LanguageProvider } from '@/utils/translations';
+import { BrowserModeProvider } from '@/context/BrowserModeContext';
+import Web3BenefitsModalHandler from '@/components/Web3BenefitsModalHandler';
+import '@/utils/translations';
 
 const nativeHandlers: NativeHandlers = {
   isFocused: async () => false,
@@ -57,41 +61,47 @@ function DeepLinkHandler() {
 
 export default function RootLayout() {
   return (
-    <LocalStorageProvider>
-      <UserContextProvider
-        nativeHandlers={nativeHandlers}
-        appVersion={packageJson.version}
-        appName="Metanet"
-      >
-        <ExchangeRateContextProvider>
-          <WalletContextProvider>
-            <ThemeProvider>
-              <DeepLinkHandler />
-              <DefaultBrowserPrompt />
-              <PasswordHandler />
-              <RecoveryKeySaver />
-              <ProtocolAccessModal />
-              <BasketAccessModal />
-              <CertificateAccessModal />
-              <SpendingAuthorizationModal />
-              <Stack
-                screenOptions={{
-                  animation: 'slide_from_right',
-                  headerShown: false
-                }}
-              >
-                <Stack.Screen name="index" />
-                <Stack.Screen name="browser" />
-                <Stack.Screen name="config" options={{
-                  headerShown: false,
-                  animation: 'slide_from_bottom',
-                  presentation: 'modal'
-                }} />
-              </Stack>
-            </ThemeProvider>
-          </WalletContextProvider>
-        </ExchangeRateContextProvider>
-      </UserContextProvider>
-    </LocalStorageProvider>
+    <LanguageProvider>
+      <LocalStorageProvider>
+        <UserContextProvider
+          nativeHandlers={nativeHandlers}
+          appVersion={packageJson.version}
+          appName="Metanet"
+        >
+          <ExchangeRateContextProvider>
+            <WalletContextProvider>              
+              <BrowserModeProvider>
+                <ThemeProvider>
+                  <DeepLinkHandler />
+                  <Web3BenefitsModalHandler />
+                  {/* <TranslationTester /> */}
+                  <DefaultBrowserPrompt />
+                  <PasswordHandler />
+                  <RecoveryKeySaver />
+                  <ProtocolAccessModal />
+                  <BasketAccessModal />
+                  <CertificateAccessModal />
+                  <SpendingAuthorizationModal />
+                  <Stack
+                    screenOptions={{
+                      animation: 'slide_from_right',
+                      headerShown: false
+                    }}
+                  >
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="browser" />
+                    <Stack.Screen name="config" options={{
+                      headerShown: false,
+                      animation: 'slide_from_bottom',
+                      presentation: 'modal'
+                    }} />
+                  </Stack>
+                </ThemeProvider>
+              </BrowserModeProvider>
+            </WalletContextProvider>
+          </ExchangeRateContextProvider>
+        </UserContextProvider>
+      </LocalStorageProvider>
+    </LanguageProvider>
   );
 }

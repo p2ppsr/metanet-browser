@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +12,8 @@ import CertifierCard, { Certifier } from '@/components/Trust/CertifierCard';
 type TrustedItem = TrustedOrigin
 
 export default function TrustScreen() {
-  // Get theme colors
+  // Get theme colors and translation
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
 
@@ -85,7 +87,7 @@ export default function TrustScreen() {
       <View style={{ flex: 1 }}>
         <Text style={[styles.itemName, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
         <Text style={[styles.itemDomain, { color: colors.textSecondary }]} numberOfLines={1}>{item.domain}</Text>
-        <Text style={[styles.itemAdded, { color: colors.textSecondary }]}>Trusted {item.added}</Text>
+        <Text style={[styles.itemAdded, { color: colors.textSecondary }]}>{t('trusted')} {item.added}</Text>
       </View>
       <TouchableOpacity onPress={() => removeItem(item.id)}>
         <Ionicons name="trash-outline" size={20} color={colors.error} />
@@ -102,11 +104,11 @@ export default function TrustScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Trusted Origins</Text>
-        <Text style={[styles.desc, { color: colors.textSecondary }]}>Manage your trust relationships and certifier network.</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('trusted_origins')}</Text>
+        <Text style={[styles.desc, { color: colors.textSecondary }]}>{t('manage_trust_relationships')}</Text>
         <TextInput
           style={[styles.searchInput, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder, color: colors.textPrimary }]}
-          placeholder="Search trusted origins…"
+          placeholder={t('search_trusted_origins')}
           placeholderTextColor={colors.textSecondary}
           value={query}
           onChangeText={setQuery}
@@ -121,7 +123,7 @@ export default function TrustScreen() {
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         ListEmptyComponent={() => (
           <View style={styles.emptyBox}>
-            <Text style={{ color: colors.textSecondary }}>No trusted origins yet.</Text>
+            <Text style={{ color: colors.textSecondary }}>{t('no_trusted_origins')}</Text>
           </View>
         )}
       />

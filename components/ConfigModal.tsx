@@ -12,6 +12,7 @@ import {
   Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet, WABConfig } from '@/context/WalletContext';
@@ -23,7 +24,8 @@ interface ConfigModalProps {
 }
 
 const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigured }) => {
-  // Access theme
+  // Access theme and translation
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const styles = useThemeStyles();
   const { 
@@ -81,7 +83,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
       }
     } catch (error: any) {
       console.error('Error fetching wallet config:', error);
-      Alert.alert('Error', 'Could not fetch wallet configuration: ' + error.message);
+      Alert.alert(t('error'), t('could_not_fetch_wallet_config') + ' ' + error.message);
     } finally {
       setIsLoadingConfig(false);
     }
@@ -153,7 +155,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
       onConfigured();
       onDismiss();
     } else {
-      Alert.alert('Configuration Error', 'Failed to save configuration. Please try again.');
+      Alert.alert(t('configuration_error'), t('failed_to_save_config'));
       resetCurrentConfig();
     }
   };
@@ -216,11 +218,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
           borderBottomColor: colors.inputBorder
         }]}>
           <TouchableOpacity onPress={handleCancel}>
-            <Text style={[styles.text, { color: colors.secondary }]}>Cancel</Text>
+            <Text style={[styles.text, { color: colors.secondary }]}>{t('cancel')}</Text>
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Configuration</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('configuration')}</Text>
           <TouchableOpacity onPress={handleSaveConfig} disabled={!isFormValid()}>
-            <Text style={[styles.text, { color: isFormValid() ? colors.secondary : colors.textSecondary }]}>Save</Text>
+            <Text style={[styles.text, { color: isFormValid() ? colors.secondary : colors.textSecondary }]}>{t('save')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -229,10 +231,10 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
             {/* WAB Configuration */}
             <View style={styles.card}>
               <Text style={[styles.text, { fontWeight: 'bold', fontSize: 16, marginBottom: 10 }]}>
-                Wallet Authentication Backend (WAB)
+                {t('wallet_auth_backend')}
               </Text>
               <Text style={[styles.textSecondary, { marginBottom: 15 }]}>
-                Provides 2 of 3 backup and recovery functionality for your root key.
+                {t('wab_description')}
               </Text>
               
               {isLoadingConfig && (
@@ -241,13 +243,13 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
                 </View>
               )}
               
-              <Text style={styles.inputLabel}>WAB URL</Text>
+              <Text style={styles.inputLabel}>{t('wab_url')}</Text>
               <View style={styles.input}>
                 <TextInput
                   style={styles.inputText}
                   value={wabUrl}
                   onChangeText={setWabUrl}
-                  placeholder="Enter WAB URL"
+                  placeholder={t('enter_wab_url')}
                   placeholderTextColor={colors.textSecondary}
                   autoCapitalize="none"
                   keyboardType="url"
@@ -259,12 +261,12 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
                 onPress={fetchWalletConfig}
                 disabled={isLoadingConfig}
               >
-                <Text style={styles.buttonText}>Refresh Info</Text>
+                <Text style={styles.buttonText}>{t('refresh_info')}</Text>
               </TouchableOpacity>
               
               {/* Phone Verification Service */}
               <Text style={[styles.inputLabel, { marginTop: 15 }]}>
-                Service which will be used to verify your phone number
+                {t('phone_verification_service')}
               </Text>
               <View style={[styles.row, { flexWrap: 'wrap', marginVertical: 10 }]}>
                 {renderChip('Twilio', method, setMethod)}
@@ -275,7 +277,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
             {/* Network Configuration */}
             <View style={[styles.card, { marginTop: 15 }]}>
               <Text style={[styles.text, { fontWeight: 'bold', fontSize: 16, marginBottom: 10 }]}>
-                BSV Network
+                {t('bsv_network')}
               </Text>
               
               <View style={[styles.row, { flexWrap: 'wrap', marginVertical: 10 }]}>
@@ -287,19 +289,19 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onDismiss, onConfigu
             {/* Storage Configuration */}
             <View style={[styles.card, { marginTop: 15 }]}>
               <Text style={[styles.text, { fontWeight: 'bold', fontSize: 16, marginBottom: 10 }]}>
-                Wallet Storage Provider
+                {t('wallet_storage_provider')}
               </Text>
               <Text style={[styles.textSecondary, { marginBottom: 15 }]}>
-                Used for your transactions and metadata storage.
+                {t('storage_description')}
               </Text>
               
-              <Text style={styles.inputLabel}>Storage URL</Text>
+              <Text style={styles.inputLabel}>{t('storage_url')}</Text>
               <View style={styles.input}>
                 <TextInput
                   style={styles.inputText}
                   value={storageUrl}
                   onChangeText={setStorageUrl}
-                  placeholder="Enter Storage URL"
+                  placeholder={t('enter_storage_url')}
                   placeholderTextColor={colors.textSecondary}
                   autoCapitalize="none"
                   keyboardType="url"
