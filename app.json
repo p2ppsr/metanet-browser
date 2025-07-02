@@ -33,7 +33,6 @@
           "defaultChannel": "default"
         }
       ],
-      "@react-native-firebase/app",
       [
         "expo-build-properties",
         {
@@ -51,7 +50,8 @@
       "router": {},
       "eas": {
         "projectId": "cc9c250b-48f3-4b79-8243-1e27fcd1548d"
-      }
+      },
+      "useFirebase": false
     },
     "android": {
       "package": "org.bsvblockchain.metanet",
@@ -62,7 +62,6 @@
         "android.permission.INTERNET",
         "android.permission.SYSTEM_ALERT_WINDOW"
       ],
-      "googleServicesFile": "google-services.json",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -116,7 +115,6 @@
     },
     "ios": {
       "bundleIdentifier": "org.bsvblockchain.metanet",
-      "googleServicesFile": "GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs camera access to scan QR codes.",
         "NSPhotoLibraryUsageDescription": "This app needs photo library access to let you select images.",
@@ -138,7 +136,6 @@
           "http"
         ]
       },
-      "appleTeamId": "D45YYR72YY",
       "entitlements": {
         "aps-environment": "development",
         "com.apple.developer.associated-domains": [

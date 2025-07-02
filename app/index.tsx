@@ -22,7 +22,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     // Get the button text from Remote Config
-    const value = remoteConfig.getValue('start_button_text');
+    const value = remoteConfig().getValue('start_button_text');
     
     // Use the remote value if it's not the static default
     if (value.getSource() !== 'static') {
@@ -33,7 +33,7 @@ export default function LoginScreen() {
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
     try {
-      await analytics.logEvent('start_button_tapped', {
+      await analytics().logEvent('start_button_tapped', {
         screen: 'browser', variant: 'A'
       });
     } catch (error) {
