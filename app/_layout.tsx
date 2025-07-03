@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { UserContextProvider, NativeHandlers } from '../context/UserContext';
 import packageJson from '../package.json';
@@ -15,6 +15,7 @@ import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal'
 import { useDeepLinking } from '@/hooks/useDeepLinking';
 import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt';
 import * as Notifications from 'expo-notifications';
+import { initializeFirebase } from '@/utils/firebase';
 import { LanguageProvider } from '@/utils/translations';
 import { BrowserModeProvider } from '@/context/BrowserModeContext';
 import Web3BenefitsModalHandler from '@/components/Web3BenefitsModalHandler';
@@ -60,6 +61,19 @@ function DeepLinkHandler() {
 }
 
 export default function RootLayout() {
+  const [configLoaded, setConfigLoaded] = useState(false);
+  useEffect(() => {
+    const initialize = async () => {
+      await initializeFirebase();
+      setConfigLoaded(true);
+    };
+    initialize();
+  }, []);
+
+  if (!configLoaded) {
+    return null;
+  }
+
   return (
     <LanguageProvider>
       <LocalStorageProvider>

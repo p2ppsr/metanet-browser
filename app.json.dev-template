@@ -48,11 +48,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "cff130bd-8ab7-480c-8c3c-11287d30c3cf"
-      },
-      "useFirebase": true
+      "router": {}
     },
     "android": {
       "package": "org.bsvblockchain.metanet",
@@ -152,7 +148,6 @@
       "iosDisplayInForeground": true,
       "androidMode": "default",
       "androidCollapsedTitle": "#{unread_notifications} new interactions"
-    },
-    "owner": "tyeverett"
+    }
   }
 }

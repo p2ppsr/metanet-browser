@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView , Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import ConfigModal from '@/components/ConfigModal';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +9,7 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import { useLocalStorage } from '@/context/LocalStorageProvider';
 import { Utils } from '@bsv/sdk';
+import { remoteConfig, analytics } from '@/utils/firebase';
 import { useTranslation } from 'react-i18next';
 import { useBrowserMode } from '@/context/BrowserModeContext';
 
@@ -17,16 +18,35 @@ export default function LoginScreen() {
   const { colors, isDark } = useTheme();
   const { managers, selectedWabUrl, selectedStorageUrl, selectedMethod, selectedNetwork, finalizeConfig } = useWallet();
   const { getSnap, setItem, getItem } = useLocalStorage();
+
+  const [startButtonText, setStartButtonText] = useState('Get Started');
   const { t } = useTranslation();
   const { showWeb3Benefits, setWeb2Mode } = useBrowserMode();
   const [loading, setLoading] = React.useState(false);
   const [initializing, setInitializing] = useState(true)
 
+  useEffect(() => {
+    // Get the button text from Remote Config
+    const value = remoteConfig().getValue('start_button_text');
+
+    // Use the remote value if it's not the static default
+    if (value.getSource() !== 'static') {
+      setStartButtonText(value.asString());
+    }
+  }, []);
+
   // Navigate to phone auth screen
   const handleGetStarted = async () => {
     try {
+      await analytics().logEvent('get_started_tapped', {
+        screen: 'onboarding'
+      });
+    } catch (error) {
+      console.error('Failed to log event', error);
+    }
+    try {
       setLoading(true)
-      
+
       // Fetch WAB info
       const res = await fetch(`${selectedWabUrl}/info`)
       if (!res.ok) {
@@ -47,7 +67,7 @@ export default function LoginScreen() {
         return
       }
       await setItem('finalConfig', JSON.stringify(finalConfig))
-      
+
       // if there's a wallet snapshot, load that
       const snap = await getSnap()
       if (!snap) {
@@ -55,6 +75,7 @@ export default function LoginScreen() {
         return
       }
       await managers?.walletManager?.loadSnapshot(snap)
+
       router.dismissAll();
       router.replace('/browser')
       return
@@ -93,6 +114,7 @@ export default function LoginScreen() {
       }
       const snapArr = Utils.toArray(snap, 'base64');
       await managers?.walletManager?.loadSnapshot(snapArr);
+
       router.dismissAll()
       router.replace('/browser');
     } catch (error) {
@@ -127,69 +149,63 @@ export default function LoginScreen() {
         </View>
         {!initializing && (
           <>
-        <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>{t('metanet')}</Text>
-        <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
-          {t('browser_with_identity_payments')}
-        </Text>
-        
-        <TouchableOpacity 
-          style={[styles.getStartedButton, { backgroundColor: colors.primary, opacity: loading ? 0.2 : 1 }]} 
-          onPress={handleGetStarted}
-          disabled={loading}
-        >
-          <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>{t('get_started')}</Text>
-        </TouchableOpacity>
-        
-        {/* Skip Login Button for Web2 Mode */}
-        <TouchableOpacity 
-          style={[
-            styles.getStartedButton, 
-            { 
-              backgroundColor: colors.paperBackground, 
-              borderWidth: 1, 
-              borderColor: colors.inputBorder,
-              marginTop: 12
-            }
-          ]} 
-          onPress={() => {
-            // Set mode to web2 immediately when button is pressed
-            setWeb2Mode(true);
-            
-            showWeb3Benefits(
-              // onContinue - if they still want to skip
-              () => {
-                router.replace({ pathname: '/browser', params: { mode: 'web2' } });
-              },
-              // onGoToLogin - if they decide to get Web3 identity
-              () => {
-                handleGetStarted();
-              }
-            );
-          }}
-        >
-          <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>Continue without login</Text>
-        </TouchableOpacity>
-        
-        <Text style={[styles.termsText, { color: colors.textSecondary }]}>
-          {t('terms_privacy_agreement')}
-        </Text>
-        
-        <TouchableOpacity 
-          style={styles.configButton} 
-          onPress={handleConfig}
-        >
-          <View style={styles.configIconContainer}>
-            <Ionicons name="settings-outline" size={20} color={colors.secondary} />
-            <Text style={styles.configButtonText}>{t('configure_providers')}</Text>
-          </View>
-        </TouchableOpacity>
+            <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>{t('metanet')}</Text>
+            <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
+              {t('browser_with_identity_payments')}
+            </Text>
 
-        <ConfigModal
-          visible={showConfig}
-          onDismiss={handleConfigDismiss}
-          onConfigured={handleConfigured}
-        />
-        </>
+            <TouchableOpacity
+              style={[styles.getStartedButton, { backgroundColor: colors.primary, opacity: loading ? 0.2 : 1 }]}
+              onPress={handleGetStarted}
+              disabled={loading}
+            >
+              <Text style={[styles.getStartedButtonText, { color: colors.buttonText }]}>{loading ? <ActivityIndicator color='#fff' /> : startButtonText}</Text>
+            </TouchableOpacity>
+
+            {/* Skip Login Button for Web2 Mode */}
+            <TouchableOpacity
+              style={[
+                styles.getStartedButton,
+                {
+                  backgroundColor: colors.paperBackground,
+                  borderWidth: 1,
+                  borderColor: colors.inputBorder,
+                  marginTop: 12
+                }
+              ]}
+              onPress={() => {
+                // Set mode to web2 immediately when button is pressed
+                setWeb2Mode(true);
+
+                showWeb3Benefits(
+                  // onContinue - if they still want to skip
+                  () => {
+                    router.replace({ pathname: '/browser', params: { mode: 'web2' } });
+                  },
+                  // onGoToLogin - if they decide to get Web3 identity
+                  () => {
+                    handleGetStarted();
+                  }
+                );
+              }}
+            >
+              <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>Continue without login</Text>
+            </TouchableOpacity>
+
+            <Text style={[styles.termsText, { color: colors.textSecondary }]}>
+              {t('terms_privacy_agreement')}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.configButton}
+              onPress={handleConfig}
+            >
+              <View style={styles.configIconContainer}>
+                <Ionicons name="settings-outline" size={20} color={colors.secondary} />
+                <Text style={styles.configButtonText}>{t('configure_providers')}</Text>
+              </View>
+            </TouchableOpacity>
+          </>
         )}
       </View>
     </SafeAreaView>
