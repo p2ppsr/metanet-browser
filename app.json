@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Metanet",
-    "slug": "metanet",
+    "slug": "metanet-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -50,7 +50,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "cff130bd-8ab7-480c-8c3c-11287d30c3cf"
+        "projectId": "f18a56d2-60e6-4170-95ca-839868f329fa"
       },
       "useFirebase": true
     },
@@ -133,6 +133,6 @@
       "androidMode": "default",
       "androidCollapsedTitle": "#{unread_notifications} new interactions"
     },
-    "owner": "tyeverett"
+    "owner": "bsvb"
   }
 }
