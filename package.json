@@ -7,6 +7,7 @@
   "license": "Open BSV",
   "scripts": {
     "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
+    "ipa-ios": "eas build --profile production --platform ios --local --verbose-logs --build-logger-level trace",
     "start": "expo start --dev-client",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --dev-client --android",
