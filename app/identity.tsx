@@ -3,12 +3,14 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'r
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 
 export default function IdentityScreen() {
-  // Get theme colors
+  // Get theme colors and translation
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
   const { managers, adminOriginator } = useWallet();
@@ -34,20 +36,20 @@ export default function IdentityScreen() {
     try {
       // Check if the managers are available
       if (!managers?.permissionsManager) {
-        Alert.alert('Error', 'Wallet manager not available');
+        Alert.alert(t('error'), t('wallet_manager_not_available'));
         return;
       }
       // Request password authentication
       const { publicKey } = await managers.permissionsManager!.getPublicKey({
         identityKey: true,
         privileged: true,
-        privilegedReason: 'Reveal your privileged identity key alongside your everyday one.'
+        privilegedReason: t('privileged_reason')
       })
       setPrivilegedKey(publicKey)
       setShowPrivilegedKey(true)
     } catch (error) {
       console.error('Failed to reveal key:', error);
-      Alert.alert('Error', 'Failed to reveal key');
+      Alert.alert(t('error'), t('failed_to_reveal_key'));
     }
   };
 
@@ -65,12 +67,12 @@ export default function IdentityScreen() {
     <SafeAreaView style={themeStyles.container}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={themeStyles.contentContainer}>
-        <Text style={[themeStyles.title, { color: colors.textPrimary }]}>Identity</Text>
-        <Text style={[themeStyles.textSecondary, { marginBottom: 20 }]}>
-          Manage your digital identity and credentials.
+        <Text style={[themeStyles.title, { color: colors.textPrimary, textAlign:'left', alignSelf:'flex-start' }]}>{t('identity')}</Text>
+        <Text style={[themeStyles.textSecondary, { marginBottom: 20, textAlign:'left', alignSelf:'flex-start' }]}>
+          {t('manage_digital_identity')}
         </Text>
         <View style={styles.keySection}>
-          <Text style={styles.keyLabel}>Identity Key:</Text>
+          <Text style={styles.keyLabel}>{t('identity_key')}</Text>
           <View style={styles.keyContainer}>
             <Text style={[styles.keyText, { backgroundColor: colors.paperBackground }]} numberOfLines={1} ellipsizeMode="middle">
               {identityKey}
@@ -88,7 +90,7 @@ export default function IdentityScreen() {
             </TouchableOpacity>
           </View>
           
-          <Text style={[styles.keyLabel, { marginTop: 20 }]}>Privileged Identity Key:</Text>
+          <Text style={[styles.keyLabel, { marginTop: 20 }]}>{t('privileged_identity_key')}</Text>
           {showPrivilegedKey ? (
             <View style={styles.keyContainer}>
               <Text style={[styles.keyText, { backgroundColor: colors.paperBackground }]} numberOfLines={1} ellipsizeMode="middle">
@@ -111,7 +113,7 @@ export default function IdentityScreen() {
               style={[styles.revealButton, { backgroundColor: colors.primary }]}
               onPress={handleRevealKey}
             >
-              <Text style={{ color: colors.buttonText, fontSize: 16, fontWeight: '500' }}>Reveal Key</Text>
+              <Text style={{ color: colors.buttonText, fontSize: 16, fontWeight: '500' }}>{t('reveal_key')}</Text>
             </TouchableOpacity>
           )}
         </View>

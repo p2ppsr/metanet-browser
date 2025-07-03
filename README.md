@@ -17,6 +17,10 @@ Clone the repo, then:
 
 ```
 npm i
+npm run configure
+```
+
+```
 npm run start
 ```
 

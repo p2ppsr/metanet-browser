@@ -13,11 +13,13 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { useWallet } from '@/context/WalletContext';
 
 export default function OtpScreen() {
+  const { t } = useTranslation();
   // Apply theme
   const { colors, isDark } = useTheme();
   const themeStyles = useThemeStyles();
@@ -70,7 +72,7 @@ export default function OtpScreen() {
       });
     } catch (error) {
       console.error('Error verifying OTP:', error);
-      Alert.alert('Verification Failed', 'The code you entered is incorrect. Please try again.');
+      Alert.alert(t('verification_failed'), t('code_incorrect_try_again'));
     } finally {
       setLoading(false);
     }
@@ -89,10 +91,10 @@ export default function OtpScreen() {
       setCountdown(60);
       setCanResend(false);
       
-      Alert.alert('Code Sent', 'A new verification code has been sent to your phone.');
+      Alert.alert(t('code_sent'), t('new_verification_code_sent'));
     } catch (error) {
       console.error('Error resending OTP:', error);
-      Alert.alert('Error', 'Failed to resend verification code. Please try again.');
+      Alert.alert(t('error'), t('failed_to_resend'));
     } finally {
       setLoading(false);
     }
@@ -106,9 +108,9 @@ export default function OtpScreen() {
         style={styles.keyboardAvoidingView}
       >
         <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Verification Code</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('verification_code')}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Enter the 6-digit code sent to {phoneNumber}
+            {t('enter_6_digit_code')} {phoneNumber}
           </Text>
           
           <View style={styles.otpContainer}>
@@ -164,6 +166,7 @@ export default function OtpScreen() {
                         handleVerify(updatedOtp)
                       }
                     }}
+                    editable={!loading}
                     autoFocus={index === 0}
                   />
                 );
@@ -171,15 +174,17 @@ export default function OtpScreen() {
             </View>
           </View>
           
+          {loading && <ActivityIndicator style={{ marginBottom: 20 }} />}
+          
           <View style={styles.resendContainer}>
-            <Text style={[styles.resendText, { color: colors.textSecondary }]}>Didn't receive the code?</Text>
+            <Text style={[styles.resendText, { color: colors.textSecondary }]}>{t('didnt_receive_code')}</Text>
             {canResend ? (
               <TouchableOpacity onPress={handleResend} disabled={loading}>
-                <Text style={[styles.resendActionText, { color: colors.secondary }]}>Resend Code</Text>
+                <Text style={[styles.resendActionText, { color: colors.secondary }]}>{t('resend_code')}</Text>
               </TouchableOpacity>
             ) : (
               <Text style={[styles.countdownText, { color: colors.textSecondary, opacity: 0.7 }]}>
-                Resend in {countdown}s
+                {t('resend_in')} {countdown}s
               </Text>
             )}
           </View>
@@ -188,7 +193,7 @@ export default function OtpScreen() {
             style={styles.changeNumberButton}
             onPress={() => router.back()}
           >
-            <Text style={[styles.changeNumberText, { color: colors.secondary }]}>Change Phone Number</Text>
+            <Text style={[styles.changeNumberText, { color: colors.secondary }]}>{t('change_phone_number')}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

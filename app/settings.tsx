@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme, ThemeMode } from '@/context/theme/ThemeContext';
 import { useThemeStyles } from '@/context/theme/useThemeStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { useWallet } from '@/context/WalletContext';
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const { colors, mode, setThemeMode } = useTheme();
   const styles = useThemeStyles();
   const { updateSettings, settings, logout } = useWallet();
@@ -30,16 +32,16 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 20 }}>
-          <Text style={styles.title}>Settings</Text>
+          <Text style={[styles.title, { textAlign:'left', alignSelf:'flex-start' }]}>{t('settings')}</Text>
           
           {/* Theme Section */}
           <View style={styles.card}>
             <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18, marginBottom: 15 }]}>
-              Appearance
+              {t('appearance')}
             </Text>
             
             <Text style={[styles.textSecondary, { marginBottom: 10 }]}>
-              Choose your preferred theme mode
+              {t('choose_theme_mode')}
             </Text>
             
             {/* Light Mode Option */}
@@ -49,7 +51,7 @@ export default function SettingsScreen() {
             >
               <View style={[styles.row, { flex: 1 }]}>
                 <Ionicons name="sunny-outline" size={24} color={colors.textPrimary} style={{ marginRight: 10 }} />
-                <Text style={styles.text}>Light</Text>
+                <Text style={styles.text}>{t('light')}</Text>
               </View>
               {mode === 'light' && (
                 <Ionicons name="checkmark-circle" size={24} color={colors.secondary} />
@@ -63,7 +65,7 @@ export default function SettingsScreen() {
             >
               <View style={[styles.row, { flex: 1 }]}>
                 <Ionicons name="moon-outline" size={24} color={colors.textPrimary} style={{ marginRight: 10 }} />
-                <Text style={styles.text}>Dark</Text>
+                <Text style={styles.text}>{t('dark')}</Text>
               </View>
               {mode === 'dark' && (
                 <Ionicons name="checkmark-circle" size={24} color={colors.secondary} />
@@ -77,7 +79,7 @@ export default function SettingsScreen() {
             >
               <View style={[styles.row, { flex: 1 }]}>
                 <Ionicons name="phone-portrait-outline" size={24} color={colors.textPrimary} style={{ marginRight: 10 }} />
-                <Text style={styles.text}>System Default</Text>
+                <Text style={styles.text}>{t('system_default')}</Text>
               </View>
               {mode === 'system' && (
                 <Ionicons name="checkmark-circle" size={24} color={colors.secondary} />
@@ -88,7 +90,7 @@ export default function SettingsScreen() {
           {/* Account Section */}
           <View style={[styles.card, { marginTop: 20 }]}>
             <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18, marginBottom: 15 }]}>
-              Account
+              {t('account')}
             </Text>
             
             <TouchableOpacity 
@@ -97,7 +99,7 @@ export default function SettingsScreen() {
             >
               <View style={[styles.row, { flex: 1 }]}>
                 <Ionicons name="log-out-outline" size={24} color={colors.error} style={{ marginRight: 10 }} />
-                <Text style={[styles.text, { color: colors.error }]}>Logout</Text>
+                <Text style={[styles.text, { color: colors.error }]}>{t('logout')}</Text>
               </View>
             </TouchableOpacity>
           </View>
