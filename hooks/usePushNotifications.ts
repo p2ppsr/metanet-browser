@@ -223,9 +223,12 @@ export const usePushNotifications = () => {
       if (!expoToken) return null;
 
       // Extract token from Expo format for potential FCM use
-      if (expoToken.startsWith('ExponentPushToken[')) {
-        const token = expoToken.replace('ExponentPushToken[', '').replace(']', '');
-        return token;
+      if (expoToken.startsWith('ExponentPushToken[') && expoToken.endsWith(']')) {
+        // Use regex to safely extract the token content between brackets
+        const match = expoToken.match(/ExponentPushToken\[(.*?)\]/);
+        if (match && match[1]) {
+          return match[1];
+        }
       }
       
       return expoToken;
