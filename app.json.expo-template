@@ -87,26 +87,6 @@
             "DEFAULT"
           ]
         }
-      ],
-      "queries": [
-        {
-          "intent": {
-            "action": "android.intent.action.VIEW",
-            "category": "android.intent.category.BROWSABLE",
-            "data": {
-              "scheme": "https"
-            }
-          }
-        },
-        {
-          "intent": {
-            "action": "android.intent.action.VIEW",
-            "category": "android.intent.category.BROWSABLE",
-            "data": {
-              "scheme": "http"
-            }
-          }
-        }
       ]
     },
     "ios": {
