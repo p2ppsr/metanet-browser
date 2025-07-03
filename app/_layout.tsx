@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
-=======
-import React, { useEffect } from 'react';
->>>>>>> origin/fix
 import { Stack } from 'expo-router';
 import { UserContextProvider, NativeHandlers } from '../context/UserContext';
 import packageJson from '../package.json';
@@ -19,14 +15,11 @@ import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal'
 import { useDeepLinking } from '@/hooks/useDeepLinking';
 import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt';
 import * as Notifications from 'expo-notifications';
-<<<<<<< HEAD
 import { initializeFirebase } from '@/utils/firebase';
-=======
 import { LanguageProvider } from '@/utils/translations';
 import { BrowserModeProvider } from '@/context/BrowserModeContext';
 import Web3BenefitsModalHandler from '@/components/Web3BenefitsModalHandler';
 import '@/utils/translations';
->>>>>>> origin/fix
 
 const nativeHandlers: NativeHandlers = {
   isFocused: async () => false,
