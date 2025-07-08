@@ -94,6 +94,8 @@ export default function PasswordScreen() {
                 value={password}
                 onChangeText={setPassword}
                 autoFocus
+                autoCapitalize="none"
+                autoCorrect={false}
               />
               <TouchableOpacity 
                 onPress={() => setShowPassword(!showPassword)}

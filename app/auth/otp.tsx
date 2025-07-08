@@ -9,7 +9,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
-  TextInput
+  TextInput,
+  Keyboard
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -64,6 +65,9 @@ export default function OtpScreen() {
         phoneNumber,
         otp,
       });
+      
+      // Dismiss keyboard before navigation to prevent jitter
+      Keyboard.dismiss();
       
       // Navigate to password screen after OTP verification
       router.push({
