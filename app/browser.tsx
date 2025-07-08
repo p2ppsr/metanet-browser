@@ -22,6 +22,7 @@ import {
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as ScreenOrientation from 'expo-screen-orientation'
 import {
   WebView,
   WebViewMessageEvent,
@@ -334,6 +335,34 @@ function Browser() {
   const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest();
   const [showBalance, setShowBalance] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Fullscreen management for iOS and Android
+  const enterFullscreen = useCallback(async () => {
+    try {
+      setIsFullscreen(true);
+      
+      if (Platform.OS === 'ios') {
+        // For iOS, we'll rely on UI changes to simulate fullscreen
+        // as true fullscreen with orientation lock can be problematic for browsers
+      }
+      // Android fullscreen is handled via UI state changes
+    } catch (error) {
+      console.warn('Failed to enter fullscreen:', error);
+    }
+  }, []);
+
+  const exitFullscreen = useCallback(async () => {
+    try {
+      setIsFullscreen(false);
+      
+      if (Platform.OS === 'ios') {
+        // For iOS, we'll rely on UI changes to simulate fullscreen
+      }
+      // Android fullscreen is handled via UI state changes
+    } catch (error) {
+      console.warn('Failed to exit fullscreen:', error);
+    }
+  }, []);
 
   // Safety check - if somehow activeTab is null, force create a new tab
   // This is done after all hooks to avoid violating Rules of Hooks
@@ -1041,7 +1070,7 @@ const navFwd = useCallback(() => {
       // Handle fullscreen requests
       if (msg.type === 'REQUEST_FULLSCREEN') {
         console.log('Fullscreen requested by website');
-        setIsFullscreen(true);
+        await enterFullscreen();
         
         // Send success response back to webview
         if (activeTab.webviewRef?.current) {
@@ -1066,7 +1095,7 @@ const navFwd = useCallback(() => {
       // Handle exit fullscreen requests
       if (msg.type === 'EXIT_FULLSCREEN') {
         console.log('Exit fullscreen requested by website');
-        setIsFullscreen(false);
+        await exitFullscreen();
         
         // Send response back to webview
         if (activeTab.webviewRef?.current) {
@@ -1633,7 +1662,7 @@ const navFwd = useCallback(() => {
   useEffect(() => {
     if (isFullscreen) {
       const backHandler = () => {
-        setIsFullscreen(false);
+        exitFullscreen();
         // Notify webview that fullscreen exited
         activeTab?.webviewRef.current?.injectJavaScript(`
           window.dispatchEvent(new MessageEvent('message', {
@@ -1652,7 +1681,7 @@ const navFwd = useCallback(() => {
         return () => subscription.remove();
       }
     }
-  }, [isFullscreen, activeTab?.webviewRef]);
+  }, [isFullscreen, activeTab?.webviewRef, exitFullscreen]);
 
   const starDrawerAnimatedStyle = useMemo(() => ([
     styles.starDrawer,
@@ -1670,6 +1699,127 @@ const navFwd = useCallback(() => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* iOS Fullscreen Overlay */}
+      {isFullscreen && Platform.OS === 'ios' && (
+        <RNModal
+          animationType="fade"
+          transparent={false}
+          visible={isFullscreen}
+          onRequestClose={exitFullscreen}
+          statusBarTranslucent={true}
+        >
+          <View style={{ flex: 1, backgroundColor: 'black' }}>
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                top: 50,
+                right: 20,
+                zIndex: 1000,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+              onPress={exitFullscreen}
+            >
+              <Ionicons name="contract-outline" size={20} color="white" />
+            </TouchableOpacity>
+            {activeTab && (
+              <WebView
+                ref={activeTab?.webviewRef}
+                source={{ 
+                  uri: activeTab?.url,
+                  headers: {
+                    'Accept-Language': getAcceptLanguageHeader()
+                  }
+                }}
+                originWhitelist={['https://*', 'http://*']}
+                onMessage={handleMessage}
+                injectedJavaScript={injectedJavaScript}
+                onNavigationStateChange={handleNavStateChange}
+                onLoadStart={(syntheticEvent: any) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.log('🚀 [WEBVIEW_LOAD_START] Navigation started:', {
+                    url: nativeEvent.url,
+                    title: nativeEvent.title,
+                    loading: nativeEvent.loading,
+                    canGoBack: nativeEvent.canGoBack,
+                    canGoForward: nativeEvent.canGoForward,
+                    activeTabId: tabStore.activeTabId,
+                    activeTabUrl: activeTab?.url,
+                    timestamp: new Date().toISOString()
+                  });
+                }}
+                onLoadProgress={(syntheticEvent: any) => {
+                  const { nativeEvent } = syntheticEvent;
+                  if (nativeEvent.progress === 0 || nativeEvent.progress === 1) {
+                    console.log('📊 [WEBVIEW_LOAD_PROGRESS] Navigation progress:', {
+                      url: nativeEvent.url,
+                      title: nativeEvent.title,
+                      progress: nativeEvent.progress,
+                      loading: nativeEvent.loading,
+                      canGoBack: nativeEvent.canGoBack,
+                      canGoForward: nativeEvent.canGoForward,
+                      timestamp: new Date().toISOString()
+                    });
+                  }
+                }}
+                onLoadEnd={(syntheticEvent: any) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.log('✅ [WEBVIEW_LOAD_END] Navigation completed:', {
+                    url: nativeEvent.url,
+                    title: nativeEvent.title,
+                    loading: nativeEvent.loading,
+                    canGoBack: nativeEvent.canGoBack,
+                    canGoForward: nativeEvent.canGoForward,
+                    timestamp: new Date().toISOString()
+                  });
+                }}
+                onShouldStartLoadWithRequest={(request: any) => {
+                  console.log('🤔 [WEBVIEW_SHOULD_START_LOAD] Navigation request evaluation:', {
+                    url: request.url,
+                    title: request.title,
+                    isMainFrame: request.mainDocumentURL === request.url,
+                    mainDocumentURL: request.mainDocumentURL,
+                    navigationType: request.navigationType,
+                    timestamp: new Date().toISOString()
+                  });
+                  return true; // Allow all requests for now
+                }}
+                userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
+                onError={(syntheticEvent: any) => {
+                  const { nativeEvent } = syntheticEvent;
+                  // Ignore favicon errors for about:blank
+                  if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
+                    return;
+                  }
+                  console.warn('❌ [WEBVIEW_ERROR] WebView error:', nativeEvent);
+                }}
+                onHttpError={(syntheticEvent: any) => {
+                  const { nativeEvent } = syntheticEvent;
+                  // Ignore favicon errors for about:blank
+                  if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
+                    return;
+                  }
+                  console.warn('🌐 [WEBVIEW_HTTP_ERROR] WebView HTTP error:', nativeEvent);
+                }}
+                javaScriptEnabled
+                domStorageEnabled
+                allowsFullscreenVideo={true}
+                allowsInlineMediaPlayback={true}
+                mediaPlaybackRequiresUserAction={false}
+                allowsLinkPreview={false}
+                allowsProtectedMedia={true}
+                allowsBackForwardNavigationGestures
+                style={{ flex: 1 }}
+              />
+            )}
+          </View>
+        </RNModal>
+      )}
+      
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={addressFocused
@@ -1686,9 +1836,15 @@ const navFwd = useCallback(() => {
                 ? 0
                 : isFullscreen 
                   ? 0 
-                  : Platform.OS === 'ios' ? 0 : insets.bottom
+                  : Platform.OS === 'ios' ? 0 : insets.bottom,
+              // On Android, completely remove safe area padding in fullscreen
+              paddingTop: isFullscreen && Platform.OS === 'android' ? 0 : undefined,
+              paddingLeft: isFullscreen && Platform.OS === 'android' ? 0 : undefined,
+              paddingRight: isFullscreen && Platform.OS === 'android' ? 0 : undefined,
             }
           ]}
+          // Disable safe area edges in fullscreen on Android
+          edges={isFullscreen && Platform.OS === 'android' ? [] : ['top', 'left', 'right']}
         >
           <StatusBar style={isDark ? 'light' : 'dark'} hidden={isFullscreen} />
 
@@ -1717,7 +1873,7 @@ const navFwd = useCallback(() => {
               style={{ flex: 1 }}
               {...responderProps}
             >
-              {isFullscreen && (
+              {isFullscreen && Platform.OS === 'android' && (
                 <TouchableOpacity
                   style={{
                     position: 'absolute',
@@ -1732,7 +1888,7 @@ const navFwd = useCallback(() => {
                     alignItems: 'center'
                   }}
                   onPress={() => {
-                    setIsFullscreen(false);
+                    exitFullscreen();
                     activeTab?.webviewRef.current?.injectJavaScript(`
                       window.dispatchEvent(new MessageEvent('message', {
                         data: JSON.stringify({
@@ -2234,7 +2390,7 @@ const TabsViewBase = ({
   const screen = Dimensions.get('window')
   const ITEM_W = screen.width * 0.42
   const ITEM_H = screen.height * 0.28
-  const insets = useSafeAreaInsets()
+   const insets = useSafeAreaInsets()
 
 // Animation for new tab button
   const newTabScale = useRef(new Animated.Value(1)).current
@@ -2453,7 +2609,7 @@ const TabsViewBase = ({
           ]} 
           onPress={onDismiss}
         >
-          <Text style={[styles.doneButtonText, { color: colors.background }]}>
+          <Text style={[styles.doneButton, { color: colors.background }]}>
             {t('done')}
           </Text>
         </TouchableOpacity>
@@ -2858,10 +3014,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
-  },
-  doneButtonText: {
-    fontSize: 16,
-    fontWeight: '600'
   },
   newTabBtn: {
     width: 56,
