@@ -14,10 +14,11 @@
     "ios": "expo start --dev-client --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "configure": "./configure.sh"
+    "configure": "./configure.sh",
+    "clean": "rm -rf node_modules && rm -rf package-lock.json && rm -rf yarn.lock && rm -rf .expo && rm -rf .expo-shared && rm -rf .vscode && rm -rf .idea && rm -rf ios/Pods && rm -rf android/.gradle && rm -rf android/app/build && npm install"
   },
   "dependencies": {
-    "@bsv/sdk": "^1.6.8",
+    "@bsv/sdk": "^1.6.11",
     "@bsv/wallet-toolbox-mobile": "^1.5.6",
     "@dicebear/core": "^9.2.2",
     "@dicebear/identicon": "^9.2.2",
