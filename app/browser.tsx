@@ -155,7 +155,14 @@ function StarDrawer({
 /*                                  BROWSER                                   */
 /* -------------------------------------------------------------------------- */
 
+let renderCounter = 0;
+
 function Browser() {
+  renderCounter++;
+  console.log('🏗️ [BROWSER_COMPONENT] Browser component rendered/re-rendered #' + renderCounter + ':', {
+    timestamp: new Date().toISOString()
+  });
+
   /* --------------------------- theme / basic hooks -------------------------- */
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
@@ -302,6 +309,8 @@ function Browser() {
 
   /* -------------------------- ui / animation state -------------------------- */
   const addressEditing = useRef(false)
+  const lastNavStateRef = useRef<WebViewNavigation | null>(null)
+  const lastNavStateTimestamp = useRef<number>(0)
   const [addressText, setAddressText] = useState(kNEW_TAB_URL)
   const [addressFocused, setAddressFocused] = useState(false);
   const [addressBarHeight, setAddressBarHeight] = useState(0);
@@ -464,6 +473,26 @@ function Browser() {
     }
   }, [i18n.language, activeTab]);
 
+  // Debug logging for WebView re-renders and navigation tracking
+  useEffect(() => {
+    console.log('🔄 [WEBVIEW_RENDER] WebView component may re-render due to activeTab change:', {
+      activeTabId: activeTab?.id,
+      activeTabUrl: activeTab?.url,
+      isDesktopView,
+      timestamp: new Date().toISOString()
+    });
+  }, [activeTab?.id, activeTab?.url, isDesktopView]);
+
+  // Track when the userAgent changes (could cause re-render)
+  useEffect(() => {
+    console.log('👤 [USER_AGENT_CHANGE] User agent changed:', {
+      newUserAgent: isDesktopView ? 'desktop' : 'mobile',
+      isDesktopView,
+      activeTabUrl: activeTab?.url,
+      timestamp: new Date().toISOString()
+    });
+  }, [isDesktopView]);
+
   /* -------------------------------------------------------------------------- */
   /*                                 UTILITIES                                  */
   /* -------------------------------------------------------------------------- */
@@ -481,14 +510,43 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
 
   const updateActiveTab = useCallback((patch: Partial<Tab>) => {
+    console.log('📝 [UPDATE_ACTIVE_TAB] Tab update requested:', {
+      patch,
+      currentActiveTabId: tabStore.activeTabId,
+      currentUrl: tabStore.activeTab?.url,
+      timestamp: new Date().toISOString(),
+      stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n')
+    });
+
     const newUrl = patch.url
     if (newUrl && !isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
+      console.log('📝 [UPDATE_ACTIVE_TAB] Invalid URL detected, redirecting to new tab:', {
+        originalUrl: newUrl,
+        redirectTo: kNEW_TAB_URL,
+        timestamp: new Date().toISOString()
+      });
       patch.url = kNEW_TAB_URL
     }
+    
+    if (newUrl) {
+      console.log('📝 [UPDATE_ACTIVE_TAB] URL change will trigger WebView navigation:', {
+        from: tabStore.activeTab?.url,
+        to: newUrl,
+        tabId: tabStore.activeTabId,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     tabStore.updateTab(tabStore.activeTabId, patch)
   }, [])
 
   const onAddressSubmit = useCallback(() => {
+    console.log('🚀 [ADDRESS_SUBMIT] Starting address submission:', {
+      originalInput: addressText,
+      timestamp: new Date().toISOString(),
+      activeTabId: tabStore.activeTabId
+    });
+
     let entry = addressText.trim()
     const isProbablyUrl =
       /^([a-z]+:\/\/|www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(entry)
@@ -500,6 +558,13 @@ function Browser() {
     if (!isValidUrl(entry)) {
       entry = kNEW_TAB_URL
     }
+
+    console.log('🚀 [ADDRESS_SUBMIT] Processed URL:', {
+      finalUrl: entry,
+      wasUrl: isProbablyUrl,
+      timestamp: new Date().toISOString(),
+      activeTabId: tabStore.activeTabId
+    });
 
     updateActiveTab({ url: entry })
     addressEditing.current = false
@@ -1175,20 +1240,59 @@ const navFwd = useCallback(() => {
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
   /* -------------------------------------------------------------------------- */  
-  const handleNavStateChange = (navState: WebViewNavigation) => {
+  const handleNavStateChange = useCallback((navState: WebViewNavigation) => {
+  console.log('🌐 [NAV_STATE_CHANGE] WebView navigation event received:', {
+    url: navState.url,
+    title: navState.title,
+    loading: navState.loading,
+    canGoBack: navState.canGoBack,
+    canGoForward: navState.canGoForward,
+    activeTabId: tabStore.activeTabId,
+    currentTabUrl: activeTab?.url,
+    timestamp: new Date().toISOString()
+  });
+
   // Safety check - if activeTab is undefined, we cannot process navigation
   if (!activeTab) {
-    console.warn('Cannot handle navigation state change: activeTab is undefined');
+    console.warn('⚠️ [NAV_STATE_CHANGE] Cannot handle navigation: activeTab is undefined');
     return;
   }
     
   // Ignore favicon requests for about:blank
   if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
+    console.log('🚫 [NAV_STATE_CHANGE] Ignoring favicon request for new tab');
     return;
   }
+
+  // Check if this is a duplicate navigation state (same URL, same loading state)
+  const now = Date.now();
+  const lastNavState = lastNavStateRef.current;
+  const isDuplicate = lastNavState && 
+    lastNavState.url === navState.url && 
+    lastNavState.loading === navState.loading &&
+    lastNavState.canGoBack === navState.canGoBack &&
+    lastNavState.canGoForward === navState.canGoForward;
+
+  // Throttle rapid navigation state changes (less than 50ms apart)
+  const isThrottled = (now - lastNavStateTimestamp.current) < 50;
+
+  if (isDuplicate) {
+    console.log('🔄 [NAV_STATE_CHANGE] Skipping duplicate navigation state for same URL/state');
+    return;
+  }
+
+  if (isThrottled && lastNavState?.url === navState.url) {
+    console.log('⏱️ [NAV_STATE_CHANGE] Throttling rapid navigation state change for same URL');
+    return;
+  }
+
+  // Store this navigation state for future duplicate detection
+  lastNavStateRef.current = navState;
+  lastNavStateTimestamp.current = now;
   
   // Log navigation state changes with back/forward capabilities
-  console.log('🌐 Navigation State Change:', {
+  const processingStart = performance.now();
+  console.log('🌐 [NAV_STATE_CHANGE] Processing navigation:', {
     url: navState.url,
     title: navState.title,
     loading: navState.loading,
@@ -1198,12 +1302,18 @@ const navFwd = useCallback(() => {
   });
   
   // Make sure we're updating the correct tab's navigation state
+  console.log('📊 [NAV_STATE_CHANGE] Updating tab store navigation state for tab:', activeTab.id);
   tabStore.handleNavigationStateChange(activeTab.id, navState)
   
-  if (!addressEditing.current) setAddressText(navState.url)
+  if (!addressEditing.current) {
+    console.log('📍 [NAV_STATE_CHANGE] Updating address text to:', navState.url);
+    setAddressText(navState.url)
+  } else {
+    console.log('📍 [NAV_STATE_CHANGE] Address editing in progress, skipping address text update');
+  }
 
   if (!navState.loading && navState.url !== kNEW_TAB_URL) {
-    console.log('📄 Webpage Loaded:', {
+    console.log('📄 [NAV_STATE_CHANGE] Webpage fully loaded, adding to history:', {
       url: navState.url,
       title: navState.title,
       canGoBack: navState.canGoBack,
@@ -1216,8 +1326,14 @@ const navFwd = useCallback(() => {
       url: navState.url,
       timestamp: Date.now()
     }).catch(() => { })
+  } else if (navState.loading) {
+    console.log('⏳ [NAV_STATE_CHANGE] Page is still loading...');
   }
-}
+
+  // Log completion time for performance tracking
+  const processingTime = performance.now() - processingStart;
+  console.log('✅ [NAV_STATE_CHANGE] Navigation state processing completed in', processingTime.toFixed(2), 'ms');
+}, [activeTab, tabStore, setAddressText, pushHistory])
 
   /* -------------------------------------------------------------------------- */
   /*                          SHARE / HOMESCREEN SHORTCUT                       */
@@ -1642,6 +1758,55 @@ const navFwd = useCallback(() => {
                 onMessage={handleMessage}
                 injectedJavaScript={injectedJavaScript}
                 onNavigationStateChange={handleNavStateChange}
+                onLoadStart={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.log('🚀 [WEBVIEW_LOAD_START] Navigation started:', {
+                    url: nativeEvent.url,
+                    title: nativeEvent.title,
+                    loading: nativeEvent.loading,
+                    canGoBack: nativeEvent.canGoBack,
+                    canGoForward: nativeEvent.canGoForward,
+                    activeTabId: tabStore.activeTabId,
+                    activeTabUrl: activeTab?.url,
+                    timestamp: new Date().toISOString()
+                  });
+                }}
+                onLoadProgress={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  if (nativeEvent.progress === 0 || nativeEvent.progress === 1) {
+                    console.log('📊 [WEBVIEW_LOAD_PROGRESS] Navigation progress:', {
+                      url: nativeEvent.url,
+                      title: nativeEvent.title,
+                      progress: nativeEvent.progress,
+                      loading: nativeEvent.loading,
+                      canGoBack: nativeEvent.canGoBack,
+                      canGoForward: nativeEvent.canGoForward,
+                      timestamp: new Date().toISOString()
+                    });
+                  }
+                }}
+                onLoadEnd={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.log('✅ [WEBVIEW_LOAD_END] Navigation completed:', {
+                    url: nativeEvent.url,
+                    title: nativeEvent.title,
+                    loading: nativeEvent.loading,
+                    canGoBack: nativeEvent.canGoBack,
+                    canGoForward: nativeEvent.canGoForward,
+                    timestamp: new Date().toISOString()
+                  });
+                }}
+                onShouldStartLoadWithRequest={(request) => {
+                  console.log('🤔 [WEBVIEW_SHOULD_START_LOAD] Navigation request evaluation:', {
+                    url: request.url,
+                    title: request.title,
+                    isMainFrame: request.mainDocumentURL === request.url,
+                    mainDocumentURL: request.mainDocumentURL,
+                    navigationType: request.navigationType,
+                    timestamp: new Date().toISOString()
+                  });
+                  return true; // Allow all requests for now
+                }}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent;
@@ -1649,7 +1814,7 @@ const navFwd = useCallback(() => {
                   if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
                     return;
                   }
-                  console.warn('WebView error:', nativeEvent);
+                  console.warn('❌ [WEBVIEW_ERROR] WebView error:', nativeEvent);
                 }}
                 onHttpError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent;
@@ -1657,7 +1822,7 @@ const navFwd = useCallback(() => {
                   if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
                     return;
                   }
-                  console.warn('WebView HTTP error:', nativeEvent);
+                  console.warn('🌐 [WEBVIEW_HTTP_ERROR] WebView HTTP error:', nativeEvent);
                 }}
                 javaScriptEnabled
                 domStorageEnabled
