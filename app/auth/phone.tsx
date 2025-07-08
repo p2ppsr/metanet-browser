@@ -216,7 +216,7 @@ export default function PhoneScreen() {
             disabled={loading}
           >
             <Text style={[styles.buttonText, { color: colors.textPrimary }]}>
-              Continue without login
+              {t('continue_without_login')}
             </Text>
           </TouchableOpacity>
           
