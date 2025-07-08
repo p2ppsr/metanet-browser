@@ -1826,6 +1826,11 @@ const navFwd = useCallback(() => {
                 }}
                 javaScriptEnabled
                 domStorageEnabled
+                allowsFullscreenVideo={true}
+                allowsInlineMediaPlayback={true}
+                mediaPlaybackRequiresUserAction={false}
+                allowsLinkPreview={false}
+                allowsProtectedMedia={true}
                 allowsBackForwardNavigationGestures
                 containerStyle={{ backgroundColor: colors.background }}
                 style={{ flex: 1 }}
