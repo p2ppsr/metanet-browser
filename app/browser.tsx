@@ -1577,21 +1577,25 @@ const navFwd = useCallback(() => {
           <StatusBar style={isDark ? 'light' : 'dark'} hidden={isFullscreen} />
 
           {activeTab?.url === kNEW_TAB_URL ? (
-            <RecommendedApps
-            includeBookmarks={bookmarkStore.bookmarks.filter(bookmark => {
-              return bookmark.url && 
-                    bookmark.url !== kNEW_TAB_URL && 
-                    isValidUrl(bookmark.url) &&
-                    !bookmark.url.includes('about:blank')
-            }).reverse() }
-            
-            setStartingUrl={url => updateActiveTab({ url })}
-            onRemoveBookmark={removeBookmark}
-            onRemoveDefaultApp={removeDefaultApp}
-            removedDefaultApps={removedDefaultApps}
-            homepageSettings={homepageSettings}
-            onUpdateHomepageSettings={updateHomepageSettings}
-          />
+            <TouchableWithoutFeedback onPress={dismissKeyboard}>
+              <View style={{ flex: 1 }}>
+                <RecommendedApps
+                includeBookmarks={bookmarkStore.bookmarks.filter(bookmark => {
+                  return bookmark.url && 
+                        bookmark.url !== kNEW_TAB_URL && 
+                        isValidUrl(bookmark.url) &&
+                        !bookmark.url.includes('about:blank')
+                }).reverse() }
+                
+                setStartingUrl={url => updateActiveTab({ url })}
+                onRemoveBookmark={removeBookmark}
+                onRemoveDefaultApp={removeDefaultApp}
+                removedDefaultApps={removedDefaultApps}
+                homepageSettings={homepageSettings}
+                onUpdateHomepageSettings={updateHomepageSettings}
+              />
+              </View>
+            </TouchableWithoutFeedback>
         ) : activeTab ? (
             <View
               style={{ flex: 1 }}
