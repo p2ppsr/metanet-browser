@@ -2451,80 +2451,89 @@ const BottomToolbar = ({
         }
       ]}
     >    
-      <TouchableOpacity
-        style={styles.toolbarButton}
-        onPress={() => {
-          console.log('🔘 Back Button Pressed:', {
-            canGoBack: activeTab.canGoBack,
-            url: activeTab.url,
-            isNewTab: activeTab.url === kNEW_TAB_URL,
-            disabled: isBackDisabled
-          });
-          navBack();
-        }}
-        disabled={isBackDisabled}
-        activeOpacity={0.6}
-        delayPressIn={0}
-      >
-        <Ionicons
-          name='arrow-back'
-          size={24}
-          color={!isBackDisabled ? colors.textPrimary : '#cccccc'}
-        />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.toolbarButton}
-        onPress={() => {
-          console.log('🔘 Forward Button Pressed:', {
-            canGoForward: activeTab.canGoForward,
-            url: activeTab.url,
-            isNewTab: activeTab.url === kNEW_TAB_URL,
-            disabled: isForwardDisabled
-          });
-          navFwd();
-        }}
-        disabled={isForwardDisabled}
-        activeOpacity={0.6}
-        delayPressIn={0}
-      >
-        <Ionicons
-          name='arrow-forward'
-          size={24}
-          color={!isForwardDisabled ? colors.textPrimary : '#cccccc'}
-        />
-      </TouchableOpacity>
+      {/* Left side navigation buttons */}
+      <View style={styles.toolbarSection}>
+        <TouchableOpacity
+          style={[styles.toolbarButton, { opacity: isBackDisabled ? 0.3 : 1 }]}
+          onPress={() => {
+            console.log('🔘 Back Button Pressed:', {
+              canGoBack: activeTab.canGoBack,
+              url: activeTab.url,
+              isNewTab: activeTab.url === kNEW_TAB_URL,
+              disabled: isBackDisabled
+            });
+            navBack();
+          }}
+          disabled={isBackDisabled}
+          activeOpacity={0.6}
+          delayPressIn={0}
+        >
+          <Ionicons
+            name='arrow-back'
+            size={24}
+            color={colors.textPrimary}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toolbarButton, { opacity: isForwardDisabled ? 0.3 : 1 }]}
+          onPress={() => {
+            console.log('🔘 Forward Button Pressed:', {
+              canGoForward: activeTab.canGoForward,
+              url: activeTab.url,
+              isNewTab: activeTab.url === kNEW_TAB_URL,
+              disabled: isForwardDisabled
+            });
+            navFwd();
+          }}
+          disabled={isForwardDisabled}
+          activeOpacity={0.6}
+          delayPressIn={0}
+        >
+          <Ionicons
+            name='arrow-forward'
+            size={24}
+            color={colors.textPrimary}
+          />
+        </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity
-        style={styles.toolbarButton}
-        onPress={shareCurrent}
-        disabled={activeTab.url === kNEW_TAB_URL}
-        activeOpacity={0.6}
-        delayPressIn={0}
-      >
-        <Ionicons
-          name='share-outline'
-          size={24}
-          color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
-        />
-      </TouchableOpacity>
+      {/* Center share button */}
+      <View style={styles.toolbarCenter}>
+        <TouchableOpacity
+          style={styles.toolbarButton}
+          onPress={shareCurrent}
+          disabled={activeTab.url === kNEW_TAB_URL}
+          activeOpacity={0.6}
+          delayPressIn={0}
+        >
+          <Ionicons
+            name='share-outline'
+            size={24}
+            color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
+          />
+        </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity
-        style={styles.toolbarButton}
-        onPress={handleStarPress}
-        activeOpacity={0.6}
-        delayPressIn={0}
-      >
-        <Ionicons name='star-outline' size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
+      {/* Right side action buttons */}
+      <View style={styles.toolbarSection}>
+        <TouchableOpacity
+          style={styles.toolbarButton}
+          onPress={handleStarPress}
+          activeOpacity={0.6}
+          delayPressIn={0}
+        >
+          <Ionicons name='star-outline' size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.toolbarButton}
-        onPress={handleTabsPress}
-        activeOpacity={0.6}
-        delayPressIn={0}
-      >
-        <Ionicons name='copy-outline' size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.toolbarButton}
+          onPress={handleTabsPress}
+          activeOpacity={0.6}
+          delayPressIn={0}
+        >
+          <Ionicons name='copy-outline' size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
     </View>
   )
 };
@@ -2548,9 +2557,21 @@ const styles = StyleSheet.create({
   padlock: { marginRight: 4 },
   bottomBar: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    alignItems: 'center',
     paddingVertical: 6,
-    borderTopWidth: StyleSheet.hairlineWidth
+    paddingHorizontal: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  toolbarSection: {
+    flexDirection: 'row',
+    flex: 1,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  toolbarCenter: {
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   toolbarButton: { padding: 6 },
   toolbarIcon: { fontSize: 20 },
