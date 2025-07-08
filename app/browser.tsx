@@ -22,7 +22,6 @@ import {
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as ScreenOrientation from 'expo-screen-orientation'
 import {
   WebView,
   WebViewMessageEvent,
@@ -340,12 +339,7 @@ function Browser() {
   const enterFullscreen = useCallback(async () => {
     try {
       setIsFullscreen(true);
-      
-      if (Platform.OS === 'ios') {
-        // For iOS, we'll rely on UI changes to simulate fullscreen
-        // as true fullscreen with orientation lock can be problematic for browsers
-      }
-      // Android fullscreen is handled via UI state changes
+      console.log('Entering fullscreen mode');
     } catch (error) {
       console.warn('Failed to enter fullscreen:', error);
     }
@@ -354,11 +348,7 @@ function Browser() {
   const exitFullscreen = useCallback(async () => {
     try {
       setIsFullscreen(false);
-      
-      if (Platform.OS === 'ios') {
-        // For iOS, we'll rely on UI changes to simulate fullscreen
-      }
-      // Android fullscreen is handled via UI state changes
+      console.log('Exiting fullscreen mode');
     } catch (error) {
       console.warn('Failed to exit fullscreen:', error);
     }
@@ -1699,23 +1689,27 @@ const navFwd = useCallback(() => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* iOS Fullscreen Overlay */}
-      {isFullscreen && Platform.OS === 'ios' && (
+      {/* Fullscreen Overlay for both iOS and Android */}
+      {isFullscreen && (
         <RNModal
           animationType="fade"
           transparent={false}
           visible={isFullscreen}
           onRequestClose={exitFullscreen}
           statusBarTranslucent={true}
+          supportedOrientations={['portrait', 'portrait-upside-down', 'landscape', 'landscape-left', 'landscape-right']}
+          onOrientationChange={(orientation) => {
+            console.log('Orientation changed to:', orientation);
+          }}
         >
           <View style={{ flex: 1, backgroundColor: 'black' }}>
             <TouchableOpacity
               style={{
                 position: 'absolute',
-                top: 50,
+                top: Platform.OS === 'ios' ? 50 : 30,
                 right: 20,
                 zIndex: 1000,
-                backgroundColor: 'rgba(0,0,0,0.5)',
+                backgroundColor: 'rgba(0,0,0,0.7)',
                 borderRadius: 20,
                 width: 40,
                 height: 40,
@@ -1837,14 +1831,10 @@ const navFwd = useCallback(() => {
                 : isFullscreen 
                   ? 0 
                   : Platform.OS === 'ios' ? 0 : insets.bottom,
-              // On Android, completely remove safe area padding in fullscreen
-              paddingTop: isFullscreen && Platform.OS === 'android' ? 0 : undefined,
-              paddingLeft: isFullscreen && Platform.OS === 'android' ? 0 : undefined,
-              paddingRight: isFullscreen && Platform.OS === 'android' ? 0 : undefined,
+              // Hide content when fullscreen modal is active
+              opacity: isFullscreen ? 0 : 1,
             }
           ]}
-          // Disable safe area edges in fullscreen on Android
-          edges={isFullscreen && Platform.OS === 'android' ? [] : ['top', 'left', 'right']}
         >
           <StatusBar style={isDark ? 'light' : 'dark'} hidden={isFullscreen} />
 
@@ -1873,35 +1863,6 @@ const navFwd = useCallback(() => {
               style={{ flex: 1 }}
               {...responderProps}
             >
-              {isFullscreen && Platform.OS === 'android' && (
-                <TouchableOpacity
-                  style={{
-                    position: 'absolute',
-                    top: insets.top + 10,
-                    right: 20,
-                    zIndex: 1000,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    borderRadius: 20,
-                    width: 40,
-                    height: 40,
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
-                  onPress={() => {
-                    exitFullscreen();
-                    activeTab?.webviewRef.current?.injectJavaScript(`
-                      window.dispatchEvent(new MessageEvent('message', {
-                        data: JSON.stringify({
-                          type: 'FULLSCREEN_CHANGE',
-                          isFullscreen: false
-                        })
-                      }));
-                    `);
-                  }}
-                >
-                  <Ionicons name="contract-outline" size={20} color="white" />
-                </TouchableOpacity>
-              )}
               <WebView
                 ref={activeTab?.webviewRef}
                 source={{ 
@@ -2862,7 +2823,7 @@ const BottomToolbar = ({
       </View>
     </View>
   )
-};
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                    CSS                                     */
