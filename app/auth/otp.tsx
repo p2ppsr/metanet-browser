@@ -108,7 +108,7 @@ export default function OtpScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={'padding'}
         style={styles.keyboardAvoidingView}
       >
         <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
