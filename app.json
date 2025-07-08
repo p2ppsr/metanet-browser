@@ -64,7 +64,6 @@
         "android.permission.SYSTEM_ALERT_WINDOW"
       ],
       "googleServicesFile": "google-services.json",
-      "navigationBarBehavior": "overlay-swipe",
       "intentFilters": [
         {
           "action": "VIEW",

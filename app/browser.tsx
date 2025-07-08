@@ -2570,7 +2570,7 @@ const TabsViewBase = ({
           ]} 
           onPress={onDismiss}
         >
-          <Text style={[styles.doneButton, { color: colors.background }]}>
+             <Text style={[ { color: colors.background }]}>
             {t('done')}
           </Text>
         </TouchableOpacity>
