@@ -54,7 +54,6 @@ import { useBrowserMode } from '@/context/BrowserModeContext'
 import { useLanguage } from '@/utils/translations'
 import SecurityScreen from './security'
 import TrustScreen from './trust'
-import { handleUHRPNavigation } from '@/utils/uhrpHandler'
 import { uhrpHandler } from '@/utils/uhrpProtocol'
 
 /* -------------------------------------------------------------------------- */
