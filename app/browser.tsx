@@ -54,6 +54,8 @@ import { useBrowserMode } from '@/context/BrowserModeContext'
 import { useLanguage } from '@/utils/translations'
 import SecurityScreen from './security'
 import TrustScreen from './trust'
+import { handleUHRPNavigation } from '@/utils/uhrpHandler'
+import { uhrpHandler } from '@/utils/uhrpProtocol'
 
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
@@ -567,6 +569,12 @@ function Browser() {
     });
 
     let entry = addressText.trim()
+    
+    // Check if this is a UHRP URL first
+    if (handleUHRPNavigation(entry)) {
+      return; // Exit early for UHRP URLs - navigation handled by the function
+    }
+    
     const isProbablyUrl =
       /^([a-z]+:\/\/|www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(entry)
 
@@ -1780,7 +1788,21 @@ const navFwd = useCallback(() => {
                     navigationType: request.navigationType,
                     timestamp: new Date().toISOString()
                   });
-                  return true; // Allow all requests for now
+                  
+                  // Check if this is a UHRP URL
+                  if (uhrpHandler.isUHRPUrl(request.url)) {
+                    console.log('🔗 [UHRP] Intercepting UHRP URL:', request.url);
+                    
+                    // Navigate to UHRP viewer
+                    router.push({
+                      pathname: '/uhrp/[url]',
+                      params: { url: request.url }
+                    });
+                    
+                    return false; // Prevent WebView from loading the URL
+                  }
+                  
+                  return true; // Allow all other requests
                 }}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {
@@ -1922,7 +1944,21 @@ const navFwd = useCallback(() => {
                     navigationType: request.navigationType,
                     timestamp: new Date().toISOString()
                   });
-                  return true; // Allow all requests for now
+                  
+                  // Check if this is a UHRP URL
+                  if (uhrpHandler.isUHRPUrl(request.url)) {
+                    console.log('🔗 [UHRP] Intercepting UHRP URL:', request.url);
+                    
+                    // Navigate to UHRP viewer
+                    router.push({
+                      pathname: '/uhrp/[url]',
+                      params: { url: request.url }
+                    });
+                    
+                    return false; // Prevent WebView from loading the URL
+                  }
+                  
+                  return true; // Allow all other requests
                 }}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {
@@ -2267,6 +2303,7 @@ const navFwd = useCallback(() => {
             </Animated.View>
           </Modal>
           
+                   
           {/* Clear History Confirmation Modal */}
           <RNModal
             transparent
