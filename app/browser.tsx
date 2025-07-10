@@ -1073,6 +1073,20 @@ const navFwd = useCallback(() => {
         return;
       }
 
+     if (msg.type === 'REQUEST_SCAN') {
+        msg.type = 'SCAN_REQUEST';
+      }
+      logWithTimestamp(F, `handleMessage:msg.type=${msg.type}`);
+
+      if (msg.type === 'SCAN_REQUEST') {
+        logWithTimestamp(F, `handleMessage:msg=${JSON.stringify(msg)}`);
+        const fullscreen = typeof msg.reason === 'string' && msg.reason.toLowerCase().includes('fullscreen');
+        logWithTimestamp(F, `handleMessage:fullscreen=${fullscreen}`);
+        setScannerFullscreen(fullscreen);
+        setShowScanner(true);
+        return;
+      }
+
       // Handle console logs from WebView
       if (msg.type === 'CONSOLE') {
         const logPrefix = '[WebView]';
