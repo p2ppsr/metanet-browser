@@ -1,18 +1,24 @@
 {
   "name": "metanet-mobile",
-  "version": "0.1.0",
-  "private": true,
+  "description": "Enabling identity, micropayments, and use of Metanet websites on mobile devices",
+  "author": "BSV Association",
   "main": "expo-router/entry",
+  "version": "0.2.2",
+  "license": "Open BSV",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
+    "ipa-ios": "eas build --profile production --platform ios --local --verbose-logs --build-logger-level trace",
+    "start": "expo start --dev-client",
+    "reset-project": "node ./scripts/reset-project.js",
+    "android": "expo start --dev-client --android",
+    "ios": "expo start --dev-client --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "configure": "./configure.sh"
   },
   "dependencies": {
     "@bsv/sdk": "^1.6.8",
-    "@bsv/wallet-toolbox-mobile": "^1.4.3",
+    "@bsv/wallet-toolbox-mobile": "^1.5.6",
     "@dicebear/core": "^9.2.2",
     "@dicebear/identicon": "^9.2.2",
     "@expo/vector-icons": "^14.1.0",
