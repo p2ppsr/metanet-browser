@@ -953,35 +953,8 @@ const navFwd = useCallback(() => {
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scannerRef = useRef<ScannerHandle>(null);
 
-  // Inject scanCodeWithCamera on mount, handles timeout and cleanup
+  // Hook with required with cleanup after unmount  
   useEffect(() => {
-    window.scanCodeWithCamera = async (reason: string): Promise<string> => {
-      return new Promise((resolve) => {
-        logWithTimestamp(F, 'Scan initiated', { reason });
-        scanResolver.current = resolve;
-        setShowScanner(true);
-
-        // Setup timeout to auto-dismiss scanner after 30s
-        scanTimeoutRef.current = setTimeout(() => {
-          if (scanResolver.current) {
-            scanResolver.current('');
-            scanResolver.current = null;
-            setShowScanner(false);
-            logWithTimestamp(F, 'Scan timed out');
-          }
-        }, 30000);
-
-        // Cleanup timeout if promise is cancelled
-        return () => {
-          if (scanTimeoutRef.current) {
-            clearTimeout(scanTimeoutRef.current);
-            scanTimeoutRef.current = null;
-          }
-        };
-      });
-    };
-
-    // Cleanup on unmount
     return () => {
       if (scanTimeoutRef.current) {
         clearTimeout(scanTimeoutRef.current);
