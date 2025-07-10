@@ -67,6 +67,8 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking';
 import { useWebAppManifest } from '@/hooks/useWebAppManifest';
 import * as Notifications from 'expo-notifications';
+import UniversalScanner, { ScannerHandle } from '@/components/UniversalScanner';
+import { logWithTimestamp } from '@/utils/logging';
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
