@@ -73,7 +73,7 @@ import { logWithTimestamp } from '@/utils/logging';
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
 /* -------------------------------------------------------------------------- */
-// Declare scanCodeWithCamera as an optional property on the Window type
+// Declare scanCodeWithCamera as an optional property on the Window type to make scanner trigger method accessible from injected JavaScript.
 declare global {
   interface Window {
     scanCodeWithCamera?: (reason: string) => Promise<string>;
@@ -655,7 +655,7 @@ const navFwd = useCallback(() => {
 
   // === 1. Injected JS ============================================
   const injectedJavaScript = useMemo(() => `
- // Listen for messages from React Native and reject the scan promise
+ // Listen for messages from React Native and reject the scan promise, adds debug hooks for RN-WebView event messaging 
   const handleMessage = function(event) {
     try {
       let messageData = event.data;
@@ -945,14 +945,15 @@ const navFwd = useCallback(() => {
 `, [getAcceptLanguageHeader]);
 
   // === 2. RN ⇄ WebView message bridge ========================================
- const [scannedData, setScannedData] = useState<string | null>(null);
+  // Manages the scanner overlay state and timeout handling
+  const [scannedData, setScannedData] = useState<string | null>(null);
   const [scannerFullscreen, setScannerFullscreen] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const scanResolver = useRef<((data: string) => void) | null>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scannerRef = useRef<ScannerHandle>(null);
 
-  // Inject scanCodeWithCamera on mount
+  // Inject scanCodeWithCamera on mount, handles timeout and cleanup
   useEffect(() => {
     window.scanCodeWithCamera = async (reason: string): Promise<string> => {
       return new Promise((resolve) => {
@@ -991,6 +992,7 @@ const navFwd = useCallback(() => {
     };
   }, []);
 
+  // Uses callback to send cancel message to webview and cleans up scanner state
   const dismissScanner = useCallback(() => {
     if (scanResolver.current) {
       logWithTimestamp(F, 'Resolving scan promise with empty string');
@@ -1024,6 +1026,7 @@ const navFwd = useCallback(() => {
     logWithTimestamp(F, 'Scanner dismissed programmatically');
   }, [activeTab]);
 
+  // Resolves the scan promise and resets scanner state
   useEffect(() => {
     if (scannedData && scanResolver.current) {
       logWithTimestamp(F, 'Scan data received', { scannedData });
@@ -1073,6 +1076,7 @@ const navFwd = useCallback(() => {
         return;
       }
       logWithTimestamp(F, `handleMessage:msg.type=${msg.type}`);
+      // Checks for split-screen or fullscreen camera scanning
       if (msg.type === 'REQUEST_SCAN') {
         logWithTimestamp(F, `handleMessage:msg=${JSON.stringify(msg)}`);
         const fullscreen = typeof msg.reason === 'string' && msg.reason.toLowerCase().includes('fullscreen');
@@ -1303,6 +1307,8 @@ const navFwd = useCallback(() => {
     },
     [activeTab, wallet, createPushSubscription, getSubscription, getPermission, handleNotificationPermissionRequest, t]
   );
+
+  // Injects result of scan back into webview page
   useEffect(() => {
     logWithTimestamp(F, `Checking scannedData for WebView update: ${scannedData}`);
     if (scannedData && activeTab?.webviewRef?.current) {
@@ -1786,6 +1792,8 @@ const navFwd = useCallback(() => {
                 }}
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
+
+                // Added injected scanner invocation function into webview runtime
                 injectedJavaScript={
                   injectedJavaScript +
                   `
