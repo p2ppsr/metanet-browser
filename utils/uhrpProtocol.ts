@@ -210,3 +210,16 @@ export class UHRPProtocolHandler {
 }
 
 export const uhrpHandler = UHRPProtocolHandler.getInstance();
+
+// Utility function to handle UHRP navigation
+export function handleUHRPNavigation(url: string): boolean {
+  if (!uhrpHandler.isUHRPUrl(url)) {
+    return false;
+  }
+  
+  console.log('🔗 [UHRP] Handling UHRP navigation:', url);
+  
+  // For now, we'll let the browser handle UHRP URLs
+  // This function returns true to indicate that UHRP handling is available
+  return true;
+}

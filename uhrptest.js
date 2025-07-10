@@ -6,46 +6,46 @@ class UHRPTester {
   }
 
   async testUHRPUrl(hash, label) {
-    console.log(`\nTesting ${label}: ${hash}`);
+    console.log(`\n Testing ${label}: ${hash}`);
     console.log('='.repeat(60));
 
     try {
       // Step 1: Validate URL
       const isValid = StorageUtils.isValidURL(hash);
-      console.log(`Valid UHRP URL: ${isValid}`);
+      console.log(` Valid UHRP URL: ${isValid}`);
 
       if (!isValid) {
-        console.log('Invalid UHRP URL format');
+        console.log(' Invalid UHRP URL format');
         return;
       }
 
       // Step 2: Resolve to HTTP URL
-      console.log('Resolving to HTTP URL...');
+      console.log(' Resolving to HTTP URL...');
       const resolved = await this.downloader.resolve(hash);
       
       if (!resolved || resolved.length === 0) {
-        console.log('UHRP resolution failed - no URLs returned');
+        console.log(' UHRP resolution failed - no URLs returned');
         return;
       }
 
       const [resolvedUrl] = resolved;
-      console.log(`Resolved to: ${resolvedUrl}`);
+      console.log(` Resolved to: ${resolvedUrl}`);
 
       // Step 3: Fetch content
-      console.log('Fetching content...');
+      console.log(' Fetching content...');
       const response = await fetch(resolvedUrl);
       
       if (!response.ok) {
-        console.log(`HTTP Error: ${response.status} ${response.statusText}`);
+        console.log(` HTTP Error: ${response.status} ${response.statusText}`);
         return;
       }
 
       // Step 4: Analyze headers
-      console.log('Response Headers:');
-      console.log(`   Content-Type: ${response.headers.get('content-type')}`);
-      console.log(`   Content-Length: ${response.headers.get('content-length')}`);
-      console.log(`   Content-Disposition: ${response.headers.get('content-disposition')}`);
-      console.log(`   Cache-Control: ${response.headers.get('cache-control')}`);
+      console.log(' Response Headers:');
+      console.log(`  Content-Type: ${response.headers.get('content-type')}`);
+      console.log(`  Content-Length: ${response.headers.get('content-length')}`);
+      console.log(`  Content-Disposition: ${response.headers.get('content-disposition')}`);
+      console.log(`  Cache-Control: ${response.headers.get('cache-control')}`);
 
       // Step 5: Analyze content
       const arrayBuffer = await response.arrayBuffer();
@@ -67,10 +67,7 @@ class UHRPTester {
       
       // Step 7: Display capability
       const canDisplay = this.canDisplayInline(detectedMimeType);
-      const shouldUseDataUrl = this.shouldUseDataUrl(detectedMimeType, serverMimeType);
       console.log(`Can Display Inline: ${canDisplay}`);
-      console.log(`Should Use Data URL: ${shouldUseDataUrl}`);
-      console.log(`Recommendation: ${shouldUseDataUrl ? 'Use data URL to bypass octet-stream' : 'Safe to use HTTP URL'}`);
 
       // Step 8: Content preview
       if (detectedMimeType.startsWith('text/') || detectedMimeType === 'application/json') {
@@ -127,12 +124,6 @@ class UHRPTester {
         bytes[8] === 0x41 && bytes[9] === 0x56 && bytes[10] === 0x49 && bytes[11] === 0x20) {
       return 'video/avi';
     }
-
-    // MOV video (QuickTime)
-    if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70 &&
-        (bytes[8] === 0x71 && bytes[9] === 0x74)) {
-      return 'video/quicktime';
-    }
     
     // HTML
     const textContent = new TextDecoder().decode(bytes.slice(0, 100));
@@ -179,8 +170,7 @@ class UHRPTester {
       'application/pdf',
       'video/mp4',
       'video/webm',
-      'video/avi',
-      'video/quicktime'
+      'video/avi'
     ];
     
     return inlineTypes.includes(mimeType) || 
@@ -189,25 +179,19 @@ class UHRPTester {
            mimeType.startsWith('video/');
   }
 
-  // Add a method to check if we should force data URL for octet-stream
-  shouldUseDataUrl(mimeType, originalMimeType) {
-    // If the server returned octet-stream but we detected a displayable type, use data URL
-    return originalMimeType === 'application/octet-stream' && this.canDisplayInline(mimeType);
-  }
-
   async runAllTests() {
-    console.log('🚀 Starting UHRP MIME Type Detection Tests');
+    console.log(' Starting UHRP MIME Type Detection Tests');
     console.log('==========================================');
 
     const testCases = [
       // New UHRP URLs
-      { hash: 'XUUi1zJ9c7mBw8VwFaWXvbaN44uSCx5a1KKcbA3mSnjXNGeHFHdW', label: 'OLD UHRP #1' },
-      { hash: 'XUTr8jVoGJUaMYQa4KP6bZ4ejVimzpkfnt1ogDBqDShmdoM6xUcZ', label: 'OLD UHRP #2' },
+      { hash: 'XUTr8jVoGJUaMYQa4KP6bZ4ejVimzpkfnt1ogDBqDShmdoM6xUcZ', label: 'Nano UHRP CAT' },
+      { hash: 'XUTEGfCykZ4E8oJhT98keoPTg2Q28Nq4sJJXLf9CYA5CjV7ZsTCV', label: 'Nano UHRP VIDEO' },
 
       // Old UHRP URLs
-      { hash: 'XUSuidbeknPv3KKFbBArzUDEfMSHCDXMqMjsAaPLkYLZS4Ebxjfm', label: 'NEW UHRP #1' },
-      { hash: 'XUTDqXwTiwhCrnC8y534bbkKjdXfH379u5T7r22kKGD83YPJgiXQ', label: 'NEW UHRP #2' },
-      { hash: 'XUTWk3AHw2ST8iKuP4zrXn888gtZpRxfwkufuL3qKRhPnQdsgv28', label: 'NEW UHRP #3' }
+      { hash: 'XUSuidbeknPv3KKFbBArzUDEfMSHCDXMqMjsAaPLkYLZS4Ebxjfm', label: 'Lite UHRP DOG' },
+      { hash: 'XUTfTEb8xSaFAu55BS1LMi5mwT4VLYXTwmGn2oKvLeVGMKZj5rGy', label: 'Lite UHRP VIDEO' },
+
     ];
 
     for (const testCase of testCases) {
@@ -217,14 +201,12 @@ class UHRPTester {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    console.log('\nAll tests completed!');
-    console.log('\nSummary Analysis:');
+    console.log('\n All tests completed!');
+    console.log('\n Summary Analysis:');
     console.log('- Check if new UHRP URLs have different Content-Type headers');
     console.log('- Compare content signatures between old and new');
     console.log('- Look for differences in Content-Disposition headers');
     console.log('- Check if server behavior differs between old and new UHRP servers');
-    console.log('- For URLs with octet-stream that should display inline: USE DATA URLs');
-    console.log('- This bypasses browser download behavior for misidentified content types');
   }
 }
 

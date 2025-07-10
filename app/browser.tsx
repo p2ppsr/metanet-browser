@@ -417,11 +417,105 @@ function Browser() {
     const checkPendingUrl = async () => {
       try {
         const pendingUrl = await getPendingUrl();
+        console.log('🔗 [Browser] Checking for pending URL:', pendingUrl);
         if (pendingUrl) {
-          console.log('Loading pending URL from deep link:', pendingUrl);
-          updateActiveTab({ url: pendingUrl });
-          setAddressText(pendingUrl);
+          console.log('🔗 [Browser] Loading pending URL from deep link:', pendingUrl);
+          
+          // Check if this is a UHRP URL that needs special handling
+          if (uhrpHandler.isUHRPUrl(pendingUrl)) {
+            console.log('🔗 [Browser] Pending URL is UHRP, resolving first:', pendingUrl);
+            try {
+              const resolvedContent = await uhrpHandler.resolveUHRPUrl(pendingUrl);
+              console.log('🔗 [Browser] UHRP resolved to:', resolvedContent.resolvedUrl);
+              
+              // Update tab with the original UHRP URL for display
+              updateActiveTab({ url: pendingUrl });
+              setAddressText(pendingUrl);
+              
+              // Navigate to the resolved HTTP URL in the WebView after a delay to ensure WebView is ready
+              setTimeout(() => {
+                const currentTab = tabStore.activeTab;
+                if (currentTab?.webviewRef?.current && resolvedContent.resolvedUrl) {
+                  currentTab.webviewRef.current.injectJavaScript(`
+                    window.location.href = '${resolvedContent.resolvedUrl}';
+                    true; // Required for iOS
+                  `);
+                }
+              }, 1000); // Longer delay to ensure WebView is fully loaded
+              
+            } catch (error: any) {
+              console.error('🔗 [Browser] UHRP resolution failed:', error);
+              
+              // Show error page for failed UHRP resolution
+              updateActiveTab({ url: pendingUrl });
+              setAddressText(pendingUrl);
+              
+              const errorHtml = `
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>UHRP Error</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                      body { 
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                        text-align: center; 
+                        padding: 50px 20px; 
+                        background: #f5f5f5;
+                        color: #333;
+                      }
+                      .container { 
+                        max-width: 400px; 
+                        margin: 0 auto; 
+                        background: white; 
+                        padding: 30px; 
+                        border-radius: 10px; 
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                      }
+                      h2 { color: #e74c3c; margin-bottom: 20px; }
+                      .url { background: #f8f9fa; padding: 10px; border-radius: 5px; word-break: break-all; margin: 20px 0; }
+                      button { 
+                        background: #007AFF; 
+                        color: white; 
+                        border: none; 
+                        padding: 12px 24px; 
+                        border-radius: 6px; 
+                        font-size: 16px; 
+                        cursor: pointer;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <h2>Failed to load UHRP content</h2>
+                      <div class="url">${pendingUrl}</div>
+                      <p>Error: ${error.message || 'Unknown error occurred while resolving UHRP URL'}</p>
+                      <button onclick="window.location.href='about:blank'">Go to Homepage</button>
+                    </div>
+                  </body>
+                </html>
+              `;
+              
+              setTimeout(() => {
+                const currentTab = tabStore.activeTab;
+                if (currentTab?.webviewRef?.current) {
+                  currentTab.webviewRef.current.injectJavaScript(`
+                    document.open();
+                    document.write(\`${errorHtml.replace(/`/g, '\\`')}\`);
+                    document.close();
+                    true; // Required for iOS
+                  `);
+                }
+              }, 1000);
+            }
+          } else {
+            // Regular URL handling
+            updateActiveTab({ url: pendingUrl });
+            setAddressText(pendingUrl);
+          }
+          
           await clearPendingUrl();
+          console.log('🔗 [Browser] Pending URL cleared');
         }
       } catch (error) {
         console.error('Error checking pending URL:', error);
@@ -1523,10 +1617,144 @@ const navFwd = useCallback(() => {
 
   // State for clear confirm modal (move this above scene components)
 
-  const handleSetStartingUrl = useCallback((url: string) => {
-    updateActiveTab({ url })
-    toggleStarDrawer(false)
+  const handleSetStartingUrl = useCallback(async (url: string) => {
+    // Check if this is a UHRP URL
+    if (uhrpHandler.isUHRPUrl(url)) {
+      console.log('🔗 [BOOKMARK_DRAWER] UHRP URL detected, resolving directly:', url);
+      try {
+        // Resolve UHRP URL directly and navigate to resolved content
+        const resolvedContent = await uhrpHandler.resolveUHRPUrl(url);
+        console.log('🔗 [BOOKMARK_DRAWER] UHRP resolved to:', resolvedContent.resolvedUrl);
+        
+        if (resolvedContent.resolvedUrl) {
+          updateActiveTab({ url: resolvedContent.resolvedUrl });
+        }
+        toggleStarDrawer(false);
+      } catch (error) {
+        console.error('🔗 [BOOKMARK_DRAWER] UHRP resolution failed:', error);
+        // Show error page
+        const errorHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>UHRP Error</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { 
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                  text-align: center; 
+                  padding: 50px 20px; 
+                  background: #f5f5f5;
+                  color: #333;
+                }
+                .container { 
+                  max-width: 400px; 
+                  margin: 0 auto; 
+                  background: white; 
+                  padding: 30px; 
+                  border-radius: 10px; 
+                  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                h2 { color: #e74c3c; margin-bottom: 20px; }
+                .url { background: #f8f9fa; padding: 10px; border-radius: 5px; word-break: break-all; margin: 20px 0; }
+                button { 
+                  background: #007AFF; 
+                  color: white; 
+                  border: none; 
+                  padding: 12px 24px; 
+                  border-radius: 6px; 
+                  font-size: 16px; 
+                  cursor: pointer;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h2>Failed to load UHRP content</h2>
+                <div class="url">${url}</div>
+                <p>Error: ${(error as any)?.message || 'Unknown error occurred while resolving UHRP URL'}</p>
+                <button onclick="window.location.href='about:blank'">Go to Homepage</button>
+              </div>
+            </body>
+          </html>
+        `;
+        updateActiveTab({ url: `data:text/html,${encodeURIComponent(errorHtml)}` });
+        toggleStarDrawer(false);
+      }
+    } else {
+      // Normal HTTP/HTTPS URL, use regular navigation
+      updateActiveTab({ url });
+      toggleStarDrawer(false);
+    }
   }, [updateActiveTab])
+
+  const handleHomepageNavigation = useCallback(async (url: string) => {
+    // Check if this is a UHRP URL
+    if (uhrpHandler.isUHRPUrl(url)) {
+      console.log('🔗 [HOMEPAGE] UHRP URL detected, resolving directly:', url);
+      try {
+        // Resolve UHRP URL directly and navigate to resolved content
+        const resolvedContent = await uhrpHandler.resolveUHRPUrl(url);
+        console.log('🔗 [HOMEPAGE] UHRP resolved to:', resolvedContent.resolvedUrl);
+        
+        if (resolvedContent.resolvedUrl) {
+          updateActiveTab({ url: resolvedContent.resolvedUrl });
+        }
+      } catch (error) {
+        console.error('🔗 [HOMEPAGE] UHRP resolution failed:', error);
+        // Show error page
+        const errorHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>UHRP Error</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { 
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                  text-align: center; 
+                  padding: 50px 20px; 
+                  background: #f5f5f5;
+                  color: #333;
+                }
+                .container { 
+                  max-width: 400px; 
+                  margin: 0 auto; 
+                  background: white; 
+                  padding: 30px; 
+                  border-radius: 10px; 
+                  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                h2 { color: #e74c3c; margin-bottom: 20px; }
+                .url { background: #f8f9fa; padding: 10px; border-radius: 5px; word-break: break-all; margin: 20px 0; }
+                button { 
+                  background: #007AFF; 
+                  color: white; 
+                  border: none; 
+                  padding: 12px 24px; 
+                  border-radius: 6px; 
+                  font-size: 16px; 
+                  cursor: pointer;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h2>Failed to load UHRP content</h2>
+                <div class="url">${url}</div>
+                <p>Error: ${(error as any)?.message || 'Unknown error occurred while resolving UHRP URL'}</p>
+                <button onclick="window.location.href='about:blank'">Go to Homepage</button>
+              </div>
+            </body>
+          </html>
+        `;
+        updateActiveTab({ url: `data:text/html,${encodeURIComponent(errorHtml)}` });
+      }
+    } else {
+      // Normal HTTP/HTTPS URL, use regular navigation
+      updateActiveTab({ url });
+    }
+  }, [updateActiveTab]);
 
   const BookmarksScene = useMemo(() => {
   return () => (
@@ -1950,7 +2178,7 @@ const navFwd = useCallback(() => {
                         !bookmark.url.includes('about:blank')
                 }).reverse() }
                 
-                setStartingUrl={url => updateActiveTab({ url })}
+                setStartingUrl={handleHomepageNavigation}
                 onRemoveBookmark={removeBookmark}
                 onRemoveDefaultApp={removeDefaultApp}
                 removedDefaultApps={removedDefaultApps}
@@ -2150,7 +2378,7 @@ const navFwd = useCallback(() => {
               value={
                 addressDisplay === 'new-tab-page' ? '' : addressDisplay
               }
-              onChangeText={onChangeAddressText}
+                           onChangeText={onChangeAddressText}
               onFocus={() => {
                 addressEditing.current = true
                 setAddressFocused(true)
