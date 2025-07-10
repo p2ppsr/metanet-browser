@@ -1786,35 +1786,35 @@ const navFwd = useCallback(() => {
                 }}
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
-                injectedJavaScript={injectedJavaScript +
-                `
-                window.scanCodeWithCamera = function (reason) {
-                  return new Promise((resolve, reject) => {
-                    const handleScanResponse = (event) => {
-                      try {
-                        const data = JSON.parse(event.data);
-                        if (data.type === 'SCAN_RESPONSE') {
-                          window.removeEventListener('message', handleScanResponse);
-                          resolve(data.data);
+                injectedJavaScript={
+                  injectedJavaScript +
+                  `
+                  window.scanCodeWithCamera = function(reason) {
+                    return new Promise((resolve, reject) => {
+                      const handleScanResponse = (event) => {
+                        try {
+                          const data = JSON.parse(event.data);
+                          if (data.type === 'SCAN_RESPONSE') {
+                            clearTimeout(timeout);
+                            resolve(data.data);
+                          }
+                        } catch (e) {
+                          // Ignore parsing errors
                         }
-                      } catch (e) {
-                        // Ignore parsing errors
-                      }
-                    };
-                    window.addEventListener('message', handleScanResponse);
-                    window.ReactNativeWebView?.postMessage(
-                      JSON.stringify({
+                      };
+
+                      window.addEventListener('message', handleScanResponse, { once: true });
+  
+                      window.ReactNativeWebView?.postMessage(JSON.stringify({
                         type: 'REQUEST_SCAN'
-                      })
-                    );
-                    // Timeout after 60 seconds
-                    setTimeout(() => {
-                      window.removeEventListener('message', handleScanResponse);
-                      reject(new Error('Scan timeout'));
-                    }, 60000);
-                  });
-                };
-                `
+                      }));
+
+                      const timeout = setTimeout(() => {
+                        reject(new Error('Scan timeout'));
+                      }, 60000);
+                    });
+                  };
+                  `
                 }
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
