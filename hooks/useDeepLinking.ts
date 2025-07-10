@@ -3,7 +3,7 @@ import { Linking } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useWebAppManifest } from './useWebAppManifest';
-import { handleUHRPNavigation } from '@/utils/uhrpHandler';
+// import { handleUHRPNavigation } from '@/utils/uhrpHandler';
 
 const PENDING_URL_KEY = 'pendingDeepLinkUrl';
 
@@ -32,10 +32,10 @@ export function useDeepLinking() {
 
   const handleDeepLink = async (url: string) => {
     try {
-      // Check if this is a UHRP URL first
-      if (handleUHRPNavigation(url)) {
-        return; // UHRP navigation handled
-      }
+      // // Check if this is a UHRP URL first
+      // if (handleUHRPNavigation(url)) {
+      //   return; // UHRP navigation handled
+      // }
       
       if (url.startsWith('http://') || url.startsWith('https://')) {
         await handleManifestAwareDeepLink(url);
