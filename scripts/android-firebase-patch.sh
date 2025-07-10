@@ -1,0 +1,25 @@
+# Patch AndroidManifest.xml files if Firebase is used
+if [[ "$USE_FIREBASE" == "true" ]]; then
+    printf "\nPatching AndroidManifest.xml files for Firebase manifest merger conflicts...\n"
+
+    for MANIFEST_PATH in \
+        "android/app/src/debug/AndroidManifest.xml" \
+        "android/app/src/main/AndroidManifest.xml"
+    do
+        if [[ -f "$MANIFEST_PATH" ]]; then
+            # Add xmlns:tools if not already present
+            if ! grep -q 'xmlns:tools=' "$MANIFEST_PATH"; then
+                sed -i '' 's/xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android" xmlns:tools="http:\/\/schemas.android.com\/tools"/' "$MANIFEST_PATH"
+                echo "Added tools namespace to <manifest> in $MANIFEST_PATH"
+            fi
+
+            # Patch the meta-data tags to include tools:replace
+            sed -i '' 's|\(<meta-data android:name="com.google.firebase.messaging.default_notification_channel_id"[^>]*\)\(/>\)|\1 tools:replace="android:value"\2|' "$MANIFEST_PATH"
+            sed -i '' 's|\(<meta-data android:name="com.google.firebase.messaging.default_notification_color"[^>]*\)\(/>\)|\1 tools:replace="android:resource"\2|' "$MANIFEST_PATH"
+
+            echo "Patched <meta-data> tags in $MANIFEST_PATH"
+        else
+            echo "⚠️  $MANIFEST_PATH not found."
+        fi
+    done
+fi

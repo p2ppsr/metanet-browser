@@ -6,6 +6,7 @@
   "version": "0.2.2",
   "license": "Open BSV",
   "scripts": {
+    "prebuild": "./scripts/configure.sh && expo prebuild && USE_FIREBASE=$(jq -r .expo.extra.useFirebase app.json) ./scripts/android-firebase-patch.sh",
     "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
     "ipa-ios": "eas build --profile production --platform ios --local --verbose-logs --build-logger-level trace",
     "start": "expo start --dev-client",
@@ -28,6 +29,7 @@
     "@react-native-firebase/analytics": "^22.2.1",
     "@react-native-firebase/app": "^22.2.1",
     "@react-native-firebase/installations": "^22.2.1",
+    "@react-native-firebase/messaging": "^22.3.0",
     "@react-native-firebase/remote-config": "^22.2.1",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
