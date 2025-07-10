@@ -571,8 +571,45 @@ function Browser() {
     let entry = addressText.trim()
     
     // Check if this is a UHRP URL first
-    if (handleUHRPNavigation(entry)) {
-      return; // Exit early for UHRP URLs - navigation handled by the function
+    if (uhrpHandler.isUHRPUrl(entry)) {
+      console.log('🔗 [UHRP] Address bar UHRP URL detected:', entry);
+      
+      // Handle UHRP URL directly in the browser
+      (async () => {
+        try {
+          console.log('🔗 [UHRP] Resolving from address bar:', entry);
+          const resolvedContent = await uhrpHandler.resolveUHRPUrl(entry);
+          console.log('🔗 [UHRP] Resolved to:', resolvedContent.resolvedUrl);
+          
+          // Navigate to the resolved HTTP URL
+          if (resolvedContent.resolvedUrl) {
+            // Update the address bar to show the original UHRP URL
+            setAddressText(entry);
+            
+            // Navigate to the resolved URL using the same method as normal navigation
+            updateActiveTab({ url: resolvedContent.resolvedUrl });
+          }
+        } catch (error: any) {
+          console.error('🔗 [UHRP] Address bar resolution failed:', error);
+          // Show error in WebView
+          const errorHtml = `
+            <html>
+              <head><title>UHRP Error</title></head>
+              <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h2>Failed to load UHRP content</h2>
+                <p>URL: ${entry}</p>
+                <p>Error: ${error.message || 'Unknown error'}</p>
+                <button onclick="history.back()">Go Back</button>
+              </body>
+            </html>
+          `;
+          
+          // Navigate to data URL with error content
+          updateActiveTab({ url: `data:text/html,${encodeURIComponent(errorHtml)}` });
+        }
+      })();
+      
+      return; // Exit early for UHRP URLs
     }
     
     const isProbablyUrl =
@@ -1793,13 +1830,56 @@ const navFwd = useCallback(() => {
                   if (uhrpHandler.isUHRPUrl(request.url)) {
                     console.log('🔗 [UHRP] Intercepting UHRP URL:', request.url);
                     
-                    // Navigate to UHRP viewer
-                    router.push({
-                      pathname: '/uhrp/[url]',
-                      params: { url: request.url }
-                    });
+                    // Resolve UHRP URL to HTTP URL and navigate to it
+                    (async () => {
+                      try {
+                        console.log('🔗 [UHRP] Resolving URL:', request.url);
+                        const resolvedContent = await uhrpHandler.resolveUHRPUrl(request.url);
+                        console.log('🔗 [UHRP] Resolved to:', resolvedContent.resolvedUrl);
+                        
+                        // Navigate to the resolved HTTP URL
+                        if (resolvedContent.resolvedUrl && activeTab?.webviewRef?.current) {
+                          // Use setTimeout to ensure the WebView is ready, then navigate
+                          setTimeout(() => {
+                            if (activeTab?.webviewRef?.current) {
+                              activeTab.webviewRef.current.injectJavaScript(`
+                                window.location.href = '${resolvedContent.resolvedUrl}';
+                                true; // Required for iOS
+                              `);
+                            }
+                          }, 100);
+                        }
+                      } catch (error: any) {
+                        console.error('🔗 [UHRP] Resolution failed:', error);
+                        // Show error in WebView by loading an error page
+                        const errorHtml = `
+                          <html>
+                            <head><title>UHRP Error</title></head>
+                            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                              <h2>Failed to load UHRP content</h2>
+                              <p>URL: ${request.url}</p>
+                              <p>Error: ${error.message || 'Unknown error'}</p>
+                              <button onclick="history.back()">Go Back</button>
+                            </body>
+                          </html>
+                        `;
+                        
+                        if (activeTab?.webviewRef?.current) {
+                          setTimeout(() => {
+                            if (activeTab?.webviewRef?.current) {
+                              activeTab.webviewRef.current.injectJavaScript(`
+                                document.open();
+                                document.write(\`${errorHtml.replace(/`/g, '\\`')}\`);
+                                document.close();
+                                true; // Required for iOS
+                              `);
+                            }
+                          }, 100);
+                        }
+                      }
+                    })();
                     
-                    return false; // Prevent WebView from loading the URL
+                    return false; // Prevent WebView from loading the original UHRP URL
                   }
                   
                   return true; // Allow all other requests
@@ -1897,7 +1977,7 @@ const navFwd = useCallback(() => {
                 onMessage={handleMessage}
                 injectedJavaScript={injectedJavaScript}
                 onNavigationStateChange={handleNavStateChange}
-                onLoadStart={(syntheticEvent) => {
+                onLoadStart={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent;
                   console.log('🚀 [WEBVIEW_LOAD_START] Navigation started:', {
                     url: nativeEvent.url,
@@ -1910,7 +1990,7 @@ const navFwd = useCallback(() => {
                     timestamp: new Date().toISOString()
                   });
                 }}
-                onLoadProgress={(syntheticEvent) => {
+                onLoadProgress={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent;
                   if (nativeEvent.progress === 0 || nativeEvent.progress === 1) {
                     console.log('📊 [WEBVIEW_LOAD_PROGRESS] Navigation progress:', {
@@ -1924,7 +2004,7 @@ const navFwd = useCallback(() => {
                     });
                   }
                 }}
-                onLoadEnd={(syntheticEvent) => {
+                onLoadEnd={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent;
                   console.log('✅ [WEBVIEW_LOAD_END] Navigation completed:', {
                     url: nativeEvent.url,
@@ -1935,7 +2015,7 @@ const navFwd = useCallback(() => {
                     timestamp: new Date().toISOString()
                   });
                 }}
-                onShouldStartLoadWithRequest={(request) => {
+                onShouldStartLoadWithRequest={(request: any) => {
                   console.log('🤔 [WEBVIEW_SHOULD_START_LOAD] Navigation request evaluation:', {
                     url: request.url,
                     title: request.title,
@@ -1949,13 +2029,56 @@ const navFwd = useCallback(() => {
                   if (uhrpHandler.isUHRPUrl(request.url)) {
                     console.log('🔗 [UHRP] Intercepting UHRP URL:', request.url);
                     
-                    // Navigate to UHRP viewer
-                    router.push({
-                      pathname: '/uhrp/[url]',
-                      params: { url: request.url }
-                    });
+                    // Resolve UHRP URL to HTTP URL and navigate to it
+                    (async () => {
+                      try {
+                        console.log('🔗 [UHRP] Resolving URL:', request.url);
+                        const resolvedContent = await uhrpHandler.resolveUHRPUrl(request.url);
+                        console.log('🔗 [UHRP] Resolved to:', resolvedContent.resolvedUrl);
+                        
+                        // Navigate to the resolved HTTP URL
+                        if (resolvedContent.resolvedUrl && activeTab?.webviewRef?.current) {
+                          // Use setTimeout to ensure the WebView is ready, then navigate
+                          setTimeout(() => {
+                            if (activeTab?.webviewRef?.current) {
+                              activeTab.webviewRef.current.injectJavaScript(`
+                                window.location.href = '${resolvedContent.resolvedUrl}';
+                                true; // Required for iOS
+                              `);
+                            }
+                          }, 100);
+                        }
+                      } catch (error: any) {
+                        console.error('🔗 [UHRP] Resolution failed:', error);
+                        // Show error in WebView by loading an error page
+                        const errorHtml = `
+                          <html>
+                            <head><title>UHRP Error</title></head>
+                            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                              <h2>Failed to load UHRP content</h2>
+                              <p>URL: ${request.url}</p>
+                              <p>Error: ${error.message || 'Unknown error'}</p>
+                              <button onclick="history.back()">Go Back</button>
+                            </body>
+                          </html>
+                        `;
+                        
+                        if (activeTab?.webviewRef?.current) {
+                          setTimeout(() => {
+                            if (activeTab?.webviewRef?.current) {
+                              activeTab.webviewRef.current.injectJavaScript(`
+                                document.open();
+                                document.write(\`${errorHtml.replace(/`/g, '\\`')}\`);
+                                document.close();
+                                true; // Required for iOS
+                              `);
+                            }
+                          }, 100);
+                        }
+                      }
+                    })();
                     
-                    return false; // Prevent WebView from loading the URL
+                    return false; // Prevent WebView from loading the original UHRP URL
                   }
                   
                   return true; // Allow all other requests
