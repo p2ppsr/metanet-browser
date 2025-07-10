@@ -13,9 +13,4 @@ export const defaultBookmarks: Bookmark[] = [
   { title: 'StackOverflow', url: 'https://stackoverflow.com', added: 0 },
   { title: 'Reddit', url: 'https://reddit.com', added: 0 },
   { title: 'Medium', url: 'https://medium.com', added: 0 },
-  {
-    title: 'scanner',
-    url: 'http://192.168.1.207:8000/scanner.html',
-    added: 0
-  }
 ]
