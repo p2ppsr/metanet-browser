@@ -1,7 +1,6 @@
 /* eslint-disable react/no-unstable-nested-components */
 const F = 'app/browser';
-/* eslint-disable react/no-unstable-nested-components */
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
   Animated,
   Dimensions,
@@ -20,38 +19,42 @@ import {
   LayoutAnimation,
   ScrollView,
   Modal as RNModal,
-  BackHandler
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
-import Modal from 'react-native-modal';
-import { GestureHandlerRootView, Swipeable, PanGestureHandler, State as GestureState } from 'react-native-gesture-handler';
-import { TabView, SceneMap } from 'react-native-tab-view';
-import Fuse from 'fuse.js';
-import * as Linking from 'expo-linking';
-import { Ionicons } from '@expo/vector-icons';
-import { observer } from 'mobx-react-lite';
-import { router } from 'expo-router';
+  BackHandler,
+} from 'react-native'
+import { StatusBar } from 'expo-status-bar'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import {
+  WebView,
+  WebViewMessageEvent,
+  WebViewNavigation
+} from 'react-native-webview'
+import Modal from 'react-native-modal'
+import { GestureHandlerRootView, Swipeable, PanGestureHandler, State as GestureState } from 'react-native-gesture-handler'
+import { TabView, SceneMap } from 'react-native-tab-view'
+import Fuse from 'fuse.js'
+import * as Linking from 'expo-linking'
+import { Ionicons } from '@expo/vector-icons'
+import { observer } from 'mobx-react-lite'
+import { router } from 'expo-router'
 
-import { useTheme } from '@/context/theme/ThemeContext';
-import { useWallet } from '@/context/WalletContext';
-import { WalletInterface } from '@bsv/sdk';
-import { RecommendedApps } from '@/components/RecommendedApps';
-import { useLocalStorage } from '@/context/LocalStorageProvider';
-import Balance from '@/components/Balance';
-import type { Bookmark, HistoryEntry, Tab } from '@/shared/types/browser';
-import { HistoryList } from '@/components/HistoryList';
-import { isValidUrl } from '@/utils/generalHelpers';
-import tabStore from '../stores/TabStore';
-import bookmarkStore from '@/stores/BookmarkStore';
-import SettingsScreen from './settings';
-import IdentityScreen from './identity';
-import { useTranslation } from 'react-i18next';
-import { useBrowserMode } from '@/context/BrowserModeContext';
-import { useLanguage } from '@/utils/translations';
-import SecurityScreen from './security';
-import TrustScreen from './trust';
+import { useTheme } from '@/context/theme/ThemeContext'
+import { useWallet } from '@/context/WalletContext'
+import { WalletInterface } from '@bsv/sdk'
+import { RecommendedApps } from '@/components/RecommendedApps'
+import { useLocalStorage } from '@/context/LocalStorageProvider'
+import Balance from '@/components/Balance'
+import type { Bookmark, HistoryEntry, Tab } from '@/shared/types/browser'
+import { HistoryList } from '@/components/HistoryList'
+import { isValidUrl } from '@/utils/generalHelpers'
+import tabStore from '../stores/TabStore'
+import bookmarkStore from '@/stores/BookmarkStore'
+import SettingsScreen from './settings'
+import IdentityScreen from './identity'
+import { useTranslation } from 'react-i18next'
+import { useBrowserMode } from '@/context/BrowserModeContext'
+import { useLanguage } from '@/utils/translations'
+import SecurityScreen from './security'
+import TrustScreen from './trust'
 
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
@@ -64,33 +67,29 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking';
 import { useWebAppManifest } from '@/hooks/useWebAppManifest';
 import * as Notifications from 'expo-notifications';
-import UniversalScanner, { ScannerHandle } from '@/components/UniversalScanner';
-import { logWithTimestamp } from '@/utils/logging';
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
 /* -------------------------------------------------------------------------- */
-
 // Declare scanCodeWithCamera as an optional property on the Window type
 declare global {
   interface Window {
     scanCodeWithCamera?: (reason: string) => Promise<string>;
   }
 }
-
-const kNEW_TAB_URL = 'about:blank';
-const kGOOGLE_PREFIX = 'https://www.google.com/search?q=';
-const HISTORY_KEY = 'history';
+const kNEW_TAB_URL = 'about:blank'
+const kGOOGLE_PREFIX = 'https://www.google.com/search?q='
+const HISTORY_KEY = 'history'
 
 function getInjectableJSMessage(message: any = {}) {
-  const messageString = JSON.stringify(message);
+  const messageString = JSON.stringify(message)
   return `
     (function() {
       window.dispatchEvent(new MessageEvent('message', {
         data: JSON.stringify(${messageString})
       }));
     })();
-  `;
+  `
 }
 
 /* -------------------------------------------------------------------------- */
@@ -111,22 +110,15 @@ function StarDrawer({
   index: number;
   setIndex: (index: number) => void;
 }) {
-  const { t } = useTranslation();
-  const routes = useMemo(
-    () => [
-      { key: 'bookmarks', title: t('bookmarks') },
-      { key: 'history', title: t('history') }
-    ],
-    [t]
-  );
-  const renderScene = useMemo(
-    () =>
-      SceneMap({
-        bookmarks: BookmarksScene,
-        history: HistoryScene
-      }),
-    [BookmarksScene, HistoryScene]
-  );
+  const { t } = useTranslation()
+  const routes = useMemo(() => [
+    { key: 'bookmarks', title: t('bookmarks') },
+    { key: 'history', title: t('history') }
+  ], [t]);
+  const renderScene = useMemo(() => SceneMap({
+    bookmarks: BookmarksScene,
+    history: HistoryScene
+  }), [BookmarksScene, HistoryScene]);
   return (
     <View style={{ flex: 1 }}>
       <TabView
@@ -134,19 +126,23 @@ function StarDrawer({
         onIndexChange={setIndex}
         renderScene={renderScene}
         lazy={false}
-        renderTabBar={(props) => (
+        renderTabBar={props => (
           <View style={styles.starTabBar}>
             {props.navigationState.routes.map((r, i) => (
               <TouchableOpacity
                 key={r.key}
-                style={[styles.starTab, i === index && { borderBottomColor: colors.primary }]}
+                style={[
+                  styles.starTab,
+                  i === index && { borderBottomColor: colors.primary }
+                ]}
                 onPress={() => setIndex(i)}
               >
                 <Text
                   style={[
                     styles.starTabLabel,
                     {
-                      color: i === index ? colors.primary : colors.textSecondary
+                      color:
+                        i === index ? colors.primary : colors.textSecondary
                     }
                   ]}
                 >
@@ -167,88 +163,93 @@ function StarDrawer({
 
 function Browser() {
   /* --------------------------- theme / basic hooks -------------------------- */
-  const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { t, i18n } = useTranslation();
-  const { isWeb2Mode } = useBrowserMode();
+  const { colors, isDark } = useTheme()
+  const insets = useSafeAreaInsets()
+  const { t, i18n } = useTranslation()
+  const { isWeb2Mode } = useBrowserMode()
 
   /* ----------------------------- language headers ----------------------------- */
   // Map i18n language codes to proper HTTP Accept-Language header values
   const getAcceptLanguageHeader = useCallback(() => {
     const languageMap: Record<string, string> = {
-      en: 'en-US,en;q=0.9',
-      zh: 'zh-CN,zh;q=0.9,en;q=0.8',
-      es: 'es-ES,es;q=0.9,en;q=0.8',
-      hi: 'hi-IN,hi;q=0.9,en;q=0.8',
-      fr: 'fr-FR,fr;q=0.9,en;q=0.8',
-      ar: 'ar-SA,ar;q=0.9,en;q=0.8',
-      pt: 'pt-BR,pt;q=0.9,en;q=0.8',
-      bn: 'bn-BD,bn;q=0.9,en;q=0.8',
-      ru: 'ru-RU,ru;q=0.9,en;q=0.8',
-      id: 'id-ID,id;q=0.9,en;q=0.8'
+      'en': 'en-US,en;q=0.9',
+      'zh': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'es': 'es-ES,es;q=0.9,en;q=0.8',
+      'hi': 'hi-IN,hi;q=0.9,en;q=0.8',
+      'fr': 'fr-FR,fr;q=0.9,en;q=0.8',
+      'ar': 'ar-SA,ar;q=0.9,en;q=0.8',
+      'pt': 'pt-BR,pt;q=0.9,en;q=0.8',
+      'bn': 'bn-BD,bn;q=0.9,en;q=0.8',
+      'ru': 'ru-RU,ru;q=0.9,en;q=0.8',
+      'id': 'id-ID,id;q=0.9,en;q=0.8'
     };
+    
     const currentLanguage = i18n.language || 'en';
     return languageMap[currentLanguage] || 'en-US,en;q=0.9';
   }, [i18n.language]);
 
   /* ----------------------------- wallet context ----------------------------- */
-  const { managers } = useWallet();
-  const [wallet, setWallet] = useState<WalletInterface | undefined>();
+  const { managers } = useWallet()
+  const [wallet, setWallet] = useState<WalletInterface | undefined>()
   useEffect(() => {
     // Only initialize wallet if not in web2 mode
     if (!isWeb2Mode && managers?.walletManager?.authenticated) {
-      setWallet(managers.walletManager);
+      setWallet(managers.walletManager)
     } else if (isWeb2Mode) {
-      setWallet(undefined);
+      setWallet(undefined)
     }
-  }, [managers, isWeb2Mode]);
+  }, [managers, isWeb2Mode])
 
   /* ---------------------------- storage helpers ----------------------------- */
-  const { getItem, setItem } = useLocalStorage();
+  const { getItem, setItem } = useLocalStorage()
 
   /* -------------------------------- history -------------------------------- */
   const loadHistory = useCallback(async (): Promise<HistoryEntry[]> => {
-    const raw = await getItem(HISTORY_KEY);
-    const data = raw ? (JSON.parse(raw) as HistoryEntry[]) : [];
-    return data.map((h) => ({
+    const raw = await getItem(HISTORY_KEY)
+    const data = raw ? (JSON.parse(raw) as HistoryEntry[]) : []
+    return data.map(h => ({
       ...h,
       url: isValidUrl(h.url) ? h.url : kNEW_TAB_URL
-    }));
-  }, [getItem]);
+    }))
+  }, [getItem])
 
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([])
   useEffect(() => {
-    loadHistory().then(setHistory);
-  }, [loadHistory]);
+    loadHistory().then(setHistory)
+  }, [loadHistory])
 
   const saveHistory = useCallback(
     async (list: HistoryEntry[]) => {
-      setHistory(list);
-      await setItem(HISTORY_KEY, JSON.stringify(list));
+      setHistory(list)
+      await setItem(HISTORY_KEY, JSON.stringify(list))
     },
     [setItem]
-  );
+  )
 
   const pushHistory = useCallback(
     async (entry: HistoryEntry) => {
-      if (history.length && history[0].url.replace(/\/$/, '') === entry.url.replace(/\/$/, '')) return;
-      const next = [entry, ...history].slice(0, 500);
-      await saveHistory(next);
+      if (
+        history.length &&
+        history[0].url.replace(/\/$/, '') === entry.url.replace(/\/$/, '')
+      )
+        return
+      const next = [entry, ...history].slice(0, 500)
+      await saveHistory(next)
     },
     [history, saveHistory]
-  );
+  )
 
   const removeHistoryItem = useCallback(
     async (url: string) => {
-      const next = history.filter((h) => h.url !== url);
-      await saveHistory(next);
+      const next = history.filter(h => h.url !== url)
+      await saveHistory(next)
     },
     [history, saveHistory]
-  );
+  )
 
   const clearHistory = useCallback(async () => {
-    await saveHistory([]);
-  }, [saveHistory]);
+    await saveHistory([])
+  }, [saveHistory])
 
   /* -------------------------------- bookmarks ------------------------------- */
   const [removedDefaultApps, setRemovedDefaultApps] = useState<string[]>([]);
@@ -257,7 +258,7 @@ function Browser() {
   const [homepageSettings, setHomepageSettings] = useState({
     showBookmarks: true,
     showRecentApps: true,
-    showRecommendedApps: true
+    showRecommendedApps: true,
   });
 
   // Load homepage settings from storage
@@ -267,7 +268,7 @@ function Browser() {
         const savedSettings = await getItem('homepageSettings');
         if (savedSettings) {
           const parsedSettings = JSON.parse(savedSettings);
-          setHomepageSettings((prev) => ({ ...prev, ...parsedSettings }));
+          setHomepageSettings(prev => ({ ...prev, ...parsedSettings }));
         }
       } catch (error) {
         console.error('Error loading homepage settings:', error);
@@ -276,41 +277,38 @@ function Browser() {
     loadHomepageSettings();
   }, [getItem]);
 
-  const updateHomepageSettings = useCallback(
-    async (newSettings: Partial<typeof homepageSettings>) => {
-      const updatedSettings = { ...homepageSettings, ...newSettings };
-      setHomepageSettings(updatedSettings);
-      try {
-        await setItem('homepageSettings', JSON.stringify(updatedSettings));
-      } catch (error) {
-        console.error('Error saving homepage settings:', error);
-      }
-    },
-    [homepageSettings, setItem]
-  );
+  const updateHomepageSettings = useCallback(async (newSettings: Partial<typeof homepageSettings>) => {
+    const updatedSettings = { ...homepageSettings, ...newSettings };
+    setHomepageSettings(updatedSettings);
+    try {
+      await setItem('homepageSettings', JSON.stringify(updatedSettings));
+    } catch (error) {
+      console.error('Error saving homepage settings:', error);
+    }
+  }, [homepageSettings, setItem]);
 
   const addBookmark = useCallback((title: string, url: string) => {
-    // Only add bookmarks for valid URLs that aren't the new tab page
-    if (url && url !== kNEW_TAB_URL && isValidUrl(url) && !url.includes('about:blank')) {
-      bookmarkStore.addBookmark(title, url);
-    }
-  }, []);
+  // Only add bookmarks for valid URLs that aren't the new tab page
+  if (url && url !== kNEW_TAB_URL && isValidUrl(url) && !url.includes('about:blank')) {
+    bookmarkStore.addBookmark(title, url)
+  }
+  }, [])
 
   const removeBookmark = useCallback((url: string) => {
-    bookmarkStore.removeBookmark(url);
-  }, []);
+    bookmarkStore.removeBookmark(url)
+  }, [])
 
   const removeDefaultApp = useCallback((url: string) => {
-    setRemovedDefaultApps((prev) => [...prev, url]);
+    setRemovedDefaultApps(prev => [...prev, url]);
   }, []);
 
   /* ---------------------------------- tabs --------------------------------- */
   /* ---------------------------------- tabs --------------------------------- */
-  const activeTab = tabStore.activeTab; // Should never be null due to TabStore guarantees
+  const activeTab = tabStore.activeTab // Should never be null due to TabStore guarantees
 
   /* -------------------------- ui / animation state -------------------------- */
-  const addressEditing = useRef(false);
-  const [addressText, setAddressText] = useState(kNEW_TAB_URL);
+  const addressEditing = useRef(false)
+  const [addressText, setAddressText] = useState(kNEW_TAB_URL)
   const [addressFocused, setAddressFocused] = useState(false);
   const [addressBarHeight, setAddressBarHeight] = useState(0);
 
@@ -321,10 +319,10 @@ function Browser() {
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'>('root');
   const drawerAnim = useRef(new Animated.Value(0)).current;
 
-  const [showTabsView, setShowTabsView] = useState(false);
-  const [showStarDrawer, setShowStarDrawer] = useState(false);
+  const [showTabsView, setShowTabsView] = useState(false)
+  const [showStarDrawer, setShowStarDrawer] = useState(false)
   const [starTabIndex, setStarTabIndex] = useState(0);
-  const starDrawerAnim = useRef(new Animated.Value(0)).current;
+  const starDrawerAnim = useRef(new Animated.Value(0)).current
   const [isDesktopView, setIsDesktopView] = useState(false);
   const [isToggleDesktopCooldown, setIsToggleDesktopCooldown] = useState(false);
 
@@ -338,10 +336,10 @@ function Browser() {
   // This is done after all hooks to avoid violating Rules of Hooks
   useEffect(() => {
     if (!activeTab) {
-      console.warn('activeTab is null, creating new tab');
-      tabStore.newTab();
+      console.warn('activeTab is null, creating new tab')
+      tabStore.newTab()
     }
-  }, [activeTab]);
+  }, [activeTab])
 
   // Balance handling - only delay on first open
   useEffect(() => {
@@ -354,12 +352,19 @@ function Browser() {
   }, [showInfoDrawer, infoDrawerRoute]);
 
   /* ------------------------- push notifications ----------------------------- */
-  const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } = usePushNotifications();
+  const {
+    requestNotificationPermission,
+    createPushSubscription,
+    unsubscribe,
+    getPermission,
+    getSubscription,
+  } = usePushNotifications();
 
   const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false);
   const [showNotificationSettingsModal, setShowNotificationSettingsModal] = useState(false);
   const [notificationRequestOrigin, setNotificationRequestOrigin] = useState('');
   const [notificationRequestResolver, setNotificationRequestResolver] = useState<((granted: boolean) => void) | null>(null);
+
 
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
@@ -405,10 +410,10 @@ function Browser() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Manifest checking useEffect
+  // Manifest checking useEffect 
   useEffect(() => {
     if (!activeTab) return;
-
+    
     let isCancelled = false;
 
     const handleManifest = async () => {
@@ -470,86 +475,87 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
   const domainForUrl = useCallback((u: string): string => {
     try {
-      if (u === kNEW_TAB_URL) return '';
-      const { hostname } = new URL(u);
-      return hostname;
+      if (u === kNEW_TAB_URL) return ''
+      const { hostname } = new URL(u)
+      return hostname
     } catch {
-      return u;
+      return u
     }
-  }, []);
+  }, [])
   /* -------------------------------------------------------------------------- */
   /*                              ADDRESS HANDLING                              */
   /* -------------------------------------------------------------------------- */
 
   const updateActiveTab = useCallback((patch: Partial<Tab>) => {
-    const newUrl = patch.url;
+    const newUrl = patch.url
     if (newUrl && !isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
-      patch.url = kNEW_TAB_URL;
+      patch.url = kNEW_TAB_URL
     }
-    tabStore.updateTab(tabStore.activeTabId, patch);
-  }, []);
+    tabStore.updateTab(tabStore.activeTabId, patch)
+  }, [])
 
   const onAddressSubmit = useCallback(() => {
-    let entry = addressText.trim();
-    const isProbablyUrl = /^([a-z]+:\/\/|www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(entry);
+    let entry = addressText.trim()
+    const isProbablyUrl =
+      /^([a-z]+:\/\/|www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(entry)
 
-    if (entry === '') entry = kNEW_TAB_URL;
-    else if (!isProbablyUrl) entry = kGOOGLE_PREFIX + encodeURIComponent(entry);
-    else if (!/^[a-z]+:\/\//i.test(entry)) entry = 'https://' + entry;
+    if (entry === '') entry = kNEW_TAB_URL
+    else if (!isProbablyUrl) entry = kGOOGLE_PREFIX + encodeURIComponent(entry)
+    else if (!/^[a-z]+:\/\//i.test(entry)) entry = 'https://' + entry
 
     if (!isValidUrl(entry)) {
-      entry = kNEW_TAB_URL;
+      entry = kNEW_TAB_URL
     }
 
-    updateActiveTab({ url: entry });
-    addressEditing.current = false;
-  }, [addressText, updateActiveTab]);
+    updateActiveTab({ url: entry })
+    addressEditing.current = false
+  }, [addressText, updateActiveTab])
 
   /* -------------------------------------------------------------------------- */
   /*                               TAB NAVIGATION                               */
   /* -------------------------------------------------------------------------- */
-  const navBack = useCallback(() => {
-    const currentTab = tabStore.activeTab;
-    if (currentTab && currentTab.canGoBack) {
-      console.log('⬅️ Navigating Back:', {
-        currentUrl: currentTab.url,
-        canGoBack: currentTab.canGoBack,
-        canGoForward: currentTab.canGoForward,
-        timestamp: new Date().toISOString()
-      });
-      tabStore.goBack(currentTab.id);
-    } else {
-      console.log('⬅️ Cannot Navigate Back:', {
-        currentUrl: currentTab?.url || 'No active tab',
-        canGoBack: currentTab?.canGoBack || false,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }, []);
+ const navBack = useCallback(() => {
+  const currentTab = tabStore.activeTab
+  if (currentTab && currentTab.canGoBack) {
+    console.log('⬅️ Navigating Back:', {
+      currentUrl: currentTab.url,
+      canGoBack: currentTab.canGoBack,
+      canGoForward: currentTab.canGoForward,
+      timestamp: new Date().toISOString()
+    });
+    tabStore.goBack(currentTab.id)
+  } else {
+    console.log('⬅️ Cannot Navigate Back:', {
+      currentUrl: currentTab?.url || 'No active tab',
+      canGoBack: currentTab?.canGoBack || false,
+      timestamp: new Date().toISOString()
+    });
+  }
+}, [])
 
-  const navFwd = useCallback(() => {
-    const currentTab = tabStore.activeTab;
-    if (currentTab && currentTab.canGoForward) {
-      console.log('➡️ Navigating Forward:', {
-        currentUrl: currentTab.url,
-        canGoBack: currentTab.canGoBack,
-        canGoForward: currentTab.canGoForward,
-        timestamp: new Date().toISOString()
-      });
-      tabStore.goForward(currentTab.id);
-    } else {
-      console.log('➡️ Cannot Navigate Forward:', {
-        currentUrl: currentTab?.url || 'No active tab',
-        canGoForward: currentTab?.canGoForward || false,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }, []);
+const navFwd = useCallback(() => {
+  const currentTab = tabStore.activeTab
+  if (currentTab && currentTab.canGoForward) {
+    console.log('➡️ Navigating Forward:', {
+      currentUrl: currentTab.url,
+      canGoBack: currentTab.canGoBack,
+      canGoForward: currentTab.canGoForward,
+      timestamp: new Date().toISOString()
+    });
+    tabStore.goForward(currentTab.id)
+  } else {
+    console.log('➡️ Cannot Navigate Forward:', {
+      currentUrl: currentTab?.url || 'No active tab',
+      canGoForward: currentTab?.canGoForward || false,
+      timestamp: new Date().toISOString()
+    });
+  }
+}, [])
 
   const navReloadOrStop = useCallback(() => {
-    const currentTab = tabStore.activeTab;
+    const currentTab = tabStore.activeTab
     if (!currentTab) return;
-
+    
     if (currentTab.isLoading) {
       console.log('🛑 Stopping Page Load:', {
         url: currentTab.url,
@@ -557,7 +563,7 @@ function Browser() {
         canGoForward: currentTab.canGoForward,
         timestamp: new Date().toISOString()
       });
-      return currentTab.webviewRef?.current?.stopLoading();
+      return currentTab.webviewRef?.current?.stopLoading()
     } else {
       console.log('🔄 Reloading Page:', {
         url: currentTab.url,
@@ -567,43 +573,43 @@ function Browser() {
       });
       return currentTab.webviewRef?.current?.reload();
     }
-  }, []);
+  }, [])
 
   const toggleDesktopView = useCallback(() => {
     // Prevent multiple rapid presses during cooldown
-    if (isToggleDesktopCooldown) return;
-
-    const currentTab = tabStore.activeTab;
-
-    setIsToggleDesktopCooldown(true);
-    setIsDesktopView((prev) => !prev);
-
+    if (isToggleDesktopCooldown) return
+    
+    const currentTab = tabStore.activeTab
+    
+    setIsToggleDesktopCooldown(true)
+    setIsDesktopView(prev => !prev)
+    
     // Reload the current page to apply the new user agent
     if (currentTab && currentTab.url !== kNEW_TAB_URL) {
-      currentTab.webviewRef?.current?.reload();
+      currentTab.webviewRef?.current?.reload()
     }
-
+    
     // Reset cooldown after reload animation/loading time
     setTimeout(() => {
-      setIsToggleDesktopCooldown(false);
-    }, 1500); // 1.5 second cooldown to allow for reload
-  }, [isToggleDesktopCooldown]);
+      setIsToggleDesktopCooldown(false)
+    }, 1500) // 1.5 second cooldown to allow for reload
+  }, [isToggleDesktopCooldown])
 
   // User agent strings
-  const mobileUserAgent =
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1';
-  const desktopUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36';
+  const mobileUserAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
+  const desktopUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
 
   useEffect(() => {
     if (tabStore.tabs.length === 0) {
-      tabStore.newTab();
+      tabStore.newTab()
     }
-  }, []);
+  }, [])
   useEffect(() => {
     if (activeTab && !addressEditing.current) {
-      setAddressText(activeTab.url);
+      setAddressText(activeTab.url)
     }
-  }, [activeTab]);
+  }, [activeTab])
+
 
   const dismissKeyboard = useCallback(() => {
     addressInputRef.current?.blur();
@@ -613,9 +619,9 @@ function Browser() {
   const responderProps =
     addressFocused && keyboardVisible
       ? {
-          onStartShouldSetResponder: () => true,
-          onResponderRelease: dismissKeyboard
-        }
+        onStartShouldSetResponder: () => true,
+        onResponderRelease: dismissKeyboard,
+      }
       : {};
 
   /* -------------------------------------------------------------------------- */
@@ -646,9 +652,7 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
 
   // === 1. Injected JS ============================================
-
-  const injectedJavaScript = useMemo(
-    () => `
+  const injectedJavaScript = useMemo(() => `
  // Listen for messages from React Native and reject the scan promise
   const handleMessage = function(event) {
     try {
@@ -936,12 +940,10 @@ function Browser() {
     };
   })();
   true;
-`,
-    [getAcceptLanguageHeader]
-  );
+`, [getAcceptLanguageHeader]);
 
   // === 2. RN ⇄ WebView message bridge ========================================
-  const [scannedData, setScannedData] = useState<string | null>(null);
+ const [scannedData, setScannedData] = useState<string | null>(null);
   const [scannerFullscreen, setScannerFullscreen] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const scanResolver = useRef<((data: string) => void) | null>(null);
@@ -1039,7 +1041,6 @@ function Browser() {
       logWithTimestamp(F, `handleMessage:event=${JSON.stringify(event)}`);
       logWithTimestamp(F, `handleMessage:activeTab=${JSON.stringify(activeTab)}`);
       logWithTimestamp(F, `handleMessage:activeTab.webviewRef?.current=${JSON.stringify(activeTab!.webviewRef?.current)}`);
-
       // Safety check - if activeTab is undefined, we cannot process messages
       if (!activeTab) {
         console.warn('Cannot process WebView message: activeTab is undefined');
@@ -1048,6 +1049,7 @@ function Browser() {
 
       const sendResponseToWebView = (id: string, result: any) => {
         if (!activeTab || !activeTab.webviewRef?.current) return;
+        
         const message = {
           type: 'CWI',
           id,
@@ -1056,28 +1058,16 @@ function Browser() {
           status: 'ok'
         };
 
-        activeTab.webviewRef.current?.injectJavaScript(getInjectableJSMessage(message));
+        activeTab.webviewRef.current.injectJavaScript(
+          getInjectableJSMessage(message)
+        );
       };
 
       let msg;
       try {
         msg = JSON.parse(event.nativeEvent.data);
-        //console.log('📡 WebView message received:', msg);
       } catch (error) {
-        console.error('❌ Failed to parse WebView message:', error);
-        return;
-      }
-      if (msg.type === 'REQUEST_SCAN') {
-        msg.type = 'SCAN_REQUEST';
-      }
-      logWithTimestamp(F, `handleMessage:msg.type=${msg.type}`);
-
-      if (msg.type === 'SCAN_REQUEST') {
-        logWithTimestamp(F, `msg=${JSON.stringify(msg)}`);
-        const fullscreen = typeof msg.reason === 'string' && msg.reason.toLowerCase().includes('fullscreen');
-        logWithTimestamp(F, `fullscreen=${fullscreen}`);
-        setScannerFullscreen(fullscreen);
-        setShowScanner(true);
+        console.error('Failed to parse WebView message:', error);
         return;
       }
 
@@ -1108,7 +1098,7 @@ function Browser() {
       if (msg.type === 'REQUEST_FULLSCREEN') {
         console.log('Fullscreen requested by website');
         setIsFullscreen(true);
-
+        
         // Send success response back to webview
         if (activeTab.webviewRef?.current) {
           activeTab.webviewRef.current.injectJavaScript(`
@@ -1133,7 +1123,7 @@ function Browser() {
       if (msg.type === 'EXIT_FULLSCREEN') {
         console.log('Exit fullscreen requested by website');
         setIsFullscreen(false);
-
+        
         // Send response back to webview
         if (activeTab.webviewRef?.current) {
           activeTab.webviewRef.current.injectJavaScript(`
@@ -1239,9 +1229,9 @@ function Browser() {
                   tag: msg.tag,
                   ...msg.data
                 },
-                sound: true
+                sound: true,
               },
-              trigger: null
+              trigger: null,
             });
           }
         } catch (error) {
@@ -1250,7 +1240,7 @@ function Browser() {
         return;
       }
 
-      // Handling of wallet before api call.
+     // Handling of wallet before api call.
       if (msg.call && (!wallet || isWeb2Mode)) {
         // console.log('Wallet not ready or in web2 mode, ignoring call:', msg.call);
         return;
@@ -1302,7 +1292,6 @@ function Browser() {
     },
     [activeTab, wallet, createPushSubscription, getSubscription, getPermission, handleNotificationPermissionRequest, t]
   );
-
   useEffect(() => {
     logWithTimestamp(F, `Checking scannedData for WebView update: ${scannedData}`);
     if (scannedData && activeTab?.webviewRef?.current) {
@@ -1322,86 +1311,85 @@ function Browser() {
       logWithTimestamp(F, `blank scannedData for WebView update`);
     }
   }, [scannedData, activeTab]);
-
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
-  /* -------------------------------------------------------------------------- */
+  /* -------------------------------------------------------------------------- */  
   const handleNavStateChange = (navState: WebViewNavigation) => {
-    // Safety check - if activeTab is undefined, we cannot process navigation
-    if (!activeTab) {
-      console.warn('Cannot handle navigation state change: activeTab is undefined');
-      return;
-    }
+  // Safety check - if activeTab is undefined, we cannot process navigation
+  if (!activeTab) {
+    console.warn('Cannot handle navigation state change: activeTab is undefined');
+    return;
+  }
+    
+  // Ignore favicon requests for about:blank
+  if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
+    return;
+  }
+  
+  // Log navigation state changes with back/forward capabilities
+  console.log('🌐 Navigation State Change:', {
+    url: navState.url,
+    title: navState.title,
+    loading: navState.loading,
+    canGoBack: navState.canGoBack,
+    canGoForward: navState.canGoForward,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Make sure we're updating the correct tab's navigation state
+  tabStore.handleNavigationStateChange(activeTab.id, navState)
+  
+  if (!addressEditing.current) setAddressText(navState.url)
 
-    // Ignore favicon requests for about:blank
-    if (navState.url?.includes('favicon.ico') && activeTab.url === kNEW_TAB_URL) {
-      return;
-    }
-
-    // Log navigation state changes with back/forward capabilities
-    console.log('🌐 Navigation State Change:', {
+  if (!navState.loading && navState.url !== kNEW_TAB_URL) {
+    console.log('📄 Webpage Loaded:', {
       url: navState.url,
       title: navState.title,
-      loading: navState.loading,
       canGoBack: navState.canGoBack,
       canGoForward: navState.canGoForward,
       timestamp: new Date().toISOString()
     });
-
-    // Make sure we're updating the correct tab's navigation state
-    tabStore.handleNavigationStateChange(activeTab.id, navState);
-
-    if (!addressEditing.current) setAddressText(navState.url);
-
-    if (!navState.loading && navState.url !== kNEW_TAB_URL) {
-      console.log('📄 Webpage Loaded:', {
-        url: navState.url,
-        title: navState.title,
-        canGoBack: navState.canGoBack,
-        canGoForward: navState.canGoForward,
-        timestamp: new Date().toISOString()
-      });
-
-      pushHistory({
-        title: navState.title || navState.url,
-        url: navState.url,
-        timestamp: Date.now()
-      }).catch(() => {});
-    }
-  };
+    
+    pushHistory({
+      title: navState.title || navState.url,
+      url: navState.url,
+      timestamp: Date.now()
+    }).catch(() => { })
+  }
+}
 
   /* -------------------------------------------------------------------------- */
   /*                          SHARE / HOMESCREEN SHORTCUT                       */
   /* -------------------------------------------------------------------------- */
   const shareCurrent = useCallback(async () => {
-    const currentTab = tabStore.activeTab;
+    const currentTab = tabStore.activeTab
     if (!currentTab) return;
-
+    
     try {
-      await Share.share({ message: currentTab.url });
+      await Share.share({ message: currentTab.url })
     } catch (err) {
-      console.warn('Share cancelled/failed', err);
+      console.warn('Share cancelled/failed', err)
     }
-  }, []);
+  }, [])
   const addToHomeScreen = useCallback(async () => {
     try {
       if (Platform.OS === 'android') {
       } else {
-        await Linking.openURL('prefs:root=Safari');
+        await Linking.openURL('prefs:root=Safari')
       }
     } catch (e) {
-      console.warn('Add to homescreen failed', e);
+      console.warn('Add to homescreen failed', e)
     }
-  }, []);
+  }, [])
 
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
   /* -------------------------------------------------------------------------- */
   // const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isDrawerAnimating, setIsDrawerAnimating] = useState(false);
-  const windowHeight = Dimensions.get('window').height;
-  const drawerFullHeight = windowHeight * 0.75;
-  const translateY = useRef(new Animated.Value(drawerFullHeight)).current;
+  const windowHeight = Dimensions.get('window').height
+  const drawerFullHeight = windowHeight * 0.75
+  const translateY = useRef(new Animated.Value(drawerFullHeight)).current
 
   const closeStarDrawer = useCallback(() => {
     const runCloseDrawer = () => {
@@ -1427,24 +1415,25 @@ function Browser() {
       return;
     }
     runCloseDrawer();
-  }, [isDrawerAnimating, drawerFullHeight, translateY]);
+  }, [isDrawerAnimating, drawerFullHeight, translateY])
 
   const onPanGestureEvent = useRef(
     Animated.event([{ nativeEvent: { translationY: translateY } }], {
       useNativeDriver: true
     })
-  ).current;
+  ).current
 
   const onPanHandlerStateChange = useCallback(
     (event: any) => {
       if (event.nativeEvent.oldState === GestureState.ACTIVE) {
-        if (isDrawerAnimating) return;
-        setIsDrawerAnimating(true);
+        if (isDrawerAnimating) return
+        setIsDrawerAnimating(true)
 
-        const { translationY, velocityY } = event.nativeEvent;
+        const { translationY, velocityY } = event.nativeEvent
 
-        const shouldClose = translationY > drawerFullHeight / 3 || velocityY > 800;
-        const targetValue = shouldClose ? drawerFullHeight : 0;
+        const shouldClose =
+          translationY > drawerFullHeight / 3 || velocityY > 800
+        const targetValue = shouldClose ? drawerFullHeight : 0
 
         Animated.spring(translateY, {
           toValue: targetValue,
@@ -1466,93 +1455,90 @@ function Browser() {
       }
     },
     [drawerFullHeight, translateY, isDrawerAnimating]
-  );
+  )
 
   useEffect(() => {
     if (showStarDrawer) {
-      setIsDrawerAnimating(true);
-      translateY.setValue(drawerFullHeight);
+      setIsDrawerAnimating(true)
+      translateY.setValue(drawerFullHeight)
       Animated.spring(translateY, {
         toValue: 0,
         useNativeDriver: true,
         tension: 100,
         friction: 8
       }).start(() => {
-        setIsDrawerAnimating(false);
-      });
+        setIsDrawerAnimating(false)
+      })
     }
-  }, [showStarDrawer]);
+  }, [showStarDrawer])
 
-  const toggleStarDrawer = useCallback(
-    (open: boolean) => {
-      setShowStarDrawer(open);
-      Animated.timing(starDrawerAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true
-      }).start();
-    },
-    [starDrawerAnim]
-  );
+  const toggleStarDrawer = useCallback((open: boolean) => {
+    setShowStarDrawer(open)
+    Animated.timing(starDrawerAnim, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true
+    }).start()
+  }, [starDrawerAnim])
 
   // State for clear confirm modal (move this above scene components)
 
-  const handleSetStartingUrl = useCallback(
-    (url: string) => {
-      updateActiveTab({ url });
-      toggleStarDrawer(false);
-    },
-    [updateActiveTab]
-  );
+  const handleSetStartingUrl = useCallback((url: string) => {
+    updateActiveTab({ url })
+    toggleStarDrawer(false)
+  }, [updateActiveTab])
 
   const BookmarksScene = useMemo(() => {
-    return () => (
-      <RecommendedApps
-        includeBookmarks={bookmarkStore.bookmarks
-          .filter((bookmark) => {
-            // Filter out invalid URLs to prevent favicon errors
-            return bookmark.url && bookmark.url !== kNEW_TAB_URL && isValidUrl(bookmark.url) && !bookmark.url.includes('about:blank');
-          })
-          .reverse()}
-        setStartingUrl={handleSetStartingUrl}
-        onRemoveBookmark={removeBookmark}
-        onRemoveDefaultApp={removeDefaultApp}
-        removedDefaultApps={removedDefaultApps}
-        hideHeader={true}
-        showOnlyBookmarks={true}
-      />
-    );
-  }, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps]);
+  return () => (
+    <RecommendedApps
+      includeBookmarks={bookmarkStore.bookmarks.filter(bookmark => {
+        // Filter out invalid URLs to prevent favicon errors
+        return bookmark.url && 
+               bookmark.url !== kNEW_TAB_URL && 
+               isValidUrl(bookmark.url) &&
+               !bookmark.url.includes('about:blank')
+      }).reverse()}
+      setStartingUrl={handleSetStartingUrl}
+      onRemoveBookmark={removeBookmark}
+      onRemoveDefaultApp={removeDefaultApp}
+      removedDefaultApps={removedDefaultApps}
+      hideHeader={true}
+      showOnlyBookmarks={true}
+    />
+  )
+}, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps])
 
   const HistoryScene = React.useCallback(() => {
     return (
       <HistoryList
         history={history}
-        onSelect={(u) => {
-          updateActiveTab({ url: u });
-          toggleStarDrawer(false);
+        onSelect={u => {
+          updateActiveTab({ url: u })
+          toggleStarDrawer(false)
         }}
         onDelete={removeHistoryItem}
         onClear={() => showClearConfirm()}
       />
-    );
+    )
   }, [history, updateActiveTab, toggleStarDrawer, removeHistoryItem]);
 
+
+
   /* ---------------------------- clear history modal ------------------------- */
-  const [clearConfirmVisible, setClearConfirmVisible] = useState(false);
+  const [clearConfirmVisible, setClearConfirmVisible] = useState(false)
 
   const showClearConfirm = useCallback(() => {
-    setClearConfirmVisible(true);
-  }, []);
+    setClearConfirmVisible(true)
+  }, [])
 
   const handleConfirmClearAll = useCallback(() => {
-    clearHistory();
-    setClearConfirmVisible(false);
-  }, [clearHistory]);
+    clearHistory()
+    setClearConfirmVisible(false)
+  }, [clearHistory])
 
   const closeClearConfirm = useCallback(() => {
-    setClearConfirmVisible(false);
-  }, []);
+    setClearConfirmVisible(false)
+  }, [])
 
   /* -------------------------------------------------------------------------- */
   /*                         ADDRESS BAR AUTOCOMPLETE                           */
@@ -1563,92 +1549,108 @@ function Browser() {
       keys: ['title', 'url'],
       threshold: 0.4
     })
-  );
+  )
   useEffect(() => {
-    fuseRef.current.setCollection([...history, ...bookmarkStore.bookmarks]);
-  }, [history, bookmarkStore.bookmarks]);
-  const [addressSuggestions, setAddressSuggestions] = useState<(HistoryEntry | Bookmark)[]>([]);
-
+    fuseRef.current.setCollection([...history, ...bookmarkStore.bookmarks])
+  }, [history, bookmarkStore.bookmarks])
+  const [addressSuggestions, setAddressSuggestions] = useState<
+    (HistoryEntry | Bookmark)[]
+  >([])
+  
   const onChangeAddressText = useCallback((txt: string) => {
-    setAddressText(txt);
+    setAddressText(txt)
     if (txt.trim().length === 0) {
-      setAddressSuggestions([]);
-      return;
+      setAddressSuggestions([])
+      return
     }
     const results = fuseRef.current
       .search(txt)
       .slice(0, 10) // Get more results initially
-      .map((r) => r.item);
-
+      .map(r => r.item)
+    
     // Remove duplicates based on URL
-    const uniqueResults = results.filter((item, index, self) => index === self.findIndex((t) => t.url === item.url)).slice(0, 5); // Then limit to 5 unique results
-
-    setAddressSuggestions(uniqueResults);
-  }, []);
+    const uniqueResults = results.filter((item, index, self) => 
+      index === self.findIndex(t => t.url === item.url)
+    ).slice(0, 5) // Then limit to 5 unique results
+    
+    setAddressSuggestions(uniqueResults)
+  }, [])
 
   /* -------------------------------------------------------------------------- */
   /*                              INFO DRAWER NAV                               */
   /* -------------------------------------------------------------------------- */
-  const toggleInfoDrawer = useCallback((open: boolean, route: typeof infoDrawerRoute = 'root') => {
-    setInfoDrawerRoute(route);
-    setShowInfoDrawer(open);
-  }, []);
+  const toggleInfoDrawer = useCallback((
+    open: boolean,
+    route: typeof infoDrawerRoute = 'root'
+  ) => {
+    setInfoDrawerRoute(route)
+    setShowInfoDrawer(open)
+  }, [])
 
   useEffect(() => {
     Animated.timing(drawerAnim, {
       toValue: showInfoDrawer ? 1 : 0,
       duration: 260,
       useNativeDriver: true
-    }).start();
-  }, [showInfoDrawer, drawerAnim]);
+    }).start()
+  }, [showInfoDrawer, drawerAnim])
 
-  const drawerHeight = infoDrawerRoute === 'root' ? Dimensions.get('window').height * 0.75 : Dimensions.get('window').height * 0.9;
+  const drawerHeight =
+    infoDrawerRoute === 'root'
+      ? Dimensions.get('window').height * 0.75
+      : Dimensions.get('window').height * 0.9
+
+
 
   /* -------------------------------------------------------------------------- */
   /*                               DRAWER HANDLERS                              */
   /* -------------------------------------------------------------------------- */
 
-  const drawerHandlers = useMemo(
-    () => ({
+    const drawerHandlers = useMemo(() => ({
       identity: () => setInfoDrawerRoute('identity'),
       security: () => setInfoDrawerRoute('security'),
       trust: () => setInfoDrawerRoute('trust'),
       settings: () => setInfoDrawerRoute('settings'),
       toggleDesktopView: () => {
-        toggleDesktopView();
-        toggleInfoDrawer(false);
+        toggleDesktopView()
+        toggleInfoDrawer(false)
       },
       addBookmark: () => {
         // Only add bookmark if activeTab exists and URL is valid and not new tab page
-        if (activeTab && activeTab.url && activeTab.url !== kNEW_TAB_URL && isValidUrl(activeTab.url) && !activeTab.url.includes('about:blank')) {
-          addBookmark(activeTab.title || t('untitled'), activeTab.url);
-          toggleInfoDrawer(false);
+        if (activeTab && 
+            activeTab.url && 
+            activeTab.url !== kNEW_TAB_URL && 
+            isValidUrl(activeTab.url) && 
+            !activeTab.url.includes('about:blank')) {
+          addBookmark(
+            activeTab.title || t('untitled'),
+            activeTab.url
+          )
+          toggleInfoDrawer(false)
         }
       },
       addToHomeScreen: async () => {
-        await addToHomeScreen();
-        toggleInfoDrawer(false);
+        await addToHomeScreen()
+        toggleInfoDrawer(false)
       },
       backToHomepage: () => {
-        updateActiveTab({ url: kNEW_TAB_URL });
-        setAddressText(kNEW_TAB_URL);
-        toggleInfoDrawer(false);
+        updateActiveTab({ url: kNEW_TAB_URL })
+        setAddressText(kNEW_TAB_URL)
+        toggleInfoDrawer(false)
       },
       goToLogin: () => {
         // Navigate back to the main route for login
-        router.replace('/');
-        toggleInfoDrawer(false);
+        router.replace('/')
+        toggleInfoDrawer(false)
       }
-    }),
-    [activeTab, addBookmark, toggleInfoDrawer, updateActiveTab, setAddressText, addToHomeScreen, toggleDesktopView, t]
-  );
+    }), [activeTab, addBookmark, toggleInfoDrawer, updateActiveTab, setAddressText, addToHomeScreen, toggleDesktopView, t])
 
   /* -------------------------------------------------------------------------- */
   /*                                  RENDER                                    */
   /* -------------------------------------------------------------------------- */
 
-  const showAddressBar = !keyboardVisible || addressFocused;
-  const showBottomBar = !(keyboardVisible && addressFocused);
+  const showAddressBar = !keyboardVisible || addressFocused
+  const showBottomBar = !(keyboardVisible && addressFocused)
 
   // Exit fullscreen on back button or gesture when in fullscreen
   useEffect(() => {
@@ -1666,7 +1668,7 @@ function Browser() {
         `);
         return true; // Prevent default back behavior
       };
-
+      
       // Add back button listener for Android
       if (Platform.OS === 'android') {
         const subscription = BackHandler.addEventListener('hardwareBackPress', backHandler);
@@ -1675,30 +1677,39 @@ function Browser() {
     }
   }, [isFullscreen, activeTab?.webviewRef]);
 
-  const starDrawerAnimatedStyle = useMemo(
-    () => [
-      styles.starDrawer,
-      {
-        backgroundColor: colors.background,
-        height: drawerFullHeight,
-        top: windowHeight - drawerFullHeight,
-        transform: [{ translateY }]
-      }
-    ],
-    [styles.starDrawer, colors.background, drawerFullHeight, windowHeight, translateY]
-  );
+  const starDrawerAnimatedStyle = useMemo(() => ([
+    styles.starDrawer,
+    {
+      backgroundColor: colors.background,
+      height: drawerFullHeight,
+      top: windowHeight - drawerFullHeight,
+      transform: [{ translateY }]
+    }
+  ]), [styles.starDrawer, colors.background, drawerFullHeight, windowHeight, translateY]);
 
-  const addressDisplay = addressFocused ? addressText : domainForUrl(addressText);
+  const addressDisplay = addressFocused
+    ? addressText
+    : domainForUrl(addressText)
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={addressFocused ? (Platform.OS === 'ios' ? 'padding' : 'height') : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={addressFocused
+          ? (Platform.OS === 'ios' ? 'padding' : 'height')
+          : undefined
+        }
+      >
         <SafeAreaView
           style={[
             styles.container,
             {
               backgroundColor: colors.inputBackground,
-              paddingBottom: addressFocused && keyboardVisible ? 0 : isFullscreen ? 0 : Platform.OS === 'ios' ? 0 : insets.bottom
+              paddingBottom: addressFocused && keyboardVisible
+                ? 0
+                : isFullscreen 
+                  ? 0 
+                  : Platform.OS === 'ios' ? 0 : insets.bottom
             }
           ]}
         >
@@ -1706,20 +1717,25 @@ function Browser() {
 
           {activeTab?.url === kNEW_TAB_URL ? (
             <RecommendedApps
-              includeBookmarks={bookmarkStore.bookmarks
-                .filter((bookmark) => {
-                  return bookmark.url && bookmark.url !== kNEW_TAB_URL && isValidUrl(bookmark.url) && !bookmark.url.includes('about:blank');
-                })
-                .reverse()}
-              setStartingUrl={(url) => updateActiveTab({ url })}
-              onRemoveBookmark={removeBookmark}
-              onRemoveDefaultApp={removeDefaultApp}
-              removedDefaultApps={removedDefaultApps}
-              homepageSettings={homepageSettings}
-              onUpdateHomepageSettings={updateHomepageSettings}
-            />
-          ) : activeTab ? (
-            <View style={{ flex: 1 }} {...responderProps}>
+            includeBookmarks={bookmarkStore.bookmarks.filter(bookmark => {
+              return bookmark.url && 
+                    bookmark.url !== kNEW_TAB_URL && 
+                    isValidUrl(bookmark.url) &&
+                    !bookmark.url.includes('about:blank')
+            }).reverse() }
+            
+            setStartingUrl={url => updateActiveTab({ url })}
+            onRemoveBookmark={removeBookmark}
+            onRemoveDefaultApp={removeDefaultApp}
+            removedDefaultApps={removedDefaultApps}
+            homepageSettings={homepageSettings}
+            onUpdateHomepageSettings={updateHomepageSettings}
+          />
+        ) : activeTab ? (
+            <View
+              style={{ flex: 1 }}
+              {...responderProps}
+            >
               {isFullscreen && (
                 <TouchableOpacity
                   style={{
@@ -1751,7 +1767,7 @@ function Browser() {
               )}
               <WebView
                 ref={activeTab?.webviewRef}
-                source={{
+                source={{ 
                   uri: activeTab?.url,
                   headers: {
                     'Accept-Language': getAcceptLanguageHeader()
@@ -1759,37 +1775,35 @@ function Browser() {
                 }}
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
-                injectedJavaScript={
-                  injectedJavaScript +
-                  `
-                  window.scanCodeWithCamera = function(reason) {
-                        return new Promise((resolve, reject) => {
-                          const handleScanResponse = (event) => {
-                            try {
-                              const data = JSON.parse(event.data);
-                              if (data.type === 'SCAN_RESPONSE') {
-                                window.removeEventListener('message', handleScanResponse);
-                                resolve(data.data);
-                              }
-                            } catch (e) {
-                              // Ignore parsing errors
-                            }
-                          };
-                          
-                          window.addEventListener('message', handleScanResponse);
-                          
-                          window.ReactNativeWebView?.postMessage(JSON.stringify({
-                            type: 'REQUEST_SCAN'
-                          }));
-                          
-                          // Timeout after 60 seconds
-                          setTimeout(() => {
-                            window.removeEventListener('message', handleScanResponse);
-                            reject(new Error('Scan timeout'));
-                          }, 60000);
-                        });
-                      };
-                      `
+                injectedJavaScript={injectedJavaScript +
+                `
+                window.scanCodeWithCamera = function (reason) {
+                  return new Promise((resolve, reject) => {
+                    const handleScanResponse = (event) => {
+                      try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'SCAN_RESPONSE') {
+                          window.removeEventListener('message', handleScanResponse);
+                          resolve(data.data);
+                        }
+                      } catch (e) {
+                        // Ignore parsing errors
+                      }
+                    };
+                    window.addEventListener('message', handleScanResponse);
+                    window.ReactNativeWebView?.postMessage(
+                      JSON.stringify({
+                        type: 'REQUEST_SCAN'
+                      })
+                    );
+                    // Timeout after 60 seconds
+                    setTimeout(() => {
+                      window.removeEventListener('message', handleScanResponse);
+                      reject(new Error('Scan timeout'));
+                    }, 60000);
+                  });
+                };
+                `
                 }
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
@@ -1828,6 +1842,7 @@ function Browser() {
                   fullscreen={scannerFullscreen}
                 />
               )}
+
             </View>
           ) : null}
           {!isFullscreen && (
@@ -1845,113 +1860,161 @@ function Browser() {
                 }
               ]}
             >
-              {!addressFocused && (
-                <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
-                  <Ionicons name="person-circle-outline" size={22} color={colors.textSecondary} />
-                </TouchableOpacity>
-              )}
-
-              {!addressFocused && !activeTab?.isLoading && activeTab?.url.startsWith('https') && (
-                <Ionicons name="lock-closed" size={16} color={colors.textSecondary} style={styles.padlock} />
-              )}
-
-              <TextInput
-                ref={addressInputRef}
-                editable
-                value={addressDisplay === 'new-tab-page' ? '' : addressDisplay}
-                onChangeText={onChangeAddressText}
-                onFocus={() => {
-                  addressEditing.current = true;
-                  setAddressFocused(true);
-                  // Set the text to empty if it's the new tab URL
-                  if (activeTab?.url === kNEW_TAB_URL) {
-                    setAddressText('');
-                  }
-                  setTimeout(() => {
-                    const textToSelect = activeTab?.url === kNEW_TAB_URL ? '' : addressText;
-                    addressInputRef.current?.setNativeProps({
-                      selection: { start: 0, end: textToSelect.length }
-                    });
-                  }, 0);
-                }}
-                onBlur={() => {
-                  addressEditing.current = false;
-                  setAddressFocused(false);
-                  setAddressSuggestions([]);
-                  // Reset to the actual URL when losing focus
-                  if (!addressEditing.current) {
-                    setAddressText(activeTab?.url ? activeTab.url : kNEW_TAB_URL);
-                  }
-                }}
-                onSubmitEditing={onAddressSubmit}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="go"
-                style={[
-                  styles.addressInput,
-                  {
-                    flex: 1,
-                    backgroundColor: colors.background,
-                    color: colors.textPrimary,
-                    textAlign: addressFocused ? 'left' : 'center'
-                  }
-                ]}
-                placeholder={t('search_placeholder')}
-                placeholderTextColor={colors.textSecondary}
-              />
-
-              <TouchableOpacity onPress={addressFocused ? () => setAddressText('') : navReloadOrStop} style={styles.addressBarIcon}>
-                <Ionicons name={addressFocused || activeTab?.isLoading ? 'close-circle' : 'refresh'} size={22} color={colors.textSecondary} />
+            {!addressFocused && (
+              <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
+                <Ionicons name='person-circle-outline' size={22} color={colors.textSecondary} />
               </TouchableOpacity>
+            )}
 
-              {!addressFocused && activeTab?.url !== kNEW_TAB_URL && (
-                <TouchableOpacity onPress={toggleDesktopView} style={styles.addressBarIcon}>
-                  <Ionicons
-                    name={isDesktopView ? 'phone-portrait' : 'desktop'}
-                    size={20}
-                    color={isDesktopView ? colors.primary : colors.textSecondary}
-                  />
-                </TouchableOpacity>
+            {!addressFocused &&
+              !activeTab?.isLoading &&
+              activeTab?.url.startsWith('https') && (
+                <Ionicons
+                  name='lock-closed'
+                  size={16}
+                  color={colors.textSecondary}
+                  style={styles.padlock}
+                />
+              )}
+
+            <TextInput
+              ref={addressInputRef}
+              editable
+              value={
+                addressDisplay === 'new-tab-page' ? '' : addressDisplay
+              }
+              onChangeText={onChangeAddressText}
+              onFocus={() => {
+                addressEditing.current = true
+                setAddressFocused(true)
+                // Set the text to empty if it's the new tab URL
+                if (activeTab?.url === kNEW_TAB_URL) {
+                  setAddressText('')
+                }
+                setTimeout(() => {
+                  const textToSelect = activeTab?.url === kNEW_TAB_URL ? '' : addressText
+                  addressInputRef.current?.setNativeProps({
+                    selection: { start: 0, end: textToSelect.length }
+                  })
+                }, 0)
+              }}
+              onBlur={() => {
+                addressEditing.current = false
+                setAddressFocused(false)
+                setAddressSuggestions([])
+                // Reset to the actual URL when losing focus
+                if (!addressEditing.current) {
+                  setAddressText(activeTab?.url ? activeTab.url : kNEW_TAB_URL)
+                }
+              }}
+              onSubmitEditing={onAddressSubmit}
+              autoCapitalize='none'
+              autoCorrect={false}
+              returnKeyType='go'
+              style={[
+                styles.addressInput,
+                {
+                  flex: 1,
+                  backgroundColor: colors.background,
+                  color: colors.textPrimary,
+                  textAlign: addressFocused ? 'left' : 'center'
+                }
+              ]}
+              placeholder={t('search_placeholder')}
+              placeholderTextColor={colors.textSecondary}
+            />
+
+            <TouchableOpacity
+              onPress={
+                addressFocused ? () => setAddressText('') : navReloadOrStop
+              }
+              style={styles.addressBarIcon}
+            >
+              <Ionicons
+                name={addressFocused || activeTab?.isLoading ? 'close-circle' : 'refresh'}
+                size={22}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+
+            {!addressFocused && activeTab?.url !== kNEW_TAB_URL && (
+              <TouchableOpacity
+                onPress={toggleDesktopView}
+                style={styles.addressBarIcon}
+              >
+                <Ionicons
+                  name={isDesktopView ? 'phone-portrait' : 'desktop'}
+                  size={20}
+                  color={isDesktopView ? colors.primary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+          )}
+          
+          {!isFullscreen && addressFocused && addressSuggestions.length > 0 && (
+            <View
+              style={[
+                styles.suggestionBox,
+                { backgroundColor: colors.paperBackground }
+              ]}
+            >
+              {addressSuggestions.map(
+                (entry: HistoryEntry | Bookmark, i: number) => (                  
+                <TouchableOpacity
+                    key={`suggestion-${i}-${entry.url}`}
+                    onPress={() => {
+                      // Dismiss keyboard and hide suggestions first
+                      addressInputRef.current?.blur()
+                      Keyboard.dismiss()
+                      setAddressFocused(false)
+                      setAddressSuggestions([])
+                      
+                      // Then load the page
+                      setAddressText(entry.url)
+                      updateActiveTab({ url: entry.url })
+                      addressEditing.current = false
+                    }}
+                    style={styles.suggestionItem}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.suggestionTitle,
+                        { color: colors.textPrimary }
+                      ]}
+                    >
+                      {entry.title}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.suggestionUrl,
+                        { color: colors.textSecondary }
+                      ]}
+                    >
+                      {entry.url}
+                    </Text>
+                  </TouchableOpacity>
+                )
               )}
             </View>
           )}
 
-          {!isFullscreen && addressFocused && addressSuggestions.length > 0 && (
-            <View style={[styles.suggestionBox, { backgroundColor: colors.paperBackground }]}>
-              {addressSuggestions.map((entry: HistoryEntry | Bookmark, i: number) => (
-                <TouchableOpacity
-                  key={`suggestion-${i}-${entry.url}`}
-                  onPress={() => {
-                    // Dismiss keyboard and hide suggestions first
-                    addressInputRef.current?.blur();
-                    Keyboard.dismiss();
-                    setAddressFocused(false);
-                    setAddressSuggestions([]);
-
-                    // Then load the page
-                    setAddressText(entry.url);
-                    updateActiveTab({ url: entry.url });
-                    addressEditing.current = false;
-                  }}
-                  style={styles.suggestionItem}
-                >
-                  <Text numberOfLines={1} style={[styles.suggestionTitle, { color: colors.textPrimary }]}>
-                    {entry.title}
-                  </Text>
-                  <Text numberOfLines={1} style={[styles.suggestionUrl, { color: colors.textSecondary }]}>
-                    {entry.url}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          {!isFullscreen && showTabsView && (
+            <TabsView
+              onDismiss={() => setShowTabsView(false)}
+              setAddressText={setAddressText}
+              colors={colors}
+            />
           )}
-
-          {!isFullscreen && showTabsView && <TabsView onDismiss={() => setShowTabsView(false)} setAddressText={setAddressText} colors={colors} />}
 
           {!isFullscreen && (showStarDrawer || isDrawerAnimating) && (
             <View style={StyleSheet.absoluteFill}>
               <Pressable style={styles.backdrop} onPress={closeStarDrawer} />
-              <Animated.View style={starDrawerAnimatedStyle}>
+              <Animated.View
+                style={starDrawerAnimatedStyle}
+              >
                 <PanGestureHandler
                   onGestureEvent={onPanGestureEvent}
                   onHandlerStateChange={onPanHandlerStateChange}
@@ -1964,17 +2027,16 @@ function Browser() {
                 </PanGestureHandler>
                 <View style={{ flex: 1 }}>
                   <StarDrawer
-                    BookmarksScene={BookmarksScene}
-                    HistoryScene={HistoryScene}
-                    colors={colors}
-                    styles={styles}
-                    index={starTabIndex}
-                    setIndex={setStarTabIndex}
-                  />
+                  BookmarksScene={BookmarksScene}
+                  HistoryScene={HistoryScene}
+                  colors={colors}
+                  styles={styles}
+                  index={starTabIndex}
+                  setIndex={setStarTabIndex}
+                />
                 </View>
               </Animated.View>
-            </View>
-          )}
+            </View>          )}
           {!isFullscreen && showBottomBar && activeTab && (
             <BottomToolbar
               activeTab={activeTab}
@@ -1991,7 +2053,7 @@ function Browser() {
           <Modal
             isVisible={!isFullscreen && showInfoDrawer}
             onBackdropPress={() => toggleInfoDrawer(false)}
-            swipeDirection="down"
+            swipeDirection='down'
             onSwipeComplete={() => toggleInfoDrawer(false)}
             style={{ margin: 0, justifyContent: 'flex-end' }}
           >
@@ -2014,17 +2076,40 @@ function Browser() {
             >
               {infoDrawerRoute === 'root' && (
                 <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
-                  <Pressable style={styles.drawerHandle} onPress={() => toggleInfoDrawer(false)}>
+                  <Pressable
+                    style={styles.drawerHandle}
+                    onPress={() => toggleInfoDrawer(false)}
+                  >
                     <View style={styles.handleBar} />
                   </Pressable>
                   {!isWeb2Mode && showBalance && <Balance />}
                   {!isWeb2Mode && (
                     <>
-                      <DrawerItem label={t('identity')} icon="person-circle-outline" onPress={drawerHandlers.identity} />
-                      <DrawerItem label={t('security')} icon="lock-closed-outline" onPress={drawerHandlers.security} />
-                      <DrawerItem label={t('trust_network')} icon="shield-checkmark-outline" onPress={drawerHandlers.trust} />
-                      <DrawerItem label={t('settings')} icon="settings-outline" onPress={drawerHandlers.settings} />
-                      <DrawerItem label={t('notifications')} icon="notifications-outline" onPress={() => setInfoDrawerRoute('notifications')} />
+                      <DrawerItem
+                        label={t('identity')}
+                        icon='person-circle-outline'
+                        onPress={drawerHandlers.identity}
+                      />
+                      <DrawerItem
+                        label={t('security')}
+                        icon='lock-closed-outline'
+                        onPress={drawerHandlers.security}
+                      />
+                      <DrawerItem
+                        label={t('trust_network')}
+                        icon='shield-checkmark-outline'
+                        onPress={drawerHandlers.trust}
+                      />
+                      <DrawerItem
+                        label={t('settings')}
+                        icon='settings-outline'
+                        onPress={drawerHandlers.settings}
+                      />
+                       <DrawerItem
+                        label={t('notifications')}
+                        icon='notifications-outline'
+                        onPress={() => setInfoDrawerRoute('notifications')}
+                      />
                       <View style={styles.divider} />
                     </>
                   )}
@@ -2035,49 +2120,90 @@ function Browser() {
                       onPress={drawerHandlers.toggleDesktopView}
                     />
                   )}
-                  <DrawerItem label={t('add_bookmark')} icon="star-outline" onPress={drawerHandlers.addBookmark} />
-                  <DrawerItem label={t('add_to_device_homescreen')} icon="home-outline" onPress={drawerHandlers.addToHomeScreen} />
-                  <DrawerItem label={t('back_to_homepage')} icon="apps-outline" onPress={drawerHandlers.backToHomepage} />
+                  <DrawerItem
+                    label={t('add_bookmark')}
+                    icon='star-outline'
+                    onPress={drawerHandlers.addBookmark}
+                  />
+                  <DrawerItem
+                    label={t('add_to_device_homescreen')}
+                    icon='home-outline'
+                    onPress={drawerHandlers.addToHomeScreen}
+                  />
+                  <DrawerItem
+                    label={t('back_to_homepage')}
+                    icon='apps-outline'
+                    onPress={drawerHandlers.backToHomepage}
+                  />
                   {/* Login button for web2 mode users */}
                   {isWeb2Mode && (
                     <>
                       <View style={styles.divider} />
-                      <DrawerItem label="Login to unlock Web3 features" icon="log-in-outline" onPress={drawerHandlers.goToLogin} />
+                      <DrawerItem
+                        label='Login to unlock Web3 features'
+                        icon='log-in-outline'
+                        onPress={drawerHandlers.goToLogin}
+                      />
                     </>
                   )}
                 </ScrollView>
               )}
 
-              {infoDrawerRoute !== 'root' && <SubDrawerView route={infoDrawerRoute} onBack={() => setInfoDrawerRoute('root')} />}
+              {infoDrawerRoute !== 'root' && (
+                <SubDrawerView
+                  route={infoDrawerRoute}
+                  onBack={() => setInfoDrawerRoute('root')}
+                />
+              )}
             </Animated.View>
           </Modal>
-
+          
           {/* Clear History Confirmation Modal */}
-          <RNModal transparent visible={clearConfirmVisible} onRequestClose={closeClearConfirm} animationType="fade">
-            <Pressable style={styles.contextMenuBackdrop} onPress={closeClearConfirm}>
+          <RNModal
+            transparent
+            visible={clearConfirmVisible}
+            onRequestClose={closeClearConfirm}
+            animationType="fade"
+          >
+            <Pressable 
+              style={styles.contextMenuBackdrop}
+              onPress={closeClearConfirm}
+            >
               <View style={[styles.contextMenu, { backgroundColor: colors.background }]}>
                 <View style={[styles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
-                  <Text style={[styles.contextMenuTitle, { color: colors.textPrimary }]}>{t('clear_browsing_history')}</Text>
-                  <Text style={[styles.contextMenuUrl, { color: colors.textSecondary }]}>{t('action_cannot_be_undone')}</Text>
+                  <Text style={[styles.contextMenuTitle, { color: colors.textPrimary }]}>
+                    {t('clear_browsing_history')}
+                  </Text>
+                  <Text style={[styles.contextMenuUrl, { color: colors.textSecondary }]}>
+                    {t('action_cannot_be_undone')}
+                  </Text>
                 </View>
-
-                <TouchableOpacity
+                
+                <TouchableOpacity 
                   style={[styles.contextMenuItem, { borderBottomColor: colors.inputBorder }]}
                   onPress={handleConfirmClearAll}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="trash-outline" size={22} color="#FF3B30" style={styles.contextMenuIcon} />
-                  <Text style={[styles.contextMenuText, { color: '#FF3B30' }]}>{t('clear')}</Text>
+                  <Text style={[styles.contextMenuText, { color: '#FF3B30' }]}>
+                    {t('clear')}
+                  </Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.contextMenuItem, { borderBottomWidth: 0 }]} onPress={closeClearConfirm} activeOpacity={0.7}>
+                
+                <TouchableOpacity 
+                  style={[styles.contextMenuItem, { borderBottomWidth: 0 }]}
+                  onPress={closeClearConfirm}
+                  activeOpacity={0.7}
+                >
                   <Ionicons name="close-outline" size={22} color={colors.textSecondary} style={styles.contextMenuIcon} />
-                  <Text style={[styles.contextMenuText, { color: colors.textSecondary }]}>{t('cancel')}</Text>
+                  <Text style={[styles.contextMenuText, { color: colors.textSecondary }]}>
+                    {t('cancel')}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </Pressable>
           </RNModal>
-
+          
           {/* Add these notification modals */}
           <NotificationPermissionModal
             visible={showNotificationPermissionModal}
@@ -2086,81 +2212,112 @@ function Browser() {
             onResponse={handleNotificationPermissionResponse}
           />
 
-          <NotificationSettingsModal visible={showNotificationSettingsModal} onDismiss={() => setShowNotificationSettingsModal(false)} />
+          <NotificationSettingsModal
+            visible={showNotificationSettingsModal}
+            onDismiss={() => setShowNotificationSettingsModal(false)}
+          />
         </SafeAreaView>
       </KeyboardAvoidingView>
-    </GestureHandlerRootView>
-  );
+    </GestureHandlerRootView >
+  )
 }
 
-export default observer(Browser);
+export default observer(Browser)
 
 /* -------------------------------------------------------------------------- */
 /*                               SUB-COMPONENTS                               */
 /* -------------------------------------------------------------------------- */
 
-const TabsViewBase = ({ onDismiss, setAddressText, colors }: { onDismiss: () => void; setAddressText: (text: string) => void; colors: any }) => {
-  const { t } = useTranslation();
+const TabsViewBase = ({
+  onDismiss,
+  setAddressText,
+  colors
+}: {
+  onDismiss: () => void
+  setAddressText: (text: string) => void
+  colors: any
+}) => {
+  const { t } = useTranslation()
   // Use the imported tabStore directly
-  const screen = Dimensions.get('window');
-  const ITEM_W = screen.width * 0.42;
-  const ITEM_H = screen.height * 0.28;
-  const insets = useSafeAreaInsets();
+  const screen = Dimensions.get('window')
+  const ITEM_W = screen.width * 0.42
+  const ITEM_H = screen.height * 0.28
+  const insets = useSafeAreaInsets()
 
-  // Animation for new tab button
-  const newTabScale = useRef(new Animated.Value(1)).current;
+// Animation for new tab button
+  const newTabScale = useRef(new Animated.Value(1)).current
   // Add cooldown state
-  const [isCreatingTab, setIsCreatingTab] = useState(false);
+  const [isCreatingTab, setIsCreatingTab] = useState(false)
 
-  const handleNewTabPress = useCallback(() => {
+   const handleNewTabPress = useCallback(() => {
     // Prevent multiple rapid presses
-    if (isCreatingTab) return;
-
-    setIsCreatingTab(true);
-
+    if (isCreatingTab) return
+    
+    setIsCreatingTab(true)
+    
     // Scale animation
     Animated.sequence([
       Animated.timing(newTabScale, {
         toValue: 0.85,
         duration: 100,
-        useNativeDriver: true
+        useNativeDriver: true,
       }),
       Animated.timing(newTabScale, {
         toValue: 1,
         duration: 150,
-        useNativeDriver: true
-      })
+        useNativeDriver: true,
+      }),
     ]).start(() => {
       // Create new tab and dismiss view after animation
-      tabStore.newTab();
+      tabStore.newTab()
       // Reset address text to new tab URL
-      setAddressText(kNEW_TAB_URL);
-      onDismiss();
-
+      setAddressText(kNEW_TAB_URL)
+      onDismiss()
+      
       // Reset cooldown after a short delay
       setTimeout(() => {
-        setIsCreatingTab(false);
-      }, 300);
-    });
-  }, [newTabScale, onDismiss, setAddressText, isCreatingTab]);
+        setIsCreatingTab(false)
+      }, 300)
+    })
+  }, [newTabScale, onDismiss, setAddressText, isCreatingTab])
 
   const renderItem = ({ item }: { item: Tab }) => {
-    const renderRightActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
+    const renderRightActions = (
+      progress: Animated.AnimatedInterpolation<number>,
+      dragX: Animated.AnimatedInterpolation<number>
+    ) => {
       const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
         inputRange: [-101, 0],
         outputRange: [0, 1],
         extrapolate: 'clamp'
-      });
-      return <Animated.View style={[styles.swipeDelete]}></Animated.View>;
-    };
-    const renderLeftActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
+      })
+      return (
+        <Animated.View
+          style={[
+            styles.swipeDelete,
+          ]}
+        >
+        </Animated.View>
+      ) 
+    }
+    const renderLeftActions = (
+      progress: Animated.AnimatedInterpolation<number>,
+      dragX: Animated.AnimatedInterpolation<number>
+    ) => {
       const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
         inputRange: [0, 101],
         outputRange: [1, 0],
         extrapolate: 'clamp'
-      });
-      return <Animated.View style={[styles.swipeDelete]}></Animated.View>;
-    };
+      })
+      return (
+        <Animated.View
+          style={[
+            styles.swipeDelete,
+          ]}
+        >
+        </Animated.View>
+      )
+    }
 
     return (
       <Swipeable
@@ -2172,62 +2329,78 @@ const TabsViewBase = ({ onDismiss, setAddressText, colors }: { onDismiss: () => 
         rightThreshold={40}
         leftThreshold={40}
       >
-        <Pressable
-          style={[
-            styles.tabPreview,
-            {
-              width: ITEM_W,
-              height: ITEM_H,
-              borderColor: item.id === tabStore.activeTabId ? colors.primary : colors.inputBorder,
-              borderWidth: item.id === tabStore.activeTabId ? 3 : StyleSheet.hairlineWidth,
-              backgroundColor: colors.paperBackground
-            }
-          ]}
-          onPress={() => {
-            tabStore.setActiveTab(item.id);
-            onDismiss();
+      <Pressable
+        style={[
+          styles.tabPreview,
+          {
+            width: ITEM_W,
+            height: ITEM_H,
+            borderColor:
+              item.id === tabStore.activeTabId ? colors.primary : colors.inputBorder,
+            borderWidth: item.id === tabStore.activeTabId ? 3 : StyleSheet.hairlineWidth,
+            backgroundColor: colors.paperBackground
+          }
+        ]}
+        onPress={() => {
+          tabStore.setActiveTab(item.id)
+          onDismiss()
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            backgroundColor: colors.textSecondary + '80',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10,
           }}
+          onPress={(e) => {
+            e.stopPropagation() // Prevent tab selection when closing
+            tabStore.closeTab(item.id)
+          }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              width: 24,
-              height: 24,
-              borderRadius: 12,
-              backgroundColor: colors.textSecondary + '80',
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 10
-            }}
-            onPress={(e) => {
-              e.stopPropagation(); // Prevent tab selection when closing
-              tabStore.closeTab(item.id);
-            }}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={{ color: colors.background, fontSize: 14, fontWeight: 'bold' }}>✕</Text>
-          </TouchableOpacity>
+          <Text style={{ color: colors.background, fontSize: 14, fontWeight: 'bold' }}>✕</Text>
+        </TouchableOpacity>
 
-          <View style={{ flex: 1, overflow: 'hidden' }}>
-            {item.url === kNEW_TAB_URL ? (
-              <View style={styles.tabPreviewEmpty}>
-                <Text style={{ fontSize: 16, color: colors.textSecondary }}>{t('new_tab')}</Text>
-              </View>
-            ) : (
-              <WebView source={{ uri: item.url }} style={{ flex: 1 }} scrollEnabled={false} pointerEvents="none" />
-            )}
-            <View style={[styles.tabTitleBar, { backgroundColor: colors.inputBackground + 'E6' }]}>
-              <Text numberOfLines={1} style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}>
-                {item.title}
+        <View style={{ flex: 1, overflow: 'hidden' }}>
+          {item.url === kNEW_TAB_URL ? (
+            <View style={styles.tabPreviewEmpty}>
+              <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+                {t('new_tab')}
               </Text>
             </View>
+          ) : (
+            <WebView
+              source={{ uri: item.url }}
+              style={{ flex: 1 }}
+              scrollEnabled={false}
+              pointerEvents='none'
+            />
+          )}
+          <View
+            style={[
+              styles.tabTitleBar,
+              { backgroundColor: colors.inputBackground + 'E6' }
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}
+            >
+              {item.title}
+            </Text>
           </View>
-        </Pressable>
-      </Swipeable>
-    );
-  };
+        </View>
+      </Pressable>
+    </Swipeable>
+  )
+}
 
   return (
     <View style={[styles.tabsViewContainer, { backgroundColor: colors.background + 'CC' }]}>
@@ -2236,22 +2409,22 @@ const TabsViewBase = ({ onDismiss, setAddressText, colors }: { onDismiss: () => 
       </TouchableWithoutFeedback>
 
       <FlatList
-        data={tabStore.tabs.slice()}
-        renderItem={renderItem}
-        keyExtractor={(t) => String(t.id)}
-        numColumns={2}
-        contentContainerStyle={{
-          padding: 12,
-          paddingTop: 32,
-          paddingBottom: 20 // Reduced padding since we have a bar now
-        }}
+      data={tabStore.tabs.slice()}
+      renderItem={renderItem}
+      keyExtractor={t => String(t.id)}
+      numColumns={2}
+      contentContainerStyle={{
+        padding: 12,
+        paddingTop: 32,
+        paddingBottom: 20 // Reduced padding since we have a bar now
+      }}
       />
 
       {/* New styled footer bar */}
       <View
         style={[
           styles.tabsViewFooterBar,
-          {
+          { 
             backgroundColor: colors.inputBackground,
             paddingBottom: insets.bottom + 10,
             borderTopColor: colors.inputBorder
@@ -2259,7 +2432,7 @@ const TabsViewBase = ({ onDismiss, setAddressText, colors }: { onDismiss: () => 
         ]}
       >
         <Animated.View style={{ transform: [{ scale: newTabScale }] }}>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={[
               styles.newTabBtn,
               {
@@ -2267,105 +2440,133 @@ const TabsViewBase = ({ onDismiss, setAddressText, colors }: { onDismiss: () => 
                 // Add visual feedback when disabled
                 ...(isCreatingTab && { opacity: 0.6 })
               }
-            ]}
-            onPress={handleNewTabPress}
+            ]} 
+            onPress={handleNewTabPress}  
             activeOpacity={0.7}
-            disabled={isCreatingTab}
+            disabled={isCreatingTab}          
           >
             <Text style={[styles.newTabIcon, { color: colors.background }]}>＋</Text>
           </TouchableOpacity>
         </Animated.View>
-
+        
         <View style={{ flex: 1 }} />
-
-        <TouchableOpacity
+        
+        <TouchableOpacity 
           style={[
             styles.doneButtonStyled,
-            {
+            { 
               backgroundColor: colors.primary,
               shadowColor: colors.textPrimary
             }
-          ]}
+          ]} 
           onPress={onDismiss}
         >
-          <Text style={[styles.doneButtonText, { color: colors.background }]}>{t('done')}</Text>
+          <Text style={[styles.doneButtonText, { color: colors.background }]}>
+            {t('done')}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
-  );
-};
+  )
+}
 
-const TabsView = observer(TabsViewBase);
+const TabsView = observer(TabsViewBase)
 
-const DrawerItem = React.memo(({ label, icon, onPress }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }) => {
-  const { colors } = useTheme();
+const DrawerItem = React.memo(({
+  label,
+  icon,
+  onPress
+}: {
+  label: string
+  icon: keyof typeof Ionicons.glyphMap
+  onPress: () => void
+}) => {
+  const { colors } = useTheme()
   return (
-    <TouchableOpacity style={styles.drawerItem} onPress={onPress} activeOpacity={0.6} delayPressIn={0}>
+    <TouchableOpacity 
+      style={styles.drawerItem} 
+      onPress={onPress}
+      activeOpacity={0.6}
+      delayPressIn={0}
+    >
       <Ionicons name={icon} size={22} color={colors.textSecondary} style={styles.drawerIcon} />
-      <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>{label}</Text>
-      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+      <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
+        {label}
+      </Text>
+      <Ionicons name='chevron-forward' size={20} color={colors.textSecondary} />
     </TouchableOpacity>
-  );
-});
+  )
+})
 
-const SubDrawerView = React.memo(
-  ({
-    route,
-    onBack,
-    onOpenNotificationSettings
-  }: {
-    route: 'identity' | 'settings' | 'security' | 'trust' | 'notifications';
-    onBack: () => void;
-    onOpenNotificationSettings?: () => void;
-  }) => {
-    const { colors } = useTheme();
-    const { t } = useTranslation();
-    const { isWeb2Mode } = useBrowserMode();
+const SubDrawerView = React.memo(({
+  route,
+  onBack,
+  onOpenNotificationSettings,
+}: {
+  route: 'identity' | 'settings' | 'security' | 'trust' | 'notifications';
+  onBack: () => void;
+  onOpenNotificationSettings?: () => void;
+}) => {
+  const { colors } = useTheme()
+  const { t } = useTranslation()
+  const { isWeb2Mode } = useBrowserMode()
 
-    const screens = useMemo(
-      () => ({
-        identity: <IdentityScreen />,
-        settings: <SettingsScreen />,
-        security: <SecurityScreen />,
-        trust: <TrustScreen />
-      }),
-      []
-    );
+  const screens = useMemo(() => ({
+    identity: <IdentityScreen />,
+    settings: <SettingsScreen />,
+    security: <SecurityScreen />,
+    trust: <TrustScreen />,
+  }), [])
 
-    return (
-      <View style={{ flex: 1 }}>
-        <View style={styles.subDrawerHeader}>
-          <TouchableOpacity onPress={onBack} activeOpacity={0.6} delayPressIn={0}>
-            <Text style={[styles.backBtn, { color: colors.primary }]}>‹ {t('back')}</Text>
-          </TouchableOpacity>
-          <Text style={[styles.subDrawerTitle, { color: colors.textPrimary }]}>{t(route)}</Text>
-          <View style={{ width: 60 }} />
-        </View>
-        <View style={styles.subDrawerContent}>
-          {route === 'notifications' ? (
-            <View>
-              <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>Manage notifications from websites and apps.</Text>
-              <TouchableOpacity
-                style={[styles.drawerItem, { backgroundColor: colors.inputBackground, borderRadius: 8 }]}
-                onPress={onOpenNotificationSettings}
-              >
-                <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} style={styles.drawerIcon} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Notification Settings</Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Manage website permissions</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            // Only show web3 screens when not in web2 mode
-            !isWeb2Mode && screens[route]
-          )}
-        </View>
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={styles.subDrawerHeader}>
+        <TouchableOpacity 
+          onPress={onBack}
+          activeOpacity={0.6}
+          delayPressIn={0}
+        >
+          <Text style={[styles.backBtn, { color: colors.primary }]}>
+            ‹ {t('back')}
+          </Text>
+        </TouchableOpacity>
+        <Text style={[styles.subDrawerTitle, { color: colors.textPrimary }]}>
+          {t(route)}
+        </Text>
+        <View style={{ width: 60 }} />
       </View>
-    );
-  }
-);
+      <View style={styles.subDrawerContent}>
+        {route === 'notifications' ? (
+          <View>
+            <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>
+              Manage notifications from websites and apps.
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.drawerItem, 
+                { backgroundColor: colors.inputBackground, borderRadius: 8 }
+              ]}
+              onPress={onOpenNotificationSettings}
+            >
+              <Ionicons name='notifications-outline' size={22} color={colors.textSecondary} style={styles.drawerIcon} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
+                  Notification Settings
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                  Manage website permissions
+                </Text>
+              </View>
+              <Ionicons name='chevron-forward' size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          // Only show web3 screens when not in web2 mode
+          !isWeb2Mode && screens[route]
+        )}
+      </View>
+    </View>  )
+})
 
 /* -------------------------------------------------------------------------- */
 /*                              BOTTOM TOOLBAR                               */
@@ -2381,17 +2582,17 @@ const BottomToolbar = ({
   toggleStarDrawer,
   setShowTabsView
 }: {
-  activeTab: Tab;
-  colors: any;
-  styles: any;
-  navBack: () => void;
-  navFwd: () => void;
-  shareCurrent: () => void;
-  toggleStarDrawer: (open: boolean) => void;
-  setShowTabsView: (show: boolean) => void;
+  activeTab: Tab
+  colors: any
+  styles: any
+  navBack: () => void
+  navFwd: () => void
+  shareCurrent: () => void
+  toggleStarDrawer: (open: boolean) => void
+  setShowTabsView: (show: boolean) => void
 }) => {
-  const handleStarPress = useCallback(() => toggleStarDrawer(true), [toggleStarDrawer]);
-  const handleTabsPress = useCallback(() => setShowTabsView(true), [setShowTabsView]);
+  const handleStarPress = useCallback(() => toggleStarDrawer(true), [toggleStarDrawer])
+  const handleTabsPress = useCallback(() => setShowTabsView(true), [setShowTabsView])
 
   // Debug: Log activeTab state on every render
   useEffect(() => {
@@ -2409,14 +2610,14 @@ const BottomToolbar = ({
   // Calculate disabled state
   const isBackDisabled = !activeTab.canGoBack || activeTab.url === kNEW_TAB_URL;
   const isForwardDisabled = !activeTab.canGoForward || activeTab.url === kNEW_TAB_URL;
-
+  
   console.log('🔧 BottomToolbar Button States:', {
     isBackDisabled,
     isForwardDisabled,
     canGoBack: activeTab.canGoBack,
     url: activeTab.url,
     isNewTab: activeTab.url === kNEW_TAB_URL
-  });
+  });;
 
   return (
     <View
@@ -2427,7 +2628,7 @@ const BottomToolbar = ({
           paddingBottom: 0
         }
       ]}
-    >
+    >    
       <TouchableOpacity
         style={styles.toolbarButton}
         onPress={() => {
@@ -2443,7 +2644,11 @@ const BottomToolbar = ({
         activeOpacity={0.6}
         delayPressIn={0}
       >
-        <Ionicons name="arrow-back" size={24} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
+        <Ionicons
+          name='arrow-back'
+          size={24}
+          color={!isBackDisabled ? colors.textPrimary : '#cccccc'}
+        />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.toolbarButton}
@@ -2460,7 +2665,11 @@ const BottomToolbar = ({
         activeOpacity={0.6}
         delayPressIn={0}
       >
-        <Ionicons name="arrow-forward" size={24} color={!isForwardDisabled ? colors.textPrimary : '#cccccc'} />
+        <Ionicons
+          name='arrow-forward'
+          size={24}
+          color={!isForwardDisabled ? colors.textPrimary : '#cccccc'}
+        />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -2470,18 +2679,32 @@ const BottomToolbar = ({
         activeOpacity={0.6}
         delayPressIn={0}
       >
-        <Ionicons name="share-outline" size={24} color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary} />
+        <Ionicons
+          name='share-outline'
+          size={24}
+          color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
+        />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.toolbarButton} onPress={handleStarPress} activeOpacity={0.6} delayPressIn={0}>
-        <Ionicons name="star-outline" size={24} color={colors.textPrimary} />
+      <TouchableOpacity
+        style={styles.toolbarButton}
+        onPress={handleStarPress}
+        activeOpacity={0.6}
+        delayPressIn={0}
+      >
+        <Ionicons name='star-outline' size={24} color={colors.textPrimary} />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.toolbarButton} onPress={handleTabsPress} activeOpacity={0.6} delayPressIn={0}>
-        <Ionicons name="copy-outline" size={24} color={colors.textPrimary} />
+      <TouchableOpacity
+        style={styles.toolbarButton}
+        onPress={handleTabsPress}
+        activeOpacity={0.6}
+        delayPressIn={0}
+      >
+        <Ionicons name='copy-outline' size={24} color={colors.textPrimary} />
       </TouchableOpacity>
     </View>
-  );
+  )
 };
 
 /* -------------------------------------------------------------------------- */
@@ -2497,7 +2720,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12
   },
   addressInput: {
-    paddingHorizontal: 8
+    paddingHorizontal: 8,
   },
   addressBarIcon: { paddingHorizontal: 6 },
   padlock: { marginRight: 4 },
@@ -2550,7 +2773,7 @@ const styles = StyleSheet.create({
   drawerHandleArea: {
     height: 40,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
 
   /* tabs view */
@@ -2574,16 +2797,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingVertical: 6,
-    paddingHorizontal: 8
+    paddingHorizontal: 8,
   },
   tabsViewFooter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 20
   },
   tabsViewFooterBar: {
     position: 'absolute',
@@ -2598,11 +2821,11 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: -2
+      height: -2,
     },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 5
+    elevation: 5,
   },
 
   doneButton: {
@@ -2610,18 +2833,18 @@ const styles = StyleSheet.create({
     right: 20,
     bottom: 56
   },
-  doneButtonStyled: {
+  doneButtonStyled: { 
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2
+      height: 2,
     },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 3
+    elevation: 3,
   },
   doneButtonText: {
     fontSize: 16,
@@ -2660,7 +2883,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24
   },
   drawerIcon: {
-    marginRight: 16
+    marginRight: 16,
   },
   drawerLabel: {
     flex: 1,
@@ -2670,7 +2893,7 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#ccc',
     marginVertical: 8,
-    marginHorizontal: 24
+    marginHorizontal: 24,
   },
 
   /* sub-drawer */
@@ -2726,7 +2949,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   contextMenu: {
     borderRadius: 12,
@@ -2735,36 +2958,36 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4
+      height: 4,
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8
+    elevation: 8,
   },
   contextMenuHeader: {
     padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   contextMenuTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4
+    marginBottom: 4,
   },
   contextMenuUrl: {
     fontSize: 12,
-    opacity: 0.7
+    opacity: 0.7,
   },
   contextMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   contextMenuIcon: {
-    marginRight: 12
+    marginRight: 12,
   },
   contextMenuText: {
     fontSize: 16,
-    flex: 1
-  }
-});
+    flex: 1,
+  },
+})
