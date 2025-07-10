@@ -1072,13 +1072,8 @@ const navFwd = useCallback(() => {
         console.error('Failed to parse WebView message:', error);
         return;
       }
-
-     if (msg.type === 'REQUEST_SCAN') {
-        msg.type = 'SCAN_REQUEST';
-      }
       logWithTimestamp(F, `handleMessage:msg.type=${msg.type}`);
-
-      if (msg.type === 'SCAN_REQUEST') {
+      if (msg.type === 'REQUEST_SCAN') {
         logWithTimestamp(F, `handleMessage:msg=${JSON.stringify(msg)}`);
         const fullscreen = typeof msg.reason === 'string' && msg.reason.toLowerCase().includes('fullscreen');
         logWithTimestamp(F, `handleMessage:fullscreen=${fullscreen}`);
