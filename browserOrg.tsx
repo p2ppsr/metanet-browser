@@ -1,6 +1,4 @@
 /* eslint-disable react/no-unstable-nested-components */
-const F = 'app/browser';
-/* eslint-disable react/no-unstable-nested-components */
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
   Animated,
@@ -64,19 +62,10 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking';
 import { useWebAppManifest } from '@/hooks/useWebAppManifest';
 import * as Notifications from 'expo-notifications';
-import UniversalScanner, { ScannerHandle } from '@/components/UniversalScanner';
-import { logWithTimestamp } from '@/utils/logging';
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
 /* -------------------------------------------------------------------------- */
-
-// Declare scanCodeWithCamera as an optional property on the Window type
-declare global {
-  interface Window {
-    scanCodeWithCamera?: (reason: string) => Promise<string>;
-  }
-}
 
 const kNEW_TAB_URL = 'about:blank';
 const kGOOGLE_PREFIX = 'https://www.google.com/search?q=';
@@ -646,29 +635,8 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
 
   // === 1. Injected JS ============================================
-
   const injectedJavaScript = useMemo(
     () => `
- // Listen for messages from React Native and reject the scan promise
-  const handleMessage = function(event) {
-    try {
-      let messageData = event.data;
-
-      if (typeof messageData === 'string') {
-        messageData = JSON.parse(messageData);
-      }
-      
-      console.log('[InjectedJS] Received:messageData=', messageData);
-      console.log('[InjectedJS] Received messageData.type=', messageData.type);
-    } catch(e) {
-      console.error('Error parsing message from React Native:', e);
-    }
-  };
-
-  // Add listener on both window and document to maximize compatibility
-  window.addEventListener('message', handleMessage);
-  document.addEventListener('message', handleMessage);
-
   // Push Notification API polyfill
   (function() {
     // Check if Notification API already exists
@@ -941,105 +909,9 @@ function Browser() {
   );
 
   // === 2. RN ⇄ WebView message bridge ========================================
-  const [scannedData, setScannedData] = useState<string | null>(null);
-  const [scannerFullscreen, setScannerFullscreen] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
-  const scanResolver = useRef<((data: string) => void) | null>(null);
-  const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scannerRef = useRef<ScannerHandle>(null);
-
-  // Inject scanCodeWithCamera on mount
-  useEffect(() => {
-    window.scanCodeWithCamera = async (reason: string): Promise<string> => {
-      return new Promise((resolve) => {
-        logWithTimestamp(F, 'Scan initiated', { reason });
-        scanResolver.current = resolve;
-        setShowScanner(true);
-
-        // Setup timeout to auto-dismiss scanner after 30s
-        scanTimeoutRef.current = setTimeout(() => {
-          if (scanResolver.current) {
-            scanResolver.current('');
-            scanResolver.current = null;
-            setShowScanner(false);
-            logWithTimestamp(F, 'Scan timed out');
-          }
-        }, 30000);
-
-        // Cleanup timeout if promise is cancelled
-        return () => {
-          if (scanTimeoutRef.current) {
-            clearTimeout(scanTimeoutRef.current);
-            scanTimeoutRef.current = null;
-          }
-        };
-      });
-    };
-
-    // Cleanup on unmount
-    return () => {
-      if (scanTimeoutRef.current) {
-        clearTimeout(scanTimeoutRef.current);
-        scanTimeoutRef.current = null;
-      }
-      scanResolver.current = null;
-      setShowScanner(false);
-    };
-  }, []);
-
-  const dismissScanner = useCallback(() => {
-    if (scanResolver.current) {
-      logWithTimestamp(F, 'Resolving scan promise with empty string');
-      scanResolver.current('');
-      scanResolver.current = null;
-    }
-
-    // Inject CANCEL_SCAN event into WebView to resolve window.scanCodeWithCamera
-    if (activeTab?.webviewRef?.current) {
-      logWithTimestamp(F, `Injecting CANCEL_SCAN to WebView at ${activeTab.url}`);
-      activeTab.webviewRef.current.injectJavaScript(`
-        window.dispatchEvent(new MessageEvent('message', {
-          data: JSON.stringify({
-            type: 'CANCEL_SCAN',
-            result: 'dismiss'
-          })
-        }));
-        true;
-      `);
-    } else {
-      logWithTimestamp(F, 'WebView ref is missing — cannot send CANCEL_SCAN');
-    }
-
-    setShowScanner(false);
-
-    if (scanTimeoutRef.current) {
-      clearTimeout(scanTimeoutRef.current);
-      scanTimeoutRef.current = null;
-    }
-
-    logWithTimestamp(F, 'Scanner dismissed programmatically');
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (scannedData && scanResolver.current) {
-      logWithTimestamp(F, 'Scan data received', { scannedData });
-      scanResolver.current(scannedData);
-      scanResolver.current = null;
-      setScannedData(null);
-      setShowScanner(false);
-      if (scanTimeoutRef.current) {
-        clearTimeout(scanTimeoutRef.current);
-        scanTimeoutRef.current = null;
-      }
-    }
-  }, [scannedData]);
 
   const handleMessage = useCallback(
     async (event: WebViewMessageEvent) => {
-      logWithTimestamp(F, `handleMessage:event=${JSON.stringify(event)}`);
-      logWithTimestamp(F, `handleMessage:activeTab=${JSON.stringify(activeTab)}`);
-      logWithTimestamp(F, `handleMessage:activeTab.webviewRef?.current=${JSON.stringify(activeTab!.webviewRef?.current)}`);
-
       // Safety check - if activeTab is undefined, we cannot process messages
       if (!activeTab) {
         console.warn('Cannot process WebView message: activeTab is undefined');
@@ -1048,6 +920,7 @@ function Browser() {
 
       const sendResponseToWebView = (id: string, result: any) => {
         if (!activeTab || !activeTab.webviewRef?.current) return;
+
         const message = {
           type: 'CWI',
           id,
@@ -1056,28 +929,14 @@ function Browser() {
           status: 'ok'
         };
 
-        activeTab.webviewRef.current?.injectJavaScript(getInjectableJSMessage(message));
+        activeTab.webviewRef.current.injectJavaScript(getInjectableJSMessage(message));
       };
 
       let msg;
       try {
         msg = JSON.parse(event.nativeEvent.data);
-        //console.log('📡 WebView message received:', msg);
       } catch (error) {
-        console.error('❌ Failed to parse WebView message:', error);
-        return;
-      }
-      if (msg.type === 'REQUEST_SCAN') {
-        msg.type = 'SCAN_REQUEST';
-      }
-      logWithTimestamp(F, `handleMessage:msg.type=${msg.type}`);
-
-      if (msg.type === 'SCAN_REQUEST') {
-        logWithTimestamp(F, `msg=${JSON.stringify(msg)}`);
-        const fullscreen = typeof msg.reason === 'string' && msg.reason.toLowerCase().includes('fullscreen');
-        logWithTimestamp(F, `fullscreen=${fullscreen}`);
-        setScannerFullscreen(fullscreen);
-        setShowScanner(true);
+        console.error('Failed to parse WebView message:', error);
         return;
       }
 
@@ -1302,26 +1161,6 @@ function Browser() {
     },
     [activeTab, wallet, createPushSubscription, getSubscription, getPermission, handleNotificationPermissionRequest, t]
   );
-
-  useEffect(() => {
-    logWithTimestamp(F, `Checking scannedData for WebView update: ${scannedData}`);
-    if (scannedData && activeTab?.webviewRef?.current) {
-      activeTab.webviewRef.current.injectJavaScript(`
-        window.dispatchEvent(new MessageEvent('message', {
-          data: JSON.stringify({
-            type: 'SCAN_RESULT',
-            result: ${JSON.stringify(scannedData)}
-          })
-        }));
-        true;
-      `);
-      setScannedData(null); // Clear after sending
-      setShowScanner(false); // Ensure scanner is unmounted
-      logWithTimestamp(F, `Scanner unmounted, WebView updated with: ${scannedData}`);
-    } else {
-      logWithTimestamp(F, `blank scannedData for WebView update`);
-    }
-  }, [scannedData, activeTab]);
 
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
@@ -1759,34 +1598,7 @@ function Browser() {
                 }}
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
-                injectedJavaScript={
-                  injectedJavaScript +
-                  `
-                  window.scanCodeWithCamera = async (reason) => {
-                    console.log('window.scanCodeWithCamera = async (', reason, ')')
-                    return new Promise((resolve) => {
-                      console.log('return new Promise((resolve)')
-                      await window.scanCodeWithCamera(reason)
-                      console.log('await window.scanCodeWithCamera:reason=',reason)
-                      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SCAN_REQUEST', reason }));
-                      const handler = (event) => {
-                        console.log('const handler = (event)')
-                        try {
-                          const data = JSON.parse(event.data);
-                          console.log('const data = JSON.parse(event.data)')
-                          if (data.type === 'SCAN_RESULT') {
-                            console.log('data.type === SCAN_RESULT')
-                            window.removeEventListener('message', handler);
-                            resolve(data.result || '');
-                          }
-                        } catch (e) {}
-                      };
-                      window.addEventListener('message', handler);
-                    });
-                  };
-                  true;
-                `
-                }
+                injectedJavaScript={injectedJavaScript}
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {
@@ -1811,19 +1623,6 @@ function Browser() {
                 containerStyle={{ backgroundColor: colors.background }}
                 style={{ flex: 1 }}
               />
-              {showScanner && (
-                <UniversalScanner
-                  ref={scannerRef}
-                  scannedData={scannedData}
-                  setScannedData={setScannedData}
-                  showScanner={showScanner}
-                  onDismiss={() => {
-                    logWithTimestamp(F, 'Starting dismissal process');
-                    dismissScanner();
-                  }}
-                  fullscreen={scannerFullscreen}
-                />
-              )}
             </View>
           ) : null}
           {!isFullscreen && (
