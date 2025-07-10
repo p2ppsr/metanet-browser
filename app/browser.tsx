@@ -1762,30 +1762,58 @@ function Browser() {
                 injectedJavaScript={
                   injectedJavaScript +
                   `
-                  window.scanCodeWithCamera = async (reason) => {
-                    console.log('window.scanCodeWithCamera = async (', reason, ')')
-                    return new Promise((resolve) => {
-                      console.log('return new Promise((resolve)')
-                      await window.scanCodeWithCamera(reason)
-                      console.log('await window.scanCodeWithCamera:reason=',reason)
-                      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SCAN_REQUEST', reason }));
-                      const handler = (event) => {
-                        console.log('const handler = (event)')
-                        try {
-                          const data = JSON.parse(event.data);
-                          console.log('const data = JSON.parse(event.data)')
-                          if (data.type === 'SCAN_RESULT') {
-                            console.log('data.type === SCAN_RESULT')
-                            window.removeEventListener('message', handler);
-                            resolve(data.result || '');
-                          }
-                        } catch (e) {}
-                      };
-                      window.addEventListener('message', handler);
-                    });
-                  };
-                  true;
-                `
+window.scanCodeWithCamera = function(reason) {
+      return new Promise((resolve, reject) => {
+        const handleScanResponse = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'SCAN_RESPONSE') {
+              window.removeEventListener('message', handleScanResponse);
+              resolve(data.data);
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        };
+        
+        window.addEventListener('message', handleScanResponse);
+        
+        window.ReactNativeWebView?.postMessage(JSON.stringify({
+          type: 'REQUEST_SCAN'
+        }));
+        
+        // Timeout after 60 seconds
+        setTimeout(() => {
+          window.removeEventListener('message', handleScanResponse);
+          reject(new Error('Scan timeout'));
+        }, 60000);
+      });
+    };`
+
+                  //   window.scanCodeWithCamera = async (reason) => {
+                  //     console.log('window.scanCodeWithCamera = async (', reason, ')')
+                  //     return new Promise((resolve) => {
+                  //       console.log('return new Promise((resolve)')
+                  //       await window.scanCodeWithCamera(reason)
+                  //       console.log('await window.scanCodeWithCamera:reason=',reason)
+                  //       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SCAN_REQUEST', reason }));
+                  //       const handler = (event) => {
+                  //         console.log('const handler = (event)')
+                  //         try {
+                  //           const data = JSON.parse(event.data);
+                  //           console.log('const data = JSON.parse(event.data)')
+                  //           if (data.type === 'SCAN_RESULT') {
+                  //             console.log('data.type === SCAN_RESULT')
+                  //             window.removeEventListener('message', handler);
+                  //             resolve(data.result || '');
+                  //           }
+                  //         } catch (e) {}
+                  //       };
+                  //       window.addEventListener('message', handler);
+                  //     });
+                  //   };
+                  //   true;
+                  // `
                 }
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
