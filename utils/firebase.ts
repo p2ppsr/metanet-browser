@@ -1,39 +1,37 @@
+// firebase.ts
+
 import { Platform } from 'react-native';
 import config from './config';
+import { initializeFirebaseNotifications } from './pushNotificationManager';
 
-// Define module-level variables for the Firebase services.
-// These will be functions that return the singleton instance, e.g., analytics().
 let analytics: () => any;
 let remoteConfig: () => any;
 let installations: () => any;
+let messaging: () => any;
+let FirebaseMessaging: any;
 
-// Conditionally load Firebase modules or set up mocks.
 if (config.useFirebase) {
   try {
     const analyticsModular = require('@react-native-firebase/analytics');
     const remoteConfigModular = require('@react-native-firebase/remote-config');
     const installationsModular = require('@react-native-firebase/installations');
+    const messagingModular = require('@react-native-firebase/messaging');
+    FirebaseMessaging = messagingModular;
 
-    const analyticsInstance = analyticsModular.getAnalytics();
-    const remoteConfigInstance = remoteConfigModular.getRemoteConfig();
-    const installationsInstance = installationsModular.getInstallations();
-    
-    analytics = () => analyticsInstance;
-    remoteConfig = () => remoteConfigInstance;
-    installations = () => installationsInstance;
-    
+    analytics = () => analyticsModular.getAnalytics();
+    remoteConfig = () => remoteConfigModular.getRemoteConfig();
+    installations = () => installationsModular.getInstallations();
+    messaging = () => messagingModular.getMessaging();
   } catch (error) {
     console.error("Failed to load Firebase modules. Running in mock mode.", error);
-    // Fallback to mock mode if modules fail to load, ensuring app doesn't crash.
     config.useFirebase = false;
   }
 }
 
-// If useFirebase is false (either by config or by load failure), set up mock services.
 if (!config.useFirebase) {
   const mockAnalytics = {
     logAppOpen: async () => console.log('Mock Analytics: app_open event logged'),
-    logEvent: async (name: string, params?: { [key: string]: any }) => {
+    logEvent: async (name: string, params?: Record<string, any>) => {
       console.log(`Mock Analytics: Event '${name}' logged with params:`, params);
     },
   };
@@ -49,7 +47,7 @@ if (!config.useFirebase) {
       console.log(`Mock Remote Config: Getting value for key '${key}'`);
       return {
         asString: () => '',
-        getSource: () => 'static', // Mimic the behavior of a default value
+        getSource: () => 'static',
       };
     },
   };
@@ -59,65 +57,62 @@ if (!config.useFirebase) {
       console.log('Mock Installations: Getting token.');
       return 'mock-token';
     },
-    getId: async () => {
-      console.log('Mock Installations: Getting ID.');
-      return 'mock-installation-id';
+  };
+
+  const mockMessaging = {
+    requestPermission: async () => {
+      console.log('Mock Messaging: Requesting permission.');
+      return true;
+    },
+    getToken: async () => {
+      console.log('Mock Messaging: Getting token.');
+      return 'mock-token';
+    },
+    onMessage: (callback: (message: any) => void) => {
+      console.log('Mock Messaging: Listening for messages.');
+      callback({ data: { message: 'Mock message' } });
     },
   };
 
-  // The service variables are assigned functions that return the mock objects,
-  // mimicking the behavior of the actual Firebase modules.
   analytics = () => mockAnalytics;
   remoteConfig = () => mockRemoteConfig;
   installations = () => mockInstallations;
+  messaging = () => mockMessaging;
+  FirebaseMessaging = {
+    AuthorizationStatus: {
+      NOT_DETERMINED: -1,
+      DENIED: 0,
+      AUTHORIZED: 1,
+      PROVISIONAL: 2,
+      EPHEMERAL: 3,
+    },
+  };
 }
 
-/**
- * Initializes Firebase services if enabled.
- * This function can be called safely regardless of the useFirebase flag.
- */
 export const initializeFirebase = async () => {
   if (!config.useFirebase) {
     console.log("Firebase is disabled. Using mock services for initialization.");
+    return;
   }
 
   try {
     await analytics().logAppOpen();
+    console.log('Firebase Analytics: app_open event logged');
 
-    if (config.useFirebase) {
-        console.log('Firebase Analytics: app_open event logged');
-    }
-
-    // For development mode of Firebase Remote Config
     if (__DEV__) {
-      await remoteConfig().setConfigSettings({
-        minimumFetchIntervalMillis: 0,
-      });
-
+      await remoteConfig().setConfigSettings({ minimumFetchIntervalMillis: 0 });
       const token = await installations().getToken();
-      if (config.useFirebase) {
-        console.log(`A/B Testing Token for ${Platform.OS}:`, token);
-      }
+      console.log(`A/B Testing Token for ${Platform.OS}:`, token);
     }
 
-    await remoteConfig().setDefaults({
-      start_button_text: 'Get Started',
-    });
+    await remoteConfig().setDefaults({ start_button_text: 'Get Started' });
+    const fetched = await remoteConfig().fetchAndActivate();
+    console.log(`Remote Config: ${fetched ? 'Fetched & activated' : 'No new configs'}`);
 
-    const fetchedRemotely = await remoteConfig().fetchAndActivate();
-
-    if (config.useFirebase) {
-        if (fetchedRemotely) {
-            console.log('Remote Config: Configs were retrieved from the backend and activated.');
-        } else {
-            console.log('Remote Config: No new configs were fetched from the backend.');
-        }
-    }
+    await initializeFirebaseNotifications();
   } catch (error) {
     console.error('Firebase initialization error:', error);
   }
 };
 
-// Export the service functions so they can be used throughout the app.
-export { analytics, remoteConfig, installations };
-
+export { analytics, remoteConfig, installations, messaging, FirebaseMessaging };
