@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Metanet",
-    "slug": "metanet",
-    "version": "0.2.1",
+    "slug": "metanet-mobile",
+    "version": "0.2.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
@@ -47,7 +47,10 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "f18a56d2-60e6-4170-95ca-839868f329fa"
+      }
     },
     "android": {
       "package": "org.bsvblockchain.metanet",
@@ -139,6 +142,7 @@
       "iosDisplayInForeground": true,
       "androidMode": "default",
       "androidCollapsedTitle": "#{unread_notifications} new interactions"
-    }
+    },
+    "owner": "bsvb"
   }
 }
