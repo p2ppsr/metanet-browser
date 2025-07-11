@@ -7,7 +7,7 @@
   "license": "Open BSV",
   "scripts": {
     "prebuild": "./scripts/configure.sh && expo prebuild && USE_FIREBASE=$(jq -r .expo.extra.useFirebase app.json) ./scripts/android-firebase-patch.sh",
-    "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
+    "apk-android": "eas build --profile production --platform android --local",
     "ipa-ios": "eas build --profile production --platform ios --local --verbose-logs --build-logger-level trace",
     "start": "expo start --dev-client",
     "reset-project": "node ./scripts/reset-project.js",
@@ -15,7 +15,8 @@
     "ios": "expo start --dev-client --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "configure": "./configure.sh"
+    "configure": "./configure.sh",
+    "eas-build-post-install": "USE_FIREBASE=true ./scripts/android-firebase-patch.sh"
   },
   "dependencies": {
     "@bsv/sdk": "^1.6.8",
