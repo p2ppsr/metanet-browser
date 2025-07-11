@@ -48,6 +48,7 @@ import { isValidUrl } from '@/utils/generalHelpers'
 import tabStore from '../stores/TabStore'
 import bookmarkStore from '@/stores/BookmarkStore'
 import SettingsScreen from './settings'
+import appConfig from '../app.json'
 import IdentityScreen from './identity'
 import { useTranslation } from 'react-i18next'
 import { useBrowserMode } from '@/context/BrowserModeContext'
@@ -812,8 +813,35 @@ const navFwd = useCallback(() => {
   }, [isToggleDesktopCooldown])
 
   // User agent strings
-  const mobileUserAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
-  const desktopUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+  const metanetVersion = appConfig.expo.version // Automatically imported from app.json
+  const getMobileUserAgent = () => {
+    const osVersion = Platform.Version
+    if (Platform.OS === 'ios') {
+      // Convert iOS version to underscored format (e.g., 16.0 -> 16_0)
+      const iosVersion = typeof osVersion === 'string' ? osVersion.replace(/\./g, '_') : '16_0'
+      return `Mozilla/5.0 (iPhone; CPU iPhone OS ${iosVersion} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Metanet/${metanetVersion} Mobile/15E148`
+    } else {
+      // Android version is typically a number
+      const androidVersion = typeof osVersion === 'number' ? osVersion : 13
+      return `Mozilla/5.0 (Linux; Android ${androidVersion}; ${Platform.select({ android: 'Mobile', default: 'SM-G973F' })}) AppleWebKit/537.36 (KHTML, like Gecko) Metanet/${metanetVersion} Mobile`
+    }
+  }
+  const getDesktopUserAgent = () => {
+    const osVersion = Platform.Version
+    if (Platform.OS === 'ios') {
+      // For desktop view on iOS, use macOS format with actual iOS version converted to macOS style
+      const iosVersion = typeof osVersion === 'string' ? osVersion : '16.0'
+      // Convert iOS version to macOS version format (e.g., 16.0 -> 12_0, 15.4 -> 11_4)
+      const macOSVersion = iosVersion.replace(/\./g, '_')
+      return `Mozilla/5.0 (Macintosh; Intel Mac OS X ${macOSVersion}) AppleWebKit/537.36 (KHTML, like Gecko) Metanet/${metanetVersion}`
+    } else {
+      // For desktop view on Android, use Linux format but identify as Metanet
+      const androidVersion = typeof osVersion === 'number' ? osVersion : 13
+      return `Mozilla/5.0 (X11; Linux x86_64; Android ${androidVersion}) AppleWebKit/537.36 (KHTML, like Gecko) Metanet/${metanetVersion}`
+    }
+  }
+  const mobileUserAgent = getMobileUserAgent()
+  const desktopUserAgent = getDesktopUserAgent()
 
   useEffect(() => {
     if (tabStore.tabs.length === 0) {
