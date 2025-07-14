@@ -148,7 +148,7 @@ const resources = {
       switch_to_desktop_view: 'Switch to Desktop View',
       add_to_device_homescreen: 'Add to Device Homescreen',
       back_to_homepage: 'Back to Homepage',
-      notifications: 'Notifications',
+      preferences: 'Preferences',
       
       // Browser actions
       clear_browsing_history: 'Clear browsing history?',

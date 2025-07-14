@@ -32,6 +32,7 @@
     "@react-native-firebase/installations": "^22.2.1",
     "@react-native-firebase/messaging": "^22.3.0",
     "@react-native-firebase/remote-config": "^22.2.1",
+    "@react-native-segmented-control/segmented-control": "^2.5.7",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/material-top-tabs": "^7.2.14",

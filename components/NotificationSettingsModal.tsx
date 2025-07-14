@@ -4,110 +4,88 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
-  Alert,
-  Switch,
+  FlatList
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useTheme } from '@/context/theme/ThemeContext';
-import { usePushNotifications, NotificationPermission } from '@/hooks/usePushNotifications';
+import { getDomainPermissions, setDomainPermission, resetDomainPermissions, PermissionType, PermissionState, DomainPermissions } from '@/utils/permissionsManager';
 
-interface NotificationSettingsModalProps {
-  visible: boolean;
-  onDismiss: () => void;
-  
+const allPermissions: PermissionType[] = [
+  'notifications', 'location', 'camera', 'microphone', 'camera-microphone', 'pan-tilt-zoom',
+  'bluetooth', 'usb', 'midi', 'persistent-storage', 'nfc', 'device-orientation', 'device-motion',
+  'fullscreen', 'clipboard-read', 'clipboard-write', 'popup', 'auto-download', 'idle-detection',
+  'vr', 'keyboard-lock'
+];
+
+interface PermissionsSettingsModalProps {
+  visible: boolean
+  onDismiss: () => void
+  domain: string
 }
 
-export default function NotificationSettingsModal({
+export default function PermissionsSettingsModal({
   visible,
   onDismiss,
-}: NotificationSettingsModalProps) {
+  domain,
+}: PermissionsSettingsModalProps) {
   const { colors } = useTheme();
-  const { 
-    permissions, 
-    subscriptions, 
-    unsubscribe, 
-    clearAllPermissions,
-    requestNotificationPermission 
-  } = usePushNotifications();
+  const [permissions, setPermissions] = React.useState<DomainPermissions>({});
 
-  const getDomainName = (origin: string): string => {
-    try {
-      const url = new URL(origin);
-      return url.hostname;
-    } catch {
-      return origin;
+  React.useEffect(() => {
+    if (visible && domain) {
+      getDomainPermissions(domain).then(setPermissions);
+    }
+  }, [visible, domain]);
+
+  // Derive summary directly from permissions state
+  const summary = React.useMemo(() => {
+    let allow = 0, deny = 0;
+    const setPermissionsCount = Object.keys(permissions).length;
+    for (const key in permissions) {
+      if (permissions[key as PermissionType] === 'allow') allow++;
+      else if (permissions[key as PermissionType] === 'deny') deny++;
+    }
+    const ask = allPermissions.length - setPermissionsCount;
+    return { allow, deny, ask };
+  }, [permissions]);
+
+  const handleSetPermission = async (permission: PermissionType, state: PermissionState) => {
+    await setDomainPermission(domain, permission, state);
+    const newPerms = await getDomainPermissions(domain);
+    setPermissions(newPerms);
+  };
+
+  const handleReset = async () => {
+    await resetDomainPermissions(domain);
+    setPermissions({});
+  };
+
+  const getLabel = (perm: PermissionType) => {
+    switch (perm) {
+      case 'notifications': return 'Notifications';
+      case 'location': return 'Location';
+      case 'camera': return 'Camera';
+      case 'microphone': return 'Microphone';
+      case 'camera-microphone': return 'Camera + Microphone';
+      case 'pan-tilt-zoom': return 'Pan-Tilt-Zoom';
+      case 'bluetooth': return 'Bluetooth';
+      case 'usb': return 'USB';
+      case 'midi': return 'MIDI';
+      case 'persistent-storage': return 'Persistent Storage';
+      case 'nfc': return 'NFC';
+      case 'device-orientation': return 'Device Orientation';
+      case 'device-motion': return 'Device Motion';
+      case 'fullscreen': return 'Fullscreen';
+      case 'clipboard-read': return 'Clipboard (Read)';
+      case 'clipboard-write': return 'Clipboard (Write)';
+      case 'popup': return 'Popup';
+      case 'auto-download': return 'Auto Download';
+      case 'idle-detection': return 'Idle Detection';
+      case 'vr': return 'VR';
+      case 'keyboard-lock': return 'Keyboard Lock';
+      default: return perm;
     }
   };
-
-  const handleTogglePermission = async (permission: NotificationPermission) => {
-    if (permission.permission === 'granted') {
-      // Unsubscribe
-      const success = await unsubscribe(permission.origin);
-      if (success) {
-        Alert.alert(
-          'Notifications Disabled',
-          `Notifications from ${getDomainName(permission.origin)} have been disabled.`
-        );
-      }
-    } else {
-      // Re-enable
-      const result = await requestNotificationPermission(permission.origin);
-      if (result === 'granted') {
-        Alert.alert(
-          'Notifications Enabled',
-          `Notifications from ${getDomainName(permission.origin)} have been enabled.`
-        );
-      }
-    }
-  };
-
-  const handleClearAll = () => {
-    Alert.alert(
-      'Clear All Notifications',
-      'This will disable notifications from all websites. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear All',
-          style: 'destructive',
-          onPress: async () => {
-            await clearAllPermissions();
-            Alert.alert('Success', 'All notification permissions have been cleared.');
-          },
-        },
-      ]
-    );
-  };
-
-  const renderPermissionItem = ({ item }: { item: NotificationPermission }) => {
-    const isGranted = item.permission === 'granted';
-    const hasSubscription = subscriptions.some(s => s.origin === item.origin);
-    
-    return (
-      <View style={[styles.permissionItem, { borderBottomColor: colors.inputBorder }]}>
-        <View style={styles.permissionInfo}>
-          <Text style={[styles.domainName, { color: colors.textPrimary }]}>
-            {getDomainName(item.origin)}
-          </Text>
-          <Text style={[styles.permissionStatus, { color: colors.textSecondary }]}>
-            {isGranted ? (hasSubscription ? 'Active' : 'Allowed') : 'Blocked'}
-          </Text>
-          <Text style={[styles.permissionDate, { color: colors.textSecondary }]}>
-            {new Date(item.granted).toLocaleDateString()}
-          </Text>
-        </View>
-        <Switch
-          value={isGranted && hasSubscription}
-          onValueChange={() => handleTogglePermission(item)}
-          trackColor={{ false: colors.inputBorder, true: colors.primary }}
-          thumbColor={colors.background}
-        />
-      </View>
-    );
-  };
-
-  const activePermissions = permissions.filter(p => p.permission !== 'default');
 
   return (
     <Modal
@@ -120,54 +98,44 @@ export default function NotificationSettingsModal({
       animationIn="slideInUp"
       animationOut="slideOutDown"
     >
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { borderBottomColor: colors.inputBorder }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}> 
+        <View style={[styles.header, { borderBottomColor: colors.inputBorder }]}> 
           <View style={styles.handle} />
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
-            Notification Settings
-          </Text>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={onDismiss}
-          >
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Permissions</Text>
+          <TouchableOpacity style={styles.closeButton} onPress={onDismiss}>
             <Text style={[styles.closeText, { color: colors.primary }]}>Done</Text>
           </TouchableOpacity>
         </View>
-
         <View style={styles.content}>
-          {activePermissions.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={[styles.emptyIcon, { color: colors.textSecondary }]}>🔕</Text>
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                No notification permissions
-              </Text>
-              <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
-                Websites that request notification permission will appear here
-              </Text>
-            </View>
-          ) : (
-            <>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                Website Permissions ({activePermissions.length})
-              </Text>
-              <FlatList
-                data={activePermissions}
-                keyExtractor={(item) => item.origin}
-                renderItem={renderPermissionItem}
-                style={styles.list}
-                showsVerticalScrollIndicator={false}
-              />
-              
-              <TouchableOpacity
-                style={[styles.clearAllButton, { backgroundColor: colors.inputBorder }]}
-                onPress={handleClearAll}
-              >
-                <Text style={[styles.clearAllText, { color: colors.textPrimary }]}>
-                  Clear All Permissions
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{`Allowed: ${summary.allow} · Denied: ${summary.deny} · Ask: ${summary.ask}`}</Text>
+          <FlatList
+            data={allPermissions}
+            keyExtractor={item => item}
+            renderItem={({ item }) => {
+              const state: PermissionState = permissions[item] || 'ask';
+              return (
+                <View style={[styles.permissionItem, { borderBottomColor: colors.inputBorder }]}> 
+                  <Text style={[styles.domainName, { color: colors.textPrimary }]}>{getLabel(item)}</Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {(['allow', 'deny', 'ask'] as PermissionState[]).map(option => (
+                      <TouchableOpacity
+                        key={option}
+                        style={{ marginHorizontal: 4, padding: 6, borderRadius: 6, backgroundColor: state === option ? colors.primary : colors.inputBorder }}
+                        onPress={() => handleSetPermission(item, option)}
+                      >
+                        <Text style={{ color: state === option ? colors.buttonText : colors.textPrimary, fontWeight: '600' }}>{option.charAt(0).toUpperCase() + option.slice(1)}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              );
+            }}
+            style={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+          <TouchableOpacity style={[styles.clearAllButton, { backgroundColor: colors.inputBorder }]} onPress={handleReset}>
+            <Text style={[styles.clearAllText, { color: colors.textPrimary }]}>Reset to Default</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>

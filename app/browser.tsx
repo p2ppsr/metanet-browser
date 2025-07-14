@@ -15,7 +15,6 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
-  LayoutAnimation,
   ScrollView,
   Modal as RNModal,
   BackHandler,
@@ -61,11 +60,15 @@ import TrustScreen from './trust'
 
 import NotificationPermissionModal from '@/components/NotificationPermissionModal';
 import NotificationSettingsModal from '@/components/NotificationSettingsModal';
+import PermissionModal from '@/components/PermissionModal';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { getDomainPermissions, setDomainPermission } from '@/utils/permissionsManager';
+import type { PermissionType } from '@/utils/permissionsManager';
 
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking';
 import { useWebAppManifest } from '@/hooks/useWebAppManifest';
 import * as Notifications from 'expo-notifications';
+import PermissionsScreen from '@/components/PermissionsScreen'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -156,6 +159,64 @@ function StarDrawer({
 /* -------------------------------------------------------------------------- */
 
 function Browser() {
+  // --- Permission Modal State ---
+  const [pendingPermission, setPendingPermission] = useState<{
+    origin: string;
+    permission: PermissionType;
+    event: any;
+  } | null>(null);
+  const [permissionLoading, setPermissionLoading] = useState(false);
+
+  // Helper: Map WebView resource to PermissionType
+  const mapWebViewResourceToPermissionType = (resource: string): PermissionType | undefined => {
+    switch (resource) {
+      case 'videoCapture': return 'camera';
+      case 'audioCapture': return 'microphone';
+      case 'geolocation': return 'location';
+      default: return undefined;
+    }
+  };
+
+  // Handler for WebView permission requests (Android only)
+  const handleWebViewPermissionRequest = async (event: any) => {
+    const origin = event.origin;
+    const resources: string[] = event.resources || [];
+    const mapped = resources.map(mapWebViewResourceToPermissionType).filter(Boolean) as PermissionType[];
+    if (!mapped.length) { event.deny(); return; }
+    const permission = mapped[0];
+    const domainPerms = await getDomainPermissions(origin);
+    const state = domainPerms[permission] || 'ask';
+    if (state === 'allow') {
+      event.grant();
+    } else if (state === 'deny') {
+      event.deny();
+    } else {
+      setPendingPermission({ origin, permission, event });
+    }
+  };
+
+  // Modal handlers
+  const handlePermissionAllow = async () => {
+    if (!pendingPermission) return;
+    setPermissionLoading(true);
+    await setDomainPermission(pendingPermission.origin, pendingPermission.permission, 'allow');
+    pendingPermission.event.grant();
+    setPendingPermission(null);
+    setPermissionLoading(false);
+  };
+  const handlePermissionDeny = async () => {
+    if (!pendingPermission) return;
+    setPermissionLoading(true);
+    await setDomainPermission(pendingPermission.origin, pendingPermission.permission, 'deny');
+    pendingPermission.event.deny();
+    setPendingPermission(null);
+    setPermissionLoading(false);
+  };
+  const handlePermissionDismiss = () => {
+    pendingPermission?.event.deny(); // Deny if dismissed
+    setPendingPermission(null);
+  };
+
   /* --------------------------- theme / basic hooks -------------------------- */
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
@@ -310,7 +371,7 @@ function Browser() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false);
-  const [infoDrawerRoute, setInfoDrawerRoute] = useState<'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'>('root');
+  const [infoDrawerRoute, setInfoDrawerRoute] = useState<'root' | 'identity' | 'settings' | 'security' | 'trust' | 'permissions'>('root');
   const drawerAnim = useRef(new Animated.Value(0)).current;
 
   const [showTabsView, setShowTabsView] = useState(false)
@@ -1636,6 +1697,7 @@ const navFwd = useCallback(() => {
                 }}
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
+                onPermissionRequest={handleWebViewPermissionRequest}
                 injectedJavaScript={injectedJavaScript}
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
@@ -1924,9 +1986,9 @@ const navFwd = useCallback(() => {
                         onPress={drawerHandlers.settings}
                       />
                        <DrawerItem
-                        label={t('notifications')}
+                        label={t('Permissions')}
                         icon='notifications-outline'
-                        onPress={() => setInfoDrawerRoute('notifications')}
+                        onPress={() => setInfoDrawerRoute('permissions')}
                       />
                       <View style={styles.divider} />
                     </>
@@ -2033,6 +2095,17 @@ const navFwd = useCallback(() => {
           <NotificationSettingsModal
             visible={showNotificationSettingsModal}
             onDismiss={() => setShowNotificationSettingsModal(false)}
+          />
+
+          {/* Generic Permission Modal for camera/mic/location/etc */}
+          <PermissionModal
+            visible={!!pendingPermission}
+            origin={pendingPermission?.origin || ''}
+            permission={pendingPermission?.permission || 'camera'} // fallback, but should always be set
+            loading={permissionLoading}
+            onAllow={handlePermissionAllow}
+            onDeny={handlePermissionDeny}
+            onDismiss={handlePermissionDismiss}
           />
         </SafeAreaView>
       </KeyboardAvoidingView>
@@ -2321,7 +2394,7 @@ const SubDrawerView = React.memo(({
   onBack,
   onOpenNotificationSettings,
 }: {
-  route: 'identity' | 'settings' | 'security' | 'trust' | 'notifications';
+  route: 'identity' | 'settings' | 'security' | 'trust' | 'permissions';
   onBack: () => void;
   onOpenNotificationSettings?: () => void;
 }) => {
@@ -2354,29 +2427,12 @@ const SubDrawerView = React.memo(({
         <View style={{ width: 60 }} />
       </View>
       <View style={styles.subDrawerContent}>
-        {route === 'notifications' ? (
+        {route === 'permissions' ? (
           <View>
             <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>
-              Manage notifications from websites and apps.
+              Manage permissions from websites and apps.
             </Text>
-            <TouchableOpacity
-              style={[
-                styles.drawerItem, 
-                { backgroundColor: colors.inputBackground, borderRadius: 8 }
-              ]}
-              onPress={onOpenNotificationSettings}
-            >
-              <Ionicons name='notifications-outline' size={22} color={colors.textSecondary} style={styles.drawerIcon} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>
-                  Notification Settings
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                  Manage website permissions
-                </Text>
-              </View>
-              <Ionicons name='chevron-forward' size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
+            <PermissionsScreen origin={"google.com"} />  {/* TODO: get origin from active tab!!!!!! */}
           </View>
         ) : (
           // Only show web3 screens when not in web2 mode
