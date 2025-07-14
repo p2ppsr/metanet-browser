@@ -9,6 +9,11 @@ export function isValidUrl(url: string): boolean {
     return true
   }
   
+  // Handle data URLs (base64 encoded content)
+  if (url.startsWith('data:')) {
+    return true
+  }
+  
   try {
     new URL(url.startsWith('http') ? url : `https://${url}`)
     return (

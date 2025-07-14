@@ -127,25 +127,16 @@ export const RecommendedApps = ({
     if (uhrpHandler.isUHRPUrl(url)) {
       console.log('🔗 [RecommendedApps] UHRP URL detected, resolving directly:', url);
       try {
-        // Resolve UHRP URL directly and navigate to resolved content
-        console.log('🔗 [RecommendedApps] About to call uhrpHandler.resolveUHRPUrl...');
-        const resolvedContent = await uhrpHandler.resolveUHRPUrl(url);
-        console.log('🔗 [RecommendedApps] resolveUHRPUrl returned:', {
-          resolvedUrl: resolvedContent.resolvedUrl,
-          shouldUseDataUrl: resolvedContent.shouldUseDataUrl,
-          hasDataUrl: !!resolvedContent.dataUrl,
-          mimeType: resolvedContent.mimeType
+        // Resolve UHRP URL directly to a data URL
+        console.log('🔗 [RecommendedApps] About to call uhrpHandler.resolveUHRPToDataUrl...');
+        const resolvedContent = await uhrpHandler.resolveUHRPToDataUrl(url);
+        console.log('🔗 [RecommendedApps] resolveUHRPToDataUrl returned:', {
+          mimeType: resolvedContent.mimeType,
+          dataUrlLength: resolvedContent.dataUrl.length
         });
         
-        if (resolvedContent.shouldUseDataUrl && resolvedContent.dataUrl) {
-          // Use data URL to bypass octet-stream content-type
-          console.log('🔗 [RecommendedApps] Using data URL to bypass octet-stream');
-          setStartingUrl(resolvedContent.dataUrl);
-        } else if (resolvedContent.resolvedUrl) {
-          // Navigate to the resolved URL, but keep the original UHRP URL in the address bar
-          console.log('🔗 [RecommendedApps] Using HTTP URL:', resolvedContent.resolvedUrl);
-          setStartingUrl(resolvedContent.resolvedUrl);
-        }
+        console.log('🔗 [RecommendedApps] Using data URL with MIME type:', resolvedContent.mimeType);
+        setStartingUrl(resolvedContent.dataUrl);
       } catch (error) {
         console.error('🔗 [RecommendedApps] UHRP resolution failed:', error);
         // Fallback: show error by navigating to a data URL with error content

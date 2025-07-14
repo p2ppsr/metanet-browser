@@ -434,19 +434,19 @@ function Browser() {
           if (uhrpHandler.isUHRPUrl(pendingUrl)) {
             console.log('🔗 [Browser] Pending URL is UHRP, resolving first:', pendingUrl);
             try {
-              const resolvedContent = await uhrpHandler.resolveUHRPUrl(pendingUrl);
-              console.log('🔗 [Browser] UHRP resolved to:', resolvedContent.resolvedUrl);
+              const resolvedContent = await uhrpHandler.resolveUHRPToDataUrl(pendingUrl);
+              console.log("🔗 [UHRP] Resolved to data URL with MIME type:", resolvedContent.mimeType);
               
               // Update tab with the original UHRP URL for display
               updateActiveTab({ url: pendingUrl });
               setAddressText(pendingUrl);
               
-              // Navigate to the resolved HTTP URL in the WebView after a delay to ensure WebView is ready
+              // Navigate to the resolved data URL in the WebView after a delay to ensure WebView is ready
               setTimeout(() => {
                 const currentTab = tabStore.activeTab;
-                if (currentTab?.webviewRef?.current && resolvedContent.resolvedUrl) {
+                if (currentTab?.webviewRef?.current && resolvedContent.dataUrl) {
                   currentTab.webviewRef.current.injectJavaScript(`
-                    window.location.href = '${resolvedContent.resolvedUrl}';
+                    window.location.href = '${resolvedContent.dataUrl}';
                     true; // Required for iOS
                   `);
                 }
@@ -680,16 +680,16 @@ function Browser() {
       (async () => {
         try {
           console.log('🔗 [UHRP] Resolving from address bar:', entry);
-          const resolvedContent = await uhrpHandler.resolveUHRPUrl(entry);
-          console.log('🔗 [UHRP] Resolved to:', resolvedContent.resolvedUrl);
+          const resolvedContent = await uhrpHandler.resolveUHRPToDataUrl(entry);
+          console.log("🔗 [UHRP] Resolved to data URL with MIME type:", resolvedContent.mimeType);
           
           // Navigate to the resolved HTTP URL
-          if (resolvedContent.resolvedUrl) {
+          if (resolvedContent.dataUrl) {
             // Update the address bar to show the original UHRP URL
             setAddressText(entry);
             
             // Navigate to the resolved URL using the same method as normal navigation
-            updateActiveTab({ url: resolvedContent.resolvedUrl });
+            updateActiveTab({ url: resolvedContent.dataUrl });
           }
         } catch (error: any) {
           console.error('🔗 [UHRP] Address bar resolution failed:', error);
@@ -1779,13 +1779,11 @@ const navFwd = useCallback(() => {
     if (uhrpHandler.isUHRPUrl(url)) {
       console.log('🔗 [BOOKMARK_DRAWER] UHRP URL detected, resolving directly:', url);
       try {
-        // Resolve UHRP URL directly and navigate to resolved content
-        const resolvedContent = await uhrpHandler.resolveUHRPUrl(url);
-        console.log('🔗 [BOOKMARK_DRAWER] UHRP resolved to:', resolvedContent.resolvedUrl);
+        // Resolve UHRP URL directly to a data URL
+        const resolvedContent = await uhrpHandler.resolveUHRPToDataUrl(url);
+        console.log("🔗 [UHRP] Resolved to data URL with MIME type:", resolvedContent.mimeType);
         
-        if (resolvedContent.resolvedUrl) {
-          updateActiveTab({ url: resolvedContent.resolvedUrl });
-        }
+        updateActiveTab({ url: resolvedContent.dataUrl });
         toggleStarDrawer(false);
       } catch (error) {
         console.error('🔗 [BOOKMARK_DRAWER] UHRP resolution failed:', error);
@@ -1850,13 +1848,11 @@ const navFwd = useCallback(() => {
     if (uhrpHandler.isUHRPUrl(url)) {
       console.log('🔗 [HOMEPAGE] UHRP URL detected, resolving directly:', url);
       try {
-        // Resolve UHRP URL directly and navigate to resolved content
-        const resolvedContent = await uhrpHandler.resolveUHRPUrl(url);
-        console.log('🔗 [HOMEPAGE] UHRP resolved to:', resolvedContent.resolvedUrl);
+        // Resolve UHRP URL directly to a data URL
+        const resolvedContent = await uhrpHandler.resolveUHRPToDataUrl(url);
+        console.log("🔗 [UHRP] Resolved to data URL with MIME type:", resolvedContent.mimeType);
         
-        if (resolvedContent.resolvedUrl) {
-          updateActiveTab({ url: resolvedContent.resolvedUrl });
-        }
+        updateActiveTab({ url: resolvedContent.dataUrl });
       } catch (error) {
         console.error('🔗 [HOMEPAGE] UHRP resolution failed:', error);
         // Show error page
@@ -2218,16 +2214,16 @@ const navFwd = useCallback(() => {
                     (async () => {
                       try {
                         console.log('🔗 [UHRP] Resolving URL:', request.url);
-                        const resolvedContent = await uhrpHandler.resolveUHRPUrl(request.url);
-                        console.log('🔗 [UHRP] Resolved to:', resolvedContent.resolvedUrl);
+                        const resolvedContent = await uhrpHandler.resolveUHRPToDataUrl(request.url);
+                        console.log("🔗 [UHRP] Resolved to data URL with MIME type:", resolvedContent.mimeType);
                         
                         // Navigate to the resolved HTTP URL
-                        if (resolvedContent.resolvedUrl && activeTab?.webviewRef?.current) {
+                        if (resolvedContent.dataUrl && activeTab?.webviewRef?.current) {
                           // Use setTimeout to ensure the WebView is ready, then navigate
                           setTimeout(() => {
                             if (activeTab?.webviewRef?.current) {
                               activeTab.webviewRef.current.injectJavaScript(`
-                                window.location.href = '${resolvedContent.resolvedUrl}';
+                                window.location.href = '${resolvedContent.dataUrl}';
                                 true; // Required for iOS
                               `);
                             }
@@ -2448,16 +2444,16 @@ const navFwd = useCallback(() => {
                     (async () => {
                       try {
                         console.log('🔗 [UHRP] Resolving URL:', request.url);
-                        const resolvedContent = await uhrpHandler.resolveUHRPUrl(request.url);
-                        console.log('🔗 [UHRP] Resolved to:', resolvedContent.resolvedUrl);
+                        const resolvedContent = await uhrpHandler.resolveUHRPToDataUrl(request.url);
+                        console.log("🔗 [UHRP] Resolved to data URL with MIME type:", resolvedContent.mimeType);
                         
                         // Navigate to the resolved HTTP URL
-                        if (resolvedContent.resolvedUrl && activeTab?.webviewRef?.current) {
+                        if (resolvedContent.dataUrl && activeTab?.webviewRef?.current) {
                           // Use setTimeout to ensure the WebView is ready, then navigate
                           setTimeout(() => {
                             if (activeTab?.webviewRef?.current) {
                               activeTab.webviewRef.current.injectJavaScript(`
-                                window.location.href = '${resolvedContent.resolvedUrl}';
+                                window.location.href = '${resolvedContent.dataUrl}';
                                 true; // Required for iOS
                               `);
                             }
