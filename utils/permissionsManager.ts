@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions'
 
 /**
@@ -25,26 +25,26 @@ export type PermissionType =
   | 'auto-download'
   | 'idle-detection'
   | 'vr'
-  | 'keyboard-lock';
+  | 'keyboard-lock'
 
 /**
  * Represents the state of a given permission: granted, denied, or requires a prompt.
  */
-export type PermissionState = 'allow' | 'deny' | 'ask';
+export type PermissionState = 'allow' | 'deny' | 'ask'
 
 /**
  * A record of permission states for a specific domain.
  */
-export type DomainPermissions = Partial<Record<PermissionType, PermissionState>>;
+export type DomainPermissions = Partial<Record<PermissionType, PermissionState>>
 
 /**
  * The shape of the entire permissions store, mapping domains to their permissions.
  */
 export interface PermissionsStore {
-  [domain: string]: DomainPermissions;
+  [domain: string]: DomainPermissions
 }
 
-const STORAGE_KEY = 'PERMISSIONS_STORE_V1';
+const STORAGE_KEY = 'PERMISSIONS_STORE_V1'
 
 /**
  * Retrieves the entire permissions store from AsyncStorage.
@@ -52,17 +52,17 @@ const STORAGE_KEY = 'PERMISSIONS_STORE_V1';
  */
 export async function getPermissionsStore(): Promise<PermissionsStore> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
+    const raw = await AsyncStorage.getItem(STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
     // Basic validation to ensure it's an object
     if (typeof parsed === 'object' && parsed !== null) {
-      return parsed;
+      return parsed
     }
-    return {};
+    return {}
   } catch (error) {
-    console.error('Failed to get permissions store:', error);
-    return {}; // Return empty object on error
+    console.error('Failed to get permissions store:', error)
+    return {} // Return empty object on error
   }
 }
 
@@ -72,9 +72,9 @@ export async function getPermissionsStore(): Promise<PermissionsStore> {
  */
 export async function setPermissionsStore(store: PermissionsStore): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(store))
   } catch (error) {
-    console.error('Failed to set permissions store:', error);
+    console.error('Failed to set permissions store:', error)
   }
 }
 
@@ -84,8 +84,8 @@ export async function setPermissionsStore(store: PermissionsStore): Promise<void
  * @returns {Promise<DomainPermissions>} An object of permissions for the domain.
  */
 export async function getDomainPermissions(domain: string): Promise<DomainPermissions> {
-  const store = await getPermissionsStore();
-  return store[domain] || {};
+  const store = await getPermissionsStore()
+  return store[domain] || {}
 }
 
 /**
@@ -94,16 +94,20 @@ export async function getDomainPermissions(domain: string): Promise<DomainPermis
  * @param {PermissionType} permission - The permission type.
  * @param {PermissionState} state - The new state for the permission.
  */
-export async function setDomainPermission(domain: string, permission: PermissionType, state: PermissionState): Promise<void> {
+export async function setDomainPermission(
+  domain: string,
+  permission: PermissionType,
+  state: PermissionState
+): Promise<void> {
   try {
-    const store = await getPermissionsStore();
+    const store = await getPermissionsStore()
     if (!store[domain]) {
-      store[domain] = {};
+      store[domain] = {}
     }
-    store[domain][permission] = state;
-    await setPermissionsStore(store);
+    store[domain][permission] = state
+    await setPermissionsStore(store)
   } catch (error) {
-    console.error(`Failed to set permission ${permission} for ${domain}:`, error);
+    console.error(`Failed to set permission ${permission} for ${domain}:`, error)
   }
 }
 
@@ -113,13 +117,13 @@ export async function setDomainPermission(domain: string, permission: Permission
  */
 export async function resetDomainPermissions(domain: string): Promise<void> {
   try {
-    const store = await getPermissionsStore();
+    const store = await getPermissionsStore()
     if (store[domain]) {
-      delete store[domain];
-      await setPermissionsStore(store);
+      delete store[domain]
+      await setPermissionsStore(store)
     }
   } catch (error) {
-    console.error(`Failed to reset permissions for ${domain}:`, error);
+    console.error(`Failed to reset permissions for ${domain}:`, error)
   }
 }
 
@@ -127,7 +131,7 @@ export async function resetDomainPermissions(domain: string): Promise<void> {
  * Resets the entire permissions store for all domains.
  */
 export async function resetAllPermissions(): Promise<void> {
-  await setPermissionsStore({});
+  await setPermissionsStore({})
 }
 
 /**
@@ -137,13 +141,13 @@ export async function resetAllPermissions(): Promise<void> {
  * @returns {Promise<PermissionState>} The current state of the permission.
  */
 export async function getPermissionState(domain: string, permission: PermissionType): Promise<PermissionState> {
-  const domainPerms = await getDomainPermissions(domain);
-  return domainPerms[permission] || 'ask';
+  const domainPerms = await getDomainPermissions(domain)
+  return domainPerms[permission] || 'ask'
 }
 
 export async function checkCameraPermissionForDomain(domain: string) {
   // const sitePerms = getSitePermission(domain)
-/*
+  /*
   if (!sitePerms.camera) return false
 
   const osPermission = await check(PERMISSIONS.ANDROID.CAMERA)
