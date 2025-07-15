@@ -1,11 +1,10 @@
-import { Image } from 'react-native';
+import { Image } from 'react-native'
 
 export default async (url: string): Promise<boolean> => {
   try {
-    await Image.prefetch(url);
-    return true;
+    await Image.prefetch(url)
+    return true
   } catch (error) {
-    return false;
+    return false
   }
 }
- 

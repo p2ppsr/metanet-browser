@@ -1,108 +1,107 @@
-import { useState, useRef } from 'react';
+import { useState, useRef } from 'react'
 
 interface WebAppManifest {
-  name?: string;
-  short_name?: string;
-  start_url?: string;
-  scope?: string;
-  display?: string;
-  background_color?: string;
-  theme_color?: string;
+  name?: string
+  short_name?: string
+  start_url?: string
+  scope?: string
+  display?: string
+  background_color?: string
+  theme_color?: string
   icons?: Array<{
-    src: string;
-    sizes: string;
-    type: string;
-  }>;
+    src: string
+    sizes: string
+    type: string
+  }>
   shortcuts?: Array<{
-    name: string;
-    url: string;
-    description?: string;
+    name: string
+    url: string
+    description?: string
     icons?: Array<{
-      src: string;
-      sizes: string;
-    }>;
-  }>;
+      src: string
+      sizes: string
+    }>
+  }>
   babbage?: {
     protocolPermissions?: {
-      [key: string]: string;
-    };
-  };
+      [key: string]: string
+    }
+  }
 }
 
 export const useWebAppManifest = () => {
-  const [manifest, setManifest] = useState<WebAppManifest | null>(null);
-  const [loading, setLoading] = useState(false);
-  
+  const [manifest, setManifest] = useState<WebAppManifest | null>(null)
+  const [loading, setLoading] = useState(false)
+
   // Cache to prevent repeated fetches
-  const manifestCache = useRef<Map<string, WebAppManifest | null>>(new Map());
-  const fetchPromises = useRef<Map<string, Promise<WebAppManifest | null>>>(new Map());
+  const manifestCache = useRef<Map<string, WebAppManifest | null>>(new Map())
+  const fetchPromises = useRef<Map<string, Promise<WebAppManifest | null>>>(new Map())
 
   const fetchManifest = async (websiteUrl: string): Promise<WebAppManifest | null> => {
     try {
-      const url = new URL(websiteUrl);
-      const baseUrl = `${url.protocol}//${url.host}`;
-      
+      const url = new URL(websiteUrl)
+      const baseUrl = `${url.protocol}//${url.host}`
+
       // Check cache first
       if (manifestCache.current.has(baseUrl)) {
-        const cached = manifestCache.current.get(baseUrl);
+        const cached = manifestCache.current.get(baseUrl)
         if (cached !== undefined) {
-          setManifest(cached);
-          return cached;
+          setManifest(cached)
+          return cached
         }
       }
-      
+
       // Check if already fetching
       if (fetchPromises.current.has(baseUrl)) {
-        return await fetchPromises.current.get(baseUrl)!;
+        return await fetchPromises.current.get(baseUrl)!
       }
-      
-      setLoading(true);
-      
-      const fetchPromise = performManifestFetch(baseUrl);
-      fetchPromises.current.set(baseUrl, fetchPromise);
-      
+
+      setLoading(true)
+
+      const fetchPromise = performManifestFetch(baseUrl)
+      fetchPromises.current.set(baseUrl, fetchPromise)
+
       try {
-        const result = await fetchPromise;
-        
+        const result = await fetchPromise
+
         // Cache the result
-        manifestCache.current.set(baseUrl, result);
-        setManifest(result);
-        
-        return result;
+        manifestCache.current.set(baseUrl, result)
+        setManifest(result)
+
+        return result
       } finally {
         // Clean up
-        fetchPromises.current.delete(baseUrl);
-        setLoading(false);
+        fetchPromises.current.delete(baseUrl)
+        setLoading(false)
       }
-      
     } catch (error) {
-      console.error('Error fetching manifest:', error);
-      setManifest(null);
-      return null;
+      console.error('Error fetching manifest:', error)
+      setManifest(null)
+      return null
     }
-  };
+  }
 
   const performManifestFetch = async (baseUrl: string): Promise<WebAppManifest | null> => {
     // Try manifest.json first
-    const manifestUrl = `${baseUrl}/manifest.json`;
+    const manifestUrl = `${baseUrl}/manifest.json`
 
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+
       const response = await fetch(manifestUrl, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json, application/manifest+json',
+          Accept: 'application/json, application/manifest+json'
         },
-        signal: controller.signal,
-      });
+        signal: controller.signal
+      })
 
-      clearTimeout(timeout);
+      clearTimeout(timeout)
 
       if (response.ok) {
-        const manifestData = await response.json();
-        return manifestData;
+        const manifestData = await response.json()
+        return manifestData
       }
     } catch (error) {
       // Manifest.json not found, try HTML fallback
@@ -110,34 +109,34 @@ export const useWebAppManifest = () => {
 
     // Try parsing HTML for manifest link
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+
       const htmlResponse = await fetch(baseUrl, {
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeout);
-      
+        signal: controller.signal
+      })
+
+      clearTimeout(timeout)
+
       if (htmlResponse.ok) {
-        const html = await htmlResponse.text();
-        const manifestLinkMatch = html.match(/<link[^>]*rel=["']manifest["'][^>]*href=["']([^"']*)["'][^>]*>/i);
-        
+        const html = await htmlResponse.text()
+        const manifestLinkMatch = html.match(/<link[^>]*rel=["']manifest["'][^>]*href=["']([^"']*)["'][^>]*>/i)
+
         if (manifestLinkMatch) {
-          const manifestPath = manifestLinkMatch[1];
-          const manifestUrl = manifestPath.startsWith('http') 
-            ? manifestPath 
-            : `${baseUrl}${manifestPath.startsWith('/') ? '' : '/'}${manifestPath}`;
-          
+          const manifestPath = manifestLinkMatch[1]
+          const manifestUrl = manifestPath.startsWith('http')
+            ? manifestPath
+            : `${baseUrl}${manifestPath.startsWith('/') ? '' : '/'}${manifestPath}`
+
           const response = await fetch(manifestUrl, {
             headers: {
-              'Accept': 'application/json, application/manifest+json',
-            },
-          });
-          
+              Accept: 'application/json, application/manifest+json'
+            }
+          })
+
           if (response.ok) {
-            const manifestData = await response.json();
-            return manifestData;
+            const manifestData = await response.json()
+            return manifestData
           }
         }
       }
@@ -145,49 +144,49 @@ export const useWebAppManifest = () => {
       // HTML parsing failed
     }
 
-    return null;
-  };
-    
+    return null
+  }
+
   const getStartUrl = (manifest: WebAppManifest | null, currentUrl: string): string => {
     if (!manifest?.start_url) {
-      return currentUrl;
+      return currentUrl
     }
-    
-    const url = new URL(currentUrl);
-    const baseUrl = `${url.protocol}//${url.host}`;
-    
+
+    const url = new URL(currentUrl)
+    const baseUrl = `${url.protocol}//${url.host}`
+
     // Handle different start_url formats
     if (manifest.start_url.startsWith('/')) {
-      return `${baseUrl}${manifest.start_url}`;
+      return `${baseUrl}${manifest.start_url}`
     } else if (manifest.start_url.startsWith('http')) {
-      return manifest.start_url;
+      return manifest.start_url
     } else if (manifest.start_url === '.') {
-      return currentUrl;
+      return currentUrl
     } else {
-      return `${baseUrl}/${manifest.start_url}`;
+      return `${baseUrl}/${manifest.start_url}`
     }
-  };
+  }
 
   const shouldRedirectToStartUrl = (manifest: WebAppManifest | null, currentUrl: string): boolean => {
     if (!manifest?.start_url) {
-      return false;
+      return false
     }
-    
+
     // Don't redirect if start_url is "."
     if (manifest.start_url === '.') {
-      return false;
+      return false
     }
-    
-    const url = new URL(currentUrl);
-    const pathname = url.pathname;
-    
-    // Redirect if on root path and start_url is different
-    return pathname === '/' && manifest.start_url !== '/' && manifest.start_url !== '.';
-  };
 
-  const getBabbagePermissions = (manifest: WebAppManifest | null): {[key: string]: string} | null => {
-    return manifest?.babbage?.protocolPermissions || null;
-  };
+    const url = new URL(currentUrl)
+    const pathname = url.pathname
+
+    // Redirect if on root path and start_url is different
+    return pathname === '/' && manifest.start_url !== '/' && manifest.start_url !== '.'
+  }
+
+  const getBabbagePermissions = (manifest: WebAppManifest | null): { [key: string]: string } | null => {
+    return manifest?.babbage?.protocolPermissions || null
+  }
 
   return {
     manifest,
@@ -197,8 +196,8 @@ export const useWebAppManifest = () => {
     shouldRedirectToStartUrl,
     getBabbagePermissions,
     clearCache: () => {
-      manifestCache.current.clear();
-      fetchPromises.current.clear();
+      manifestCache.current.clear()
+      fetchPromises.current.clear()
     }
-  };
-};
+  }
+}
