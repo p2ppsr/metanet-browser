@@ -1,4 +1,5 @@
 /* eslint-disable react/no-unstable-nested-components */
+const F = 'app/browser';
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
   Animated,
@@ -63,12 +64,20 @@ import type { PermissionType } from '@/utils/permissionsManager';
 
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking';
 import { useWebAppManifest } from '@/hooks/useWebAppManifest';
+import * as Notifications from 'expo-notifications';
+import UniversalScanner, { ScannerHandle } from '@/components/UniversalScanner';
+import { logWithTimestamp } from '@/utils/logging';
 import PermissionsScreen from '@/components/PermissionsScreen'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
 /* -------------------------------------------------------------------------- */
-
+// Declare scanCodeWithCamera as an optional property on the Window type to make scanner trigger method accessible from injected JavaScript.
+declare global {
+  interface Window {
+    scanCodeWithCamera?: (reason: string) => Promise<string>;
+  }
+}
 const kNEW_TAB_URL = 'about:blank'
 const kGOOGLE_PREFIX = 'https://www.google.com/search?q='
 const HISTORY_KEY = 'history'
@@ -878,9 +887,80 @@ function Browser() {
 `, [getAcceptLanguageHeader]);
 
   // === 2. RN ⇄ WebView message bridge ========================================
+  // Manages the scanner overlay state and timeout handling
+  const [scannedData, setScannedData] = useState<string | null>(null);
+  const [scannerFullscreen, setScannerFullscreen] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const scanResolver = useRef<((data: string) => void) | null>(null);
+  const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scannerRef = useRef<ScannerHandle>(null);
+
+  // Hook with required with cleanup after unmount  
+  useEffect(() => {
+    return () => {
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
+      scanResolver.current = null;
+      setShowScanner(false);
+    };
+  }, []);
+
+  // Uses callback to send cancel message to webview and cleans up scanner state
+  const dismissScanner = useCallback(() => {
+    if (scanResolver.current) {
+      logWithTimestamp(F, 'Resolving scan promise with empty string');
+      scanResolver.current('');
+      scanResolver.current = null;
+    }
+
+    // Inject CANCEL_SCAN event into WebView to resolve window.scanCodeWithCamera
+    if (activeTab?.webviewRef?.current) {
+      logWithTimestamp(F, `Injecting CANCEL_SCAN to WebView at ${activeTab.url}`);
+      activeTab.webviewRef.current.injectJavaScript(`
+        window.dispatchEvent(new MessageEvent('message', {
+          data: JSON.stringify({
+            type: 'CANCEL_SCAN',
+            result: 'dismiss'
+          })
+        }));
+        true;
+      `);
+    } else {
+      logWithTimestamp(F, 'WebView ref is missing — cannot send CANCEL_SCAN');
+    }
+
+    setShowScanner(false);
+
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = null;
+    }
+
+    logWithTimestamp(F, 'Scanner dismissed programmatically');
+  }, [activeTab]);
+
+  // Resolves the scan promise and resets scanner state
+  useEffect(() => {
+    if (scannedData && scanResolver.current) {
+      logWithTimestamp(F, 'Scan data received', { scannedData });
+      scanResolver.current(scannedData);
+      scanResolver.current = null;
+      setScannedData(null);
+      setShowScanner(false);
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
+    }
+  }, [scannedData]);
 
   const handleMessage = useCallback(
     async (event: WebViewMessageEvent) => {
+      logWithTimestamp(F, `handleMessage:event=${JSON.stringify(event)}`);
+      logWithTimestamp(F, `handleMessage:activeTab=${JSON.stringify(activeTab)}`);
+      logWithTimestamp(F, `handleMessage:activeTab.webviewRef?.current=${JSON.stringify(activeTab!.webviewRef?.current)}`);
       // Safety check - if activeTab is undefined, we cannot process messages
       if (!activeTab) {
         console.warn('Cannot process WebView message: activeTab is undefined');
@@ -908,6 +988,16 @@ function Browser() {
         msg = JSON.parse(event.nativeEvent.data);
       } catch (error) {
         console.error('Failed to parse WebView message:', error);
+        return;
+      }
+      logWithTimestamp(F, `handleMessage:msg.type=${msg.type}`);
+      // Checks for split-screen or fullscreen camera scanning
+      if (msg.type === 'REQUEST_SCAN') {
+        logWithTimestamp(F, `handleMessage:msg=${JSON.stringify(msg)}`);
+        const fullscreen = typeof msg.reason === 'string' && msg.reason.toLowerCase().includes('fullscreen');
+        logWithTimestamp(F, `handleMessage:fullscreen=${fullscreen}`);
+        setScannerFullscreen(fullscreen);
+        setShowScanner(true);
         return;
       }
 
@@ -1501,7 +1591,38 @@ function Browser() {
                 }}
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
-                injectedJavaScript={injectedJavaScript}
+
+                // Added injected scanner invocation function into webview runtime
+                injectedJavaScript={
+                  injectedJavaScript +
+                  `
+                  window.scanCodeWithCamera = function(reason) {
+                    return new Promise((resolve, reject) => {
+                      const handleScanResponse = (event) => {
+                        try {
+                          const data = JSON.parse(event.data);
+                          if (data.type === 'SCAN_RESPONSE') {
+                            clearTimeout(timeout);
+                            resolve(data.data);
+                          }
+                        } catch (e) {
+                          // Ignore parsing errors
+                        }
+                      };
+
+                      window.addEventListener('message', handleScanResponse, { once: true });
+  
+                      window.ReactNativeWebView?.postMessage(JSON.stringify({
+                        type: 'REQUEST_SCAN'
+                      }));
+
+                      const timeout = setTimeout(() => {
+                        reject(new Error('Scan timeout'));
+                      }, 60000);
+                    });
+                  };
+                  `
+                }
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {
@@ -1526,6 +1647,20 @@ function Browser() {
                 containerStyle={{ backgroundColor: colors.background }}
                 style={{ flex: 1 }}
               />
+              {showScanner && (
+                <UniversalScanner
+                  ref={scannerRef}
+                  scannedData={scannedData}
+                  setScannedData={setScannedData}
+                  showScanner={showScanner}
+                  onDismiss={() => {
+                    logWithTimestamp(F, 'Starting dismissal process');
+                    dismissScanner();
+                  }}
+                  fullscreen={scannerFullscreen}
+                />
+              )}
+
             </View>
           ) : null}
           {!isFullscreen && (
