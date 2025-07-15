@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, SectionList, TouchableOpacity } from 'react-native';
-import { useTheme } from '@/context/theme/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
+import React from 'react'
+import { View, Text, StyleSheet, SectionList, TouchableOpacity } from 'react-native'
+import { useTheme } from '@/context/theme/ThemeContext'
+import { Ionicons } from '@expo/vector-icons'
+import * as Clipboard from 'expo-clipboard'
 
 export type Permission = {
   id: string
@@ -33,7 +33,7 @@ type Props = {
 }
 
 const TrustDetail: React.FC<Props> = ({ origin, onClose, onRevoke }) => {
-  const { colors } = useTheme();
+  const { colors } = useTheme()
 
   // Group permissions by type for section list
   const grouped = origin.permissions.reduce<Record<string, Permission[]>>((acc, p) => {
@@ -48,13 +48,17 @@ const TrustDetail: React.FC<Props> = ({ origin, onClose, onRevoke }) => {
   }))
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.paperBackground }]}>      
+    <View style={[styles.container, { backgroundColor: colors.paperBackground }]}>
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.name, { color: colors.textPrimary }]}>{origin.name}</Text>
           <Text style={[styles.domain, { color: colors.textSecondary }]}>{origin.domain}</Text>
         </View>
-        <TouchableOpacity onPress={() => onRevoke(origin.id)} accessibilityRole="button" accessibilityLabel="Revoke trust">
+        <TouchableOpacity
+          onPress={() => onRevoke(origin.id)}
+          accessibilityRole="button"
+          accessibilityLabel="Revoke trust"
+        >
           <Ionicons name="trash" size={22} color={colors.error} />
         </TouchableOpacity>
       </View>
@@ -63,14 +67,22 @@ const TrustDetail: React.FC<Props> = ({ origin, onClose, onRevoke }) => {
       {origin.lastUsed && (
         <Text style={[styles.meta, { color: colors.textSecondary }]}>Last used {origin.lastUsed}</Text>
       )}
-      {origin.note && (
-        <Text style={[styles.note, { color: colors.textPrimary }]}>“{origin.note}”</Text>
-      )}
+      {origin.note && <Text style={[styles.note, { color: colors.textPrimary }]}>“{origin.note}”</Text>}
 
       {/* full identity key */}
       <View style={styles.keyRow}>
-        <Text style={[styles.fullKey, { color: colors.textSecondary, flex:1 }]} numberOfLines={1} ellipsizeMode="middle">{origin.fullKey}</Text>
-        <TouchableOpacity onPress={() => Clipboard.setStringAsync(origin.fullKey)} accessibilityLabel="Copy identity key" style={{ paddingHorizontal:4 }}>
+        <Text
+          style={[styles.fullKey, { color: colors.textSecondary, flex: 1 }]}
+          numberOfLines={1}
+          ellipsizeMode="middle"
+        >
+          {origin.fullKey}
+        </Text>
+        <TouchableOpacity
+          onPress={() => Clipboard.setStringAsync(origin.fullKey)}
+          accessibilityLabel="Copy identity key"
+          style={{ paddingHorizontal: 4 }}
+        >
           <Ionicons name="copy" size={16} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -81,7 +93,7 @@ const TrustDetail: React.FC<Props> = ({ origin, onClose, onRevoke }) => {
         renderItem={({ item }) => (
           <View style={styles.permissionRow}>
             <Ionicons name="checkmark-circle" size={16} color={colors.primary} style={{ marginRight: 8 }} />
-            <Text style={{ color: colors.textPrimary, flex:1 }}>{item.description}</Text>
+            <Text style={{ color: colors.textPrimary, flex: 1 }}>{item.description}</Text>
           </View>
         )}
         renderSectionHeader={({ section }) => (
@@ -94,17 +106,24 @@ const TrustDetail: React.FC<Props> = ({ origin, onClose, onRevoke }) => {
 
       <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Recent activity</Text>
       {origin.events.map(ev => (
-        <Text style={[styles.eventText, { color: colors.textSecondary }]} key={ev.date + ev.text}>• {ev.date}: {ev.text}</Text>
+        <Text style={[styles.eventText, { color: colors.textSecondary }]} key={ev.date + ev.text}>
+          • {ev.date}: {ev.text}
+        </Text>
       ))}
 
-      <TouchableOpacity style={[styles.closeBtn, { backgroundColor: colors.primary }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close details">
+      <TouchableOpacity
+        style={[styles.closeBtn, { backgroundColor: colors.primary }]}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close details"
+      >
         <Text style={{ color: colors.buttonText }}>Close</Text>
       </TouchableOpacity>
     </View>
   )
 }
 
-export default TrustDetail;
+export default TrustDetail
 
 const styles = StyleSheet.create({
   container: { borderRadius: 12, padding: 20, width: '90%' },
@@ -112,11 +131,11 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: '700' },
   domain: { fontSize: 12 },
   meta: { fontSize: 12 },
-  note: { fontSize: 14, fontStyle: 'italic', marginTop:4 },
+  note: { fontSize: 14, fontStyle: 'italic', marginTop: 4 },
   sectionHeader: { fontSize: 14, fontWeight: '600', marginTop: 16 },
   permissionRow: { flexDirection: 'row', alignItems: 'center' },
   keyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   fullKey: { fontSize: 10 },
   eventText: { fontSize: 12, marginTop: 4 },
   closeBtn: { alignSelf: 'flex-end', marginTop: 20, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 6 }
-}); 
+})

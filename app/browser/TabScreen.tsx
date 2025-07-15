@@ -18,9 +18,7 @@ const TabsScreen = () => {
       <FlatList
         data={tabs}
         keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <TabItem tab={item} onDelete={handleDelete} />
-        )}
+        renderItem={({ item }) => <TabItem tab={item} onDelete={handleDelete} />}
       />
     </View>
   )

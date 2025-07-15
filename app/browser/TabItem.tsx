@@ -1,16 +1,6 @@
 import React, { useRef } from 'react'
-import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native'
-import {
-  GestureHandlerRootView,
-  PanGestureHandler
-} from 'react-native-gesture-handler'
+import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler'
 
 interface TabItemProps {
   tab: { title: string; id: string }
@@ -23,10 +13,7 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3
 const TabItem = ({ tab, onDelete }: TabItemProps) => {
   const translateX = useRef(new Animated.Value(0)).current
 
-  const handleGestureEvent = Animated.event(
-    [{ nativeEvent: { translationX: translateX } }],
-    { useNativeDriver: true }
-  )
+  const handleGestureEvent = Animated.event([{ nativeEvent: { translationX: translateX } }], { useNativeDriver: true })
 
   const handleGestureEnd = ({ nativeEvent }: any) => {
     if (nativeEvent.translationX < -SWIPE_THRESHOLD) {
@@ -45,13 +32,8 @@ const TabItem = ({ tab, onDelete }: TabItemProps) => {
 
   return (
     <GestureHandlerRootView>
-      <PanGestureHandler
-        onGestureEvent={handleGestureEvent}
-        onEnded={handleGestureEnd}
-      >
-        <Animated.View
-          style={[styles.container, { transform: [{ translateX }] }]}
-        >
+      <PanGestureHandler onGestureEvent={handleGestureEvent} onEnded={handleGestureEnd}>
+        <Animated.View style={[styles.container, { transform: [{ translateX }] }]}>
           <Text style={styles.text}>{tab.title}</Text>
         </Animated.View>
       </PanGestureHandler>

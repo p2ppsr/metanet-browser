@@ -8,12 +8,7 @@ const Tabs: React.FC = () => {
   return (
     <ScrollView>
       {bookmarkStore.tabs.map((tab, index) => (
-        <BookmarkTabs
-          key={tab.id}
-          tab={tab}
-          index={index}
-          removeTab={bookmarkStore.removeTab}
-        />
+        <BookmarkTabs key={tab.id} tab={tab} index={index} removeTab={bookmarkStore.removeTab} />
       ))}
     </ScrollView>
   )

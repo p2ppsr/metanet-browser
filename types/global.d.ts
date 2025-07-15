@@ -1,5 +1,5 @@
 declare global {
-    var pendingUrl: string | null;
-  }
-  
-  export {};
+  var pendingUrl: string | null
+}
+
+export {}
