@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "web": {
       "bundler": "metro",
       "output": "static",
