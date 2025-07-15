@@ -42,12 +42,7 @@ export const BottomToolbar = ({
   >
     <ToolbarButton icon="←" onPress={navBack} disabled={!canGoBack} color={colors.text} />
     <ToolbarButton icon="→" onPress={navFwd} disabled={!canGoForward} color={colors.text} />
-    <ToolbarButton
-      icon="⇪"
-      onPress={shareCurrent}
-      disabled={activeTabUrl === kNEW_TAB_URL}
-      color={colors.text}
-    />
+    <ToolbarButton icon="⇪" onPress={shareCurrent} disabled={activeTabUrl === kNEW_TAB_URL} color={colors.text} />
     <ToolbarButton icon="★" onPress={() => toggleStarDrawer(true)} color={colors.text} />
     <ToolbarButton icon="▒" onPress={() => setShowTabsView(true)} color={colors.text} />
   </View>

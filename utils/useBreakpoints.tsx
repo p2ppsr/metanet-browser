@@ -9,7 +9,7 @@ const defaultValue: BreakpointMatches = {
   xs: false,
   sm: false,
   md: false,
-  or: false,
+  or: false
 }
 
 // Create a context with our specific type:
@@ -66,11 +66,7 @@ const BreakpointProvider: React.FC<BreakpointProviderProps> = ({ children, queri
     }
   }, [queries])
 
-  return (
-    <BreakpointContext.Provider value={queryMatch}>
-      {children}
-    </BreakpointContext.Provider>
-  )
+  return <BreakpointContext.Provider value={queryMatch}>{children}</BreakpointContext.Provider>
 }
 
 const useBreakpoint = (): BreakpointMatches => {

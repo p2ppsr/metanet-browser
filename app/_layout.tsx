@@ -1,47 +1,47 @@
-import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
-import { UserContextProvider, NativeHandlers } from '../context/UserContext';
-import packageJson from '../package.json';
-import { WalletContextProvider } from '@/context/WalletContext';
-import { ExchangeRateContextProvider } from '@/context/ExchangeRateContext';
-import { ThemeProvider } from '@/context/theme/ThemeContext';
-import PasswordHandler from '@/components/PasswordHandler';
-import RecoveryKeySaver from '@/components/RecoveryKeySaver';
-import LocalStorageProvider from '@/context/LocalStorageProvider';
-import ProtocolAccessModal from '@/components/ProtocolAccessModal';
-import BasketAccessModal from '@/components/BasketAccessModal';
-import CertificateAccessModal from '@/components/CertificateAccessModal';
-import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal';
-import { useDeepLinking } from '@/hooks/useDeepLinking';
-import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt';
-import * as Notifications from 'expo-notifications';
-import { initializeFirebase } from '@/utils/firebase';
-import { LanguageProvider } from '@/utils/translations';
-import { BrowserModeProvider } from '@/context/BrowserModeContext';
-import Web3BenefitsModalHandler from '@/components/Web3BenefitsModalHandler';
-import '@/utils/translations';
+import React, { useEffect, useState } from 'react'
+import { Stack } from 'expo-router'
+import { UserContextProvider, NativeHandlers } from '../context/UserContext'
+import packageJson from '../package.json'
+import { WalletContextProvider } from '@/context/WalletContext'
+import { ExchangeRateContextProvider } from '@/context/ExchangeRateContext'
+import { ThemeProvider } from '@/context/theme/ThemeContext'
+import PasswordHandler from '@/components/PasswordHandler'
+import RecoveryKeySaver from '@/components/RecoveryKeySaver'
+import LocalStorageProvider from '@/context/LocalStorageProvider'
+import ProtocolAccessModal from '@/components/ProtocolAccessModal'
+import BasketAccessModal from '@/components/BasketAccessModal'
+import CertificateAccessModal from '@/components/CertificateAccessModal'
+import SpendingAuthorizationModal from '@/components/SpendingAuthorizationModal'
+import { useDeepLinking } from '@/hooks/useDeepLinking'
+import DefaultBrowserPrompt from '@/components/DefaultBrowserPrompt'
+import * as Notifications from 'expo-notifications'
+import { initializeFirebase } from '@/utils/firebase'
+import { LanguageProvider } from '@/utils/translations'
+import { BrowserModeProvider } from '@/context/BrowserModeContext'
+import Web3BenefitsModalHandler from '@/components/Web3BenefitsModalHandler'
+import '@/utils/translations'
 
 const nativeHandlers: NativeHandlers = {
   isFocused: async () => false,
-  onFocusRequested: async () => { },
-  onFocusRelinquished: async () => { },
+  onFocusRequested: async () => {},
+  onFocusRelinquished: async () => {},
   onDownloadFile: async (fileData: Blob, fileName: string) => {
     try {
-      const url = window.URL.createObjectURL(fileData);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      return true;
+      const url = window.URL.createObjectURL(fileData)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      return true
     } catch (error) {
-      console.error('Download failed:', error);
-      return false;
+      console.error('Download failed:', error)
+      return false
     }
   }
-};
+}
 
 // Configure global notification behavior
 Notifications.setNotificationHandler({
@@ -50,40 +50,36 @@ Notifications.setNotificationHandler({
     shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+    shouldShowList: true
+  })
+})
 
 // Deep link handler component
 function DeepLinkHandler() {
-  useDeepLinking();
-  return null;
+  useDeepLinking()
+  return null
 }
 
 export default function RootLayout() {
-  const [configLoaded, setConfigLoaded] = useState(false);
+  const [configLoaded, setConfigLoaded] = useState(false)
   useEffect(() => {
     const initialize = async () => {
-      await initializeFirebase();
-      setConfigLoaded(true);
-    };
-    initialize();
-  }, []);
+      await initializeFirebase()
+      setConfigLoaded(true)
+    }
+    initialize()
+  }, [])
 
   if (!configLoaded) {
-    return null;
+    return null
   }
 
   return (
     <LanguageProvider>
       <LocalStorageProvider>
-        <UserContextProvider
-          nativeHandlers={nativeHandlers}
-          appVersion={packageJson.version}
-          appName="Metanet"
-        >
+        <UserContextProvider nativeHandlers={nativeHandlers} appVersion={packageJson.version} appName="Metanet">
           <ExchangeRateContextProvider>
-            <WalletContextProvider>              
+            <WalletContextProvider>
               <BrowserModeProvider>
                 <ThemeProvider>
                   <DeepLinkHandler />
@@ -104,11 +100,14 @@ export default function RootLayout() {
                   >
                     <Stack.Screen name="index" />
                     <Stack.Screen name="browser" />
-                    <Stack.Screen name="config" options={{
-                      headerShown: false,
-                      animation: 'slide_from_bottom',
-                      presentation: 'modal'
-                    }} />
+                    <Stack.Screen
+                      name="config"
+                      options={{
+                        headerShown: false,
+                        animation: 'slide_from_bottom',
+                        presentation: 'modal'
+                      }}
+                    />
                   </Stack>
                 </ThemeProvider>
               </BrowserModeProvider>
@@ -117,5 +116,5 @@ export default function RootLayout() {
         </UserContextProvider>
       </LocalStorageProvider>
     </LanguageProvider>
-  );
+  )
 }

@@ -2,9 +2,7 @@ interface FetchManifestParams {
   domain: string
 }
 
-export default async function fetchManifest({
-  domain,
-}: FetchManifestParams): Promise<any | undefined> {
+export default async function fetchManifest({ domain }: FetchManifestParams): Promise<any | undefined> {
   try {
     // Remove any protocol prefixes (even if duplicated)
     const cleanDomain = domain.replace(/^(https?:\/\/)+/, '')

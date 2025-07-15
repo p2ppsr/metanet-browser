@@ -1,21 +1,21 @@
-import { StyleSheet } from 'react-native';
-import { useTheme } from './ThemeContext';
+import { StyleSheet } from 'react-native'
+import { useTheme } from './ThemeContext'
 
 // This hook creates commonly used styles based on the current theme
 export const useThemeStyles = () => {
-  const { colors, isDark } = useTheme();
-  
+  const { colors, isDark } = useTheme()
+
   return StyleSheet.create({
     // Container styles
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.background
     },
     contentContainer: {
       flex: 1,
       padding: 20,
       justifyContent: 'center',
-      alignItems: 'center',
+      alignItems: 'center'
     },
     card: {
       backgroundColor: colors.paperBackground,
@@ -23,32 +23,32 @@ export const useThemeStyles = () => {
       borderWidth: 1,
       borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
       padding: 16,
-      marginVertical: 8,
+      marginVertical: 8
     },
-    
+
     // Text styles
     title: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.textPrimary,
       marginBottom: 10,
-      textAlign: 'center',
+      textAlign: 'center'
     },
     subtitle: {
       fontSize: 16,
       color: colors.textSecondary,
       marginBottom: 30,
-      textAlign: 'center',
+      textAlign: 'center'
     },
     text: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: 16
     },
     textSecondary: {
       color: colors.textSecondary,
-      fontSize: 14,
+      fontSize: 14
     },
-    
+
     // Button styles
     button: {
       backgroundColor: colors.buttonBackground,
@@ -57,18 +57,18 @@ export const useThemeStyles = () => {
       borderRadius: 10,
       width: '100%',
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: 20
     },
     buttonText: {
       color: colors.buttonText,
       fontSize: 16,
-      fontWeight: 'bold',
+      fontWeight: 'bold'
     },
     buttonDisabled: {
-      backgroundColor: colors.buttonBackgroundDisabled,
+      backgroundColor: colors.buttonBackgroundDisabled
     },
     buttonTextDisabled: {
-      color: colors.buttonTextDisabled,
+      color: colors.buttonTextDisabled
     },
     // Secondary button styles (transparent with border)
     buttonSecondary: {
@@ -80,21 +80,21 @@ export const useThemeStyles = () => {
       alignItems: 'center',
       marginBottom: 20,
       borderWidth: 2,
-      borderColor: colors.buttonBackground,
+      borderColor: colors.buttonBackground
     },
     buttonSecondaryText: {
       color: colors.textPrimary,
       fontSize: 16,
-      fontWeight: 'bold',
+      fontWeight: 'bold'
     },
     buttonSecondaryDisabled: {
-      borderColor: colors.buttonBackgroundDisabled,
+      borderColor: colors.buttonBackgroundDisabled
     },
-    
+
     // Input styles
     inputContainer: {
       width: '100%',
-      marginBottom: 30,
+      marginBottom: 30
     },
     input: {
       flexDirection: 'row',
@@ -105,54 +105,54 @@ export const useThemeStyles = () => {
       borderRadius: 10,
       backgroundColor: colors.inputBackground,
       marginBottom: 15,
-      alignItems: 'center',
+      alignItems: 'center'
     },
     inputText: {
       flex: 1,
       fontSize: 16,
       paddingHorizontal: 15,
-      color: colors.inputText,
+      color: colors.inputText
     },
     inputLabel: {
       color: colors.textSecondary,
       fontSize: 14,
-      marginBottom: 5,
+      marginBottom: 5
     },
-    
+
     // Icon styles
     icon: {
       padding: 10,
-      color: colors.textSecondary,
+      color: colors.textSecondary
     },
-    
+
     // Validation styles
     validationError: {
       color: colors.error,
       fontSize: 12,
       marginBottom: 15,
-      marginTop: -10,
+      marginTop: -10
     },
-    
+
     // Link styles
     link: {
       color: colors.secondary,
-      fontWeight: '500',
+      fontWeight: '500'
     },
-    
+
     // Other common styles
     row: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'center'
     },
     center: {
       justifyContent: 'center',
-      alignItems: 'center',
+      alignItems: 'center'
     },
     divider: {
       height: 1,
       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
       width: '100%',
-      marginVertical: 16,
-    },
-  });
-};
+      marginVertical: 16
+    }
+  })
+}

@@ -8,20 +8,9 @@ interface ToolbarButtonProps {
   color: string
 }
 
-export const ToolbarButton = ({
-  icon,
-  onPress,
-  disabled,
-  color
-}: ToolbarButtonProps) => (
-  <TouchableOpacity
-    style={styles.toolbarButton}
-    onPress={onPress}
-    disabled={disabled}
-  >
-    <Text style={[styles.toolbarIcon, { color }, disabled && { opacity: 0.3 }]}>
-      {icon}
-    </Text>
+export const ToolbarButton = ({ icon, onPress, disabled, color }: ToolbarButtonProps) => (
+  <TouchableOpacity style={styles.toolbarButton} onPress={onPress} disabled={disabled}>
+    <Text style={[styles.toolbarIcon, { color }, disabled && { opacity: 0.3 }]}>{icon}</Text>
   </TouchableOpacity>
 )
 
