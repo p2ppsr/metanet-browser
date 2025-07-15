@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions'
 
 /**
  * Defines the types of permissions a website can request.
@@ -138,4 +139,19 @@ export async function resetAllPermissions(): Promise<void> {
 export async function getPermissionState(domain: string, permission: PermissionType): Promise<PermissionState> {
   const domainPerms = await getDomainPermissions(domain);
   return domainPerms[permission] || 'ask';
+}
+
+export async function checkCameraPermissionForDomain(domain: string) {
+  // const sitePerms = getSitePermission(domain)
+/*
+  if (!sitePerms.camera) return false
+
+  const osPermission = await check(PERMISSIONS.ANDROID.CAMERA)
+  if (osPermission !== RESULTS.GRANTED) {
+    const result = await request(PERMISSIONS.ANDROID.CAMERA)
+    return result === RESULTS.GRANTED
+  }
+
+  return true
+  */
 }
