@@ -611,9 +611,9 @@ function Browser() {
   const responderProps =
     addressFocused && keyboardVisible
       ? {
-          onStartShouldSetResponder: () => true,
-          onResponderRelease: dismissKeyboard
-        }
+        onStartShouldSetResponder: () => true,
+        onResponderRelease: dismissKeyboard
+      }
       : {}
 
   /* -------------------------------------------------------------------------- */
@@ -1179,7 +1179,7 @@ function Browser() {
         title: navState.title || navState.url,
         url: navState.url,
         timestamp: Date.now()
-      }).catch(() => {})
+      }).catch(() => { })
     }
   }
 
@@ -1584,7 +1584,7 @@ function Browser() {
                 >
                   <Ionicons name="contract-outline" size={20} color="white" />
                 </TouchableOpacity>
-              )}
+              )}    
               <WebView
                 ref={activeTab?.webviewRef}
                 source={{
@@ -1626,6 +1626,21 @@ function Browser() {
                   };
                   `
                 }
+                injectedJavaScriptBeforeContentLoaded={`
+                (function() {
+                  const denied = ${JSON.stringify(permissionsDeniedForCurrentDomain)}
+                  if (denied.includes("CAMERA")) {
+                    navigator.mediaDevices.getUserMedia = () => {
+                      throw new Error("Camera access is blocked for this site.");
+                    };
+                  }
+                  if (denied.includes("RECORD_AUDIO")) {
+                    navigator.mediaDevices.getUserMedia = () => {
+                      throw new Error("Microphone access is blocked for this site.");
+                    };
+                  }
+                })();
+              `}
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {

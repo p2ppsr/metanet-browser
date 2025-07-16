@@ -5,7 +5,7 @@ import { getDomainPermissions, setDomainPermission, PermissionState, PermissionT
 import { useTranslation } from 'react-i18next'
 import SegmentedControl from '@react-native-segmented-control/segmented-control'
 
-const ALL_PERMISSIONS: PermissionType[] = ['camera', 'microphone', 'location', 'notifications']
+const ALL_PERMISSIONS: PermissionType[] = ['CAMERA', 'MICROPHONE', 'location', 'notifications'] // TODO will need to update to add all of the ones listed in permissionManager.ts, for now, just use the most simple and most frequently used permissions
 
 interface PermissionsScreenProps {
   origin: string
