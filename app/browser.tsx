@@ -48,6 +48,14 @@ import { HistoryList } from '@/components/HistoryList'
 import { isValidUrl } from '@/utils/generalHelpers'
 import tabStore from '../stores/TabStore'
 import bookmarkStore from '@/stores/BookmarkStore'
+import { 
+  getPermissionState, 
+  setDomainPermission, 
+  checkPermissionForDomain, 
+  PermissionType, 
+  PermissionState,
+  getDomainPermissions 
+} from '@/utils/permissionsManager'
 import SettingsScreen from './settings'
 import IdentityScreen from './identity'
 import { useTranslation } from 'react-i18next'
@@ -59,9 +67,6 @@ import TrustScreen from './trust'
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
 /* -------------------------------------------------------------------------- */
-
-import { getDomainPermissions, setDomainPermission } from '@/utils/permissionsManager'
-import type { PermissionType } from '@/utils/permissionsManager'
 
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
@@ -193,6 +198,61 @@ function Browser() {
     return languageMap[currentLanguage] || 'en-US,en;q=0.9'
   }, [i18n.language])
 
+  /* ---------------------------------- tabs --------------------------------- */
+  const activeTab = tabStore.activeTab // Should never be null due to TabStore guarantees
+
+  /* ----------------------------- permissions ----------------------------- */
+
+  /**
+   * Updates the list of denied permissions for the current domain
+   */
+  const updateDeniedPermissionsForDomain = useCallback(async (url: string) => {
+    try {
+      const domain = domainForUrl(url)
+      const allPermissions: PermissionType[] = ['CAMERA', 'RECORD_AUDIO', 'ACCESS_FINE_LOCATION']
+      const deniedPermissions: PermissionType[] = []
+
+      // Check each permission
+      for (const permission of allPermissions) {
+        const state = await getPermissionState(domain, permission)
+        if (state === 'deny') {
+          deniedPermissions.push(permission)
+        }
+      }
+
+      setPermissionsDeniedForCurrentDomain(deniedPermissions)
+    } catch (error) {
+      console.error('Failed to update denied permissions:', error)
+    }
+  }, [])
+
+  /**
+   * Shows a permission prompt to the user and returns a promise that resolves
+   * when they make a decision
+   */
+  const promptUserForPermission = useCallback(
+    (domain: string, permission: PermissionType): Promise<boolean> => {
+      return new Promise((resolve) => {
+        // Store the resolver function so we can call it when user responds
+        permissionResolverRef.current = (granted: boolean) => {
+          // Update permission in storage
+          setDomainPermission(domain, permission, granted ? 'allow' : 'deny').then(() => {
+            // Update the denied permissions list if user denied
+            if (!granted) {
+              updateDeniedPermissionsForDomain(activeTab?.url || '')
+            }
+            resolve(granted)
+          })
+        }
+
+        // Show the prompt
+        setCurrentPermissionRequest({ domain, permission })
+        setShowPermissionPrompt(true)
+      })
+    },
+    [activeTab?.url]
+  )
+
   /* ----------------------------- wallet context ----------------------------- */
   const { managers } = useWallet()
   const [wallet, setWallet] = useState<WalletInterface | undefined>()
@@ -306,9 +366,73 @@ function Browser() {
     setRemovedDefaultApps(prev => [...prev, url])
   }, [])
 
-  /* ---------------------------------- tabs --------------------------------- */
-  /* ---------------------------------- tabs --------------------------------- */
-  const activeTab = tabStore.activeTab // Should never be null due to TabStore guarantees
+  /* ------------------------------ permission modal ----------------------------- */
+  /**
+   * Renders the permission prompt modal
+   */
+  const renderPermissionPrompt = () => {
+    if (!showPermissionPrompt || !currentPermissionRequest) return null
+    
+    const { domain, permission } = currentPermissionRequest
+    // Map permission types to user-friendly display names
+    let permissionDisplay = 'Permission'
+    if (permission === 'CAMERA') permissionDisplay = 'Camera'
+    else if (permission === 'RECORD_AUDIO') permissionDisplay = 'Microphone'
+    else if (permission === 'ACCESS_FINE_LOCATION') permissionDisplay = 'Location'
+    
+    return (
+      <Modal
+        isVisible={showPermissionPrompt}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropOpacity={0.5}
+        onBackdropPress={() => {
+          // Deny permission when backdrop is pressed
+          if (permissionResolverRef.current) {
+            permissionResolverRef.current(false)
+            permissionResolverRef.current = null
+          }
+          setShowPermissionPrompt(false)
+          setCurrentPermissionRequest(null)
+        }}
+      >
+        <View style={styles.permissionModalContent}>
+          <Text style={styles.permissionModalTitle}>{`${permissionDisplay} Permission Request`}</Text>
+          <Text style={styles.permissionModalText}>
+            {`${domain} wants to use your ${permissionDisplay.toLowerCase()}`}
+          </Text>
+          <View style={styles.permissionModalButtons}>
+            <TouchableOpacity
+              style={[styles.permissionModalButton, styles.permissionModalButtonDeny]}
+              onPress={() => {
+                if (permissionResolverRef.current) {
+                  permissionResolverRef.current(false)
+                  permissionResolverRef.current = null
+                }
+                setShowPermissionPrompt(false)
+                setCurrentPermissionRequest(null)
+              }}
+            >
+              <Text style={styles.permissionModalButtonText}>Block</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.permissionModalButton, styles.permissionModalButtonAllow]}
+              onPress={() => {
+                if (permissionResolverRef.current) {
+                  permissionResolverRef.current(true)
+                  permissionResolverRef.current = null
+                }
+                setShowPermissionPrompt(false)
+                setCurrentPermissionRequest(null)
+              }}
+            >
+              <Text style={styles.permissionModalButtonText}>Allow</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    )
+  }
 
   /* -------------------------- ui / animation state -------------------------- */
   const addressEditing = useRef(false)
@@ -318,6 +442,13 @@ function Browser() {
 
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
+  const [mobileControlsHeight, setMobileControlsHeight] = useState(0)
+
+  // Permission-related state variables
+  const [permissionsDeniedForCurrentDomain, setPermissionsDeniedForCurrentDomain] = useState<PermissionType[]>([])
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false)
+  const [currentPermissionRequest, setCurrentPermissionRequest] = useState<{domain: string; permission: PermissionType} | null>(null)
+  const permissionResolverRef = useRef<((granted: boolean) => void) | null>(null)
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<
@@ -1010,6 +1141,132 @@ function Browser() {
         return
       }
 
+      // Handle camera permission request
+      if (msg.type === 'REQUEST_CAMERA') {
+        const domain = domainForUrl(activeTab.url)
+        const permState = await getPermissionState(domain, 'CAMERA')
+
+        if (permState === 'deny') {
+          activeTab.webviewRef?.current?.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'CAMERA_PERMISSION_RESULT',
+                granted: false
+              })
+            }));
+          `)
+          return
+        }
+
+        if (permState === 'ask') {
+          const granted = await promptUserForPermission(domain, 'CAMERA')
+          activeTab.webviewRef?.current?.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'CAMERA_PERMISSION_RESULT',
+                granted: ${granted}
+              })
+            }));
+          `)
+          return
+        }
+
+        const granted = await checkPermissionForDomain(domain, 'CAMERA')
+        activeTab.webviewRef?.current?.injectJavaScript(`
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'CAMERA_PERMISSION_RESULT',
+              granted: ${granted}
+            })
+          }));
+        `)
+        return
+      }
+
+      // Handle microphone permission request
+      if (msg.type === 'REQUEST_MICROPHONE') {
+        const domain = domainForUrl(activeTab.url)
+        const permState = await getPermissionState(domain, 'RECORD_AUDIO')
+
+        if (permState === 'deny') {
+          activeTab.webviewRef?.current?.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'MICROPHONE_PERMISSION_RESULT',
+                granted: false
+              })
+            }));
+          `)
+          return
+        }
+
+        if (permState === 'ask') {
+          const granted = await promptUserForPermission(domain, 'RECORD_AUDIO')
+          activeTab.webviewRef?.current?.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'MICROPHONE_PERMISSION_RESULT',
+                granted: ${granted}
+              })
+            }));
+          `)
+          return
+        }
+
+        const granted = await checkPermissionForDomain(domain, 'RECORD_AUDIO')
+        activeTab.webviewRef?.current?.injectJavaScript(`
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'MICROPHONE_PERMISSION_RESULT',
+              granted: ${granted}
+            })
+          }));
+        `)
+        return
+      }
+
+      // Handle location permission request
+      if (msg.type === 'REQUEST_LOCATION') {
+        const domain = domainForUrl(activeTab.url)
+        const permState = await getPermissionState(domain, 'ACCESS_FINE_LOCATION')
+
+        if (permState === 'deny') {
+          activeTab.webviewRef?.current?.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'LOCATION_PERMISSION_RESULT',
+                granted: false
+              })
+            }));
+          `)
+          return
+        }
+
+        if (permState === 'ask') {
+          const granted = await promptUserForPermission(domain, 'ACCESS_FINE_LOCATION')
+          activeTab.webviewRef?.current?.injectJavaScript(`
+            window.dispatchEvent(new MessageEvent('message', {
+              data: JSON.stringify({
+                type: 'LOCATION_PERMISSION_RESULT',
+                granted: ${granted}
+              })
+            }));
+          `)
+          return
+        }
+
+        const granted = await checkPermissionForDomain(domain, 'ACCESS_FINE_LOCATION')
+        activeTab.webviewRef?.current?.injectJavaScript(`
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'LOCATION_PERMISSION_RESULT',
+              granted: ${granted}
+            })
+          }));
+        `)
+        return
+      }
+
       // Handle console logs from WebView
       if (msg.type === 'CONSOLE') {
         const logPrefix = '[WebView]'
@@ -1518,7 +1775,9 @@ function Browser() {
   const addressDisplay = addressFocused ? addressText : domainForUrl(addressText)
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.container}>
+      {/* Permission prompt modal */}
+      {renderPermissionPrompt()}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={addressFocused ? (Platform.OS === 'ios' ? 'padding' : 'height') : undefined}
@@ -1595,6 +1854,13 @@ function Browser() {
                 }}
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
+                onNavigationStateChange={(navState: WebViewNavigation) => {
+                  // Check if URL actually changed to avoid unnecessary updates
+                  if (navState.url !== activeTab?.url) {
+                    updateDeniedPermissionsForDomain(navState.url)
+                  }
+                  handleNavStateChange(navState)
+                }}
                 // Added injected scanner invocation function into webview runtime
                 injectedJavaScript={
                   injectedJavaScript +
@@ -1641,7 +1907,6 @@ function Browser() {
                   }
                 })();
               `}
-                onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent
@@ -2666,5 +2931,51 @@ const styles = StyleSheet.create({
   contextMenuText: {
     fontSize: 16,
     flex: 1
+  },
+  permissionModalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  permissionModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  permissionModalText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  permissionModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  permissionModalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    minWidth: '40%',
+    alignItems: 'center',
+  },
+  permissionModalButtonDeny: {
+    backgroundColor: '#f44336',
+  },
+  permissionModalButtonAllow: {
+    backgroundColor: '#4caf50',
+  },
+  permissionModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   }
 })
