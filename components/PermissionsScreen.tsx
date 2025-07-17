@@ -1,27 +1,97 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ActivityIndicator, SectionList, Pressable } from 'react-native'
 import { useTheme } from '@/context/theme/ThemeContext'
 import { getDomainPermissions, setDomainPermission, PermissionState, PermissionType } from '@/utils/permissionsManager'
 import { useTranslation } from 'react-i18next'
 import SegmentedControl from '@react-native-segmented-control/segmented-control'
 
-const ALL_PERMISSIONS: PermissionType[] = ['CAMERA', 'MICROPHONE', 'location', 'notifications'] // TODO will need to update to add all of the ones listed in permissionManager.ts, for now, just use the most simple and most frequently used permissions
+// Group permissions by category for better organization
+interface PermissionCategory {
+  title: string
+  data: PermissionType[]
+}
+
+// Define the most commonly used permissions grouped by category
+const PERMISSION_CATEGORIES: PermissionCategory[] = [
+  {
+    title: 'Media',
+    data: ['CAMERA', 'RECORD_AUDIO', 'READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO']
+  },
+  {
+    title: 'Location',
+    data: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'ACCESS_BACKGROUND_LOCATION']
+  },
+  {
+    title: 'Storage',
+    data: ['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']
+  },
+  {
+    title: 'Contacts',
+    data: ['READ_CONTACTS', 'WRITE_CONTACTS']
+  },
+  {
+    title: 'Calendar',
+    data: ['READ_CALENDAR', 'WRITE_CALENDAR']
+  },
+  {
+    title: 'Phone',
+    data: ['READ_PHONE_STATE', 'CALL_PHONE', 'READ_CALL_LOG', 'WRITE_CALL_LOG', 'READ_PHONE_NUMBERS', 'ANSWER_PHONE_CALLS']
+  },
+  {
+    title: 'Sensors',
+    data: ['BODY_SENSORS', 'ACTIVITY_RECOGNITION']
+  },
+  {
+    title: 'Bluetooth',
+    data: ['BLUETOOTH_SCAN', 'BLUETOOTH_CONNECT', 'BLUETOOTH_ADVERTISE']
+  }
+]
+
+// Flatten the categories to get all permissions for search/filter functionality
+const ALL_PERMISSIONS: PermissionType[] = PERMISSION_CATEGORIES.reduce<PermissionType[]>(
+  (acc, category) => [...acc, ...category.data],
+  []
+)
 
 interface PermissionsScreenProps {
   origin: string
 }
 
 const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
+  console.log('[PermissionsScreen] Rendering component with origin:', origin)
   const { colors } = useTheme()
   const { t } = useTranslation()
   const [permissions, setPermissions] = useState<Partial<Record<PermissionType, PermissionState>>>({})
   const [loading, setLoading] = useState(true)
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
 
   const fetchPermissions = useCallback(async () => {
     if (origin) {
       setLoading(true)
-      const perms = await getDomainPermissions(origin)
-      setPermissions(perms)
+      const fetchedPerms = await getDomainPermissions(origin)
+      console.log('[PermissionsScreen] Fetched permissions for', origin, fetchedPerms)
+
+      // Create a default permissions object with 'ask' for all permissions
+      const fullPermissions: Record<PermissionType, PermissionState> = {} as Record<PermissionType, PermissionState>
+      ALL_PERMISSIONS.forEach(perm => {
+        fullPermissions[perm] = fetchedPerms?.[perm] || 'ask'
+      })
+
+      // Set the complete permissions object
+      setPermissions(fullPermissions)
+      console.log('[PermissionsScreen] Complete permissions object with defaults:', fullPermissions)
+
+      // By default, expand all categories to ensure content is visible
+      const initialExpandedState: Record<string, boolean> = {}
+      PERMISSION_CATEGORIES.forEach(category => {
+        initialExpandedState[category.title] = true
+      })
+      console.log('[PermissionsScreen] Setting initial expanded categories:', initialExpandedState)
+      setExpandedCategories(initialExpandedState)
+
+      setLoading(false)
+    } else {
+      console.log('[PermissionsScreen] No origin provided, cannot fetch permissions')
       setLoading(false)
     }
   }, [origin])
@@ -36,48 +106,142 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
     setDomainPermission(origin, permission, state)
   }
 
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    )
+  // Format permission name for better readability
+  const formatPermissionName = (permission: string) => {
+    // First replace underscores with spaces and convert to title case
+    const formatted = permission
+      .split('_')
+      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ')
+      .replace('Media', '')
+      .replace('Audio', 'Microphone')
+      .replace('Record', 'Use')
+      .replace('Camera', 'Camera')
+      .replace('Access Fine Location', 'Precise Location')
+      .replace('Access Coarse Location', 'Approximate Location')
+      .trim()
+    return formatted
   }
 
   if (!origin) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <Text style={{ color: colors.textSecondary }}>{t('no_website_active')}</Text>
+      <View style={styles.centered}>
+        <Text style={{ color: colors.textSecondary }}>
+          {t('no_domain') || 'No domain specified'}
+        </Text>
       </View>
     )
   }
 
+  // Add debug info
+  console.log('[PermissionsScreen] Current state before rendering:', {
+    origin,
+    loading,
+    permissionCount: Object.keys(permissions).length,
+    categoriesCount: PERMISSION_CATEGORIES.length,
+    allPermCount: ALL_PERMISSIONS.length
+  })
+
+  // Debug what categories and permissions we're rendering
+  const sectionsToRender = PERMISSION_CATEGORIES.map(category => {
+    const permissionsInCategory = category.data
+    const isExpanded = expandedCategories[category.title] ?? false
+    console.log(`[PermissionsScreen] Category ${category.title} has ${permissionsInCategory.length} permissions, expanded: ${isExpanded}`)
+
+    // Filter permissions to only those that exist in this domain or have defaults
+    const availablePermissions = permissionsInCategory.filter(perm => {
+      const exists = permissions.hasOwnProperty(perm)
+      if (!exists) console.log(`[PermissionsScreen] Permission ${perm} does not exist in current permissions object`)
+      return exists
+    })
+
+    console.log(`[PermissionsScreen] Category ${category.title} has ${availablePermissions.length} available permissions after filtering`)
+
+    return {
+      title: category.title,
+      data: isExpanded ? availablePermissions : []
+    }
+  }).filter(section => section.data.length > 0) // Only include sections with data
+
   return (
-    <View style={styles.container}>
-      <Text style={[styles.header, { color: colors.textPrimary }]}>{t('permissions_for')}</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text
         style={[styles.origin, { color: colors.textSecondary, borderBottomColor: colors.inputBorder }]}
         numberOfLines={1}
       >
-        {origin}
+        {origin || 'Unknown Domain'}
       </Text>
-      {ALL_PERMISSIONS.map(perm => {
-        const selectedIndex = ['allow', 'ask', 'deny'].indexOf(permissions[perm] || 'ask')
-        return (
-          <View key={perm} style={styles.permissionRow}>
-            <Text style={[styles.permissionLabel, { color: colors.textPrimary }]}>{capitalize(perm)}</Text>
-            <SegmentedControl
-              values={[t('allow'), t('ask'), t('deny')]}
-              selectedIndex={selectedIndex}
-              onValueChange={value => handleValueChange(perm, value)}
-              tintColor={colors.primary}
-              style={{ width: 200 }}
-            />
-          </View>
-        )
-      })}
+
+      {loading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+      ) : sectionsToRender.length === 0 ? (
+        <View style={[styles.centered, { backgroundColor: colors.background }]}>
+          <Text style={{ color: colors.textPrimary, fontSize: 16, textAlign: 'center' }}>
+            {t('no_permissions_found') || 'No permissions available for this domain'}
+          </Text>
+        </View>
+      ) : (
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+          <Text style={{ margin: 10, color: colors.textSecondary }}>
+            {`${Object.keys(permissions).length} permissions found. Tap a category to expand/collapse.`}
+          </Text>
+          <SectionList
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+            sections={sectionsToRender}
+            keyExtractor={(item) => item}
+            renderSectionHeader={({ section: { title } }) => {
+              const isExpanded = expandedCategories[title] ?? false;
+              return (
+                <Pressable
+                  onPress={() => setExpandedCategories(prev => ({ ...prev, [title]: !isExpanded }))}
+                  style={[styles.sectionHeader, { backgroundColor: colors.inputBackground || '#f0f0f0' }]}
+                >
+                  <Text style={[styles.sectionHeaderText, { color: colors.textPrimary }]}>
+                    {isExpanded ? '▼ ' : '▶ '}
+                    {title}
+                  </Text>
+                </Pressable>
+              );
+            }}
+            renderItem={({ item: perm }) => {
+              const state = permissions[perm] || 'ask'
+              const selectedIndex = Math.max(['allow', 'ask', 'deny'].indexOf(state), 0)
+              return (
+                <View style={[styles.permissionRow, { backgroundColor: colors.background }]}>
+                  <Text style={[styles.permissionLabel, { color: colors.textPrimary }]}>
+                    {formatPermissionName(perm)}
+                  </Text>
+                  <SegmentedControl
+                    values={[t('allow') || 'Allow', t('ask') || 'Ask', t('deny') || 'Deny']}
+                    selectedIndex={selectedIndex}
+                    onValueChange={value => handleValueChange(perm, value)}
+                    tintColor={colors.primary}
+                    style={{ width: 180 }}
+                  />
+                </View>
+              )
+            }}
+            ItemSeparatorComponent={() => (
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: colors.inputBorder,
+                  marginLeft: 16
+                }}
+              />
+            )}
+            ListEmptyComponent={
+              <View style={styles.centered}>
+                <Text style={{ color: colors.textSecondary }}>
+                  {t('no_permissions') || 'No permissions to display'}
+                </Text>
+              </View>
+            }
+            stickySectionHeadersEnabled
+          />
+        </View>
+      )}
     </View>
   )
 }
@@ -85,32 +249,57 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16
+    padding: 0,
   },
   centered: {
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    flex: 1
   },
   header: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center'
+    fontSize: 20, // Increased size
+    fontWeight: '700', // Bolder
+    textAlign: 'center',
+    marginBottom: 8 // Added spacing
   },
   origin: {
-    fontSize: 13,
+    fontSize: 16, // Increased size
     textAlign: 'center',
     paddingBottom: 16,
     marginBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#ccc' // Explicit border color
+  },
+  sectionHeader: {
+    paddingVertical: 10, // More padding
+    paddingHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4, // Added bottom margin
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0', // Explicit background color
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  sectionHeaderText: {
+    fontSize: 16,
+    fontWeight: '700', // Bolder
+    color: '#333' // Explicit text color
   },
   permissionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12
+    paddingVertical: 12, // More padding
+    paddingHorizontal: 16,
+    borderBottomWidth: 1, // Added bottom border
+    borderBottomColor: '#eee', // Light border color
+    backgroundColor: 'white' // Explicit background color
   },
   permissionLabel: {
-    fontSize: 17
+    fontSize: 15,
+    flex: 1,
+    paddingRight: 12,
+    color: '#333' // Explicit text color
   }
 })
 

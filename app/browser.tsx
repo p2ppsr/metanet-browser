@@ -48,13 +48,13 @@ import { HistoryList } from '@/components/HistoryList'
 import { isValidUrl } from '@/utils/generalHelpers'
 import tabStore from '../stores/TabStore'
 import bookmarkStore from '@/stores/BookmarkStore'
-import { 
-  getPermissionState, 
-  setDomainPermission, 
-  checkPermissionForDomain, 
-  PermissionType, 
+import {
+  getPermissionState,
+  setDomainPermission,
+  checkPermissionForDomain,
+  PermissionType,
   PermissionState,
-  getDomainPermissions 
+  getDomainPermissions
 } from '@/utils/permissionsManager'
 import SettingsScreen from './settings'
 import IdentityScreen from './identity'
@@ -70,10 +70,10 @@ import TrustScreen from './trust'
 
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
-import * as Notifications from 'expo-notifications'
 import UniversalScanner, { ScannerHandle } from '@/components/UniversalScanner'
 import { logWithTimestamp } from '@/utils/logging'
 import PermissionsScreen from '@/components/PermissionsScreen'
+import PermissionModal from '@/components/PermissionModal'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -205,6 +205,7 @@ function Browser() {
 
   /**
    * Updates the list of denied permissions for the current domain
+   * This is called when navigating to a new URL or when permissions change
    */
   const updateDeniedPermissionsForDomain = useCallback(async (url: string) => {
     try {
@@ -220,7 +221,15 @@ function Browser() {
         }
       }
 
+      // Log the denied permissions for debugging
+      console.log(`Permissions denied for ${domain}:`, deniedPermissions)
+
+      // Update the state variable that's used in the injected JavaScript
       setPermissionsDeniedForCurrentDomain(deniedPermissions)
+
+      // If we have an active WebView and we're on this domain currently,
+      // we could trigger a reload to apply the new permission settings
+      // Alternatively, we let navigation events handle refreshing
     } catch (error) {
       console.error('Failed to update denied permissions:', error)
     }
@@ -230,27 +239,77 @@ function Browser() {
    * Shows a permission prompt to the user and returns a promise that resolves
    * when they make a decision
    */
-  const promptUserForPermission = useCallback(
-    (domain: string, permission: PermissionType): Promise<boolean> => {
-      return new Promise((resolve) => {
-        // Store the resolver function so we can call it when user responds
-        permissionResolverRef.current = (granted: boolean) => {
-          // Update permission in storage
-          setDomainPermission(domain, permission, granted ? 'allow' : 'deny').then(() => {
-            // Update the denied permissions list if user denied
-            if (!granted) {
-              updateDeniedPermissionsForDomain(activeTab?.url || '')
-            }
-            resolve(granted)
-          })
-        }
+  // Function to show the permission modal
+  const showPermissionModal = useCallback((domain: string, permission: PermissionType, callback: (granted: boolean) => void) => {
+    console.log(`[showPermissionModal] Opening modal for ${domain} with permission ${permission}`)
+    setPendingDomain(domain)
+    setPendingPermission(permission)
+    setPendingCallback(() => callback)
+    setPermissionModalVisible(true)
+    console.log(`[showPermissionModal] Modal visibility set to true`)
+  }, [])
 
-        // Show the prompt
-        setCurrentPermissionRequest({ domain, permission })
-        setShowPermissionPrompt(true)
+  // Helper function to check OS level permissions
+  const checkOSPermission = useCallback(async (permission: PermissionType): Promise<boolean> => {
+    // This function would call the appropriate OS-level permission checks using react-native-permissions
+    // For demonstration, we're simplifying this
+    console.log(`[OS Permission Check] Checking ${permission} permission`)
+    return true // Assume permission is granted at OS level for demonstration
+  }, [])
+
+  const promptUserForPermission = useCallback(
+    async (domain: string, permission: PermissionType): Promise<boolean> => {
+      console.log(`[Permission Request] Attempting to prompt user for ${permission} on ${domain}`)
+      return new Promise(resolve => {
+        // First check if we already have a domain-specific permission set
+        getPermissionState(domain, permission).then(async domainPermission => {
+          console.log(`[Permission Check] Domain ${domain} permission for ${permission}: ${domainPermission}`)
+
+          if (domainPermission === 'deny') {
+            // If already denied for this domain, don't show modal
+            console.log(`[Permission] Already denied for domain ${domain}`)
+            resolve(false)
+            return
+          }
+
+          if (domainPermission === 'allow') {
+            // If already allowed for this domain, check OS permission
+            const osGranted = await checkOSPermission(permission)
+            resolve(osGranted)
+            return
+          }
+
+          // Otherwise show the modal (domainPermission is 'ask' or undefined)
+          console.log(`[Permission] Setting up modal for ${domain} for ${permission}`)
+
+          // Directly set modal state instead of using showPermissionModal
+          setPendingDomain(domain)
+          setPendingPermission(permission)
+          setPendingCallback((granted: boolean) => {
+            console.log(`[Permission] User responded to prompt: ${granted ? 'granted' : 'denied'}`)
+            if (granted) {
+              // If user allowed, check OS permission
+              checkOSPermission(permission).then(osGranted => {
+                if (!osGranted) {
+                  console.log(`[Permission] OS denied ${permission} even though domain was allowed`)
+                }
+                resolve(osGranted)
+              })
+            } else {
+              // User denied in the modal
+              resolve(false)
+            }
+          })
+
+          // Force modal visibility in next tick to ensure state updates
+          setTimeout(() => {
+            console.log('[Permission] Setting modal to visible')
+            setPermissionModalVisible(true)
+          }, 0)
+        })
       })
     },
-    [activeTab?.url]
+    [checkOSPermission]
   )
 
   /* ----------------------------- wallet context ----------------------------- */
@@ -366,74 +425,6 @@ function Browser() {
     setRemovedDefaultApps(prev => [...prev, url])
   }, [])
 
-  /* ------------------------------ permission modal ----------------------------- */
-  /**
-   * Renders the permission prompt modal
-   */
-  const renderPermissionPrompt = () => {
-    if (!showPermissionPrompt || !currentPermissionRequest) return null
-    
-    const { domain, permission } = currentPermissionRequest
-    // Map permission types to user-friendly display names
-    let permissionDisplay = 'Permission'
-    if (permission === 'CAMERA') permissionDisplay = 'Camera'
-    else if (permission === 'RECORD_AUDIO') permissionDisplay = 'Microphone'
-    else if (permission === 'ACCESS_FINE_LOCATION') permissionDisplay = 'Location'
-    
-    return (
-      <Modal
-        isVisible={showPermissionPrompt}
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        backdropOpacity={0.5}
-        onBackdropPress={() => {
-          // Deny permission when backdrop is pressed
-          if (permissionResolverRef.current) {
-            permissionResolverRef.current(false)
-            permissionResolverRef.current = null
-          }
-          setShowPermissionPrompt(false)
-          setCurrentPermissionRequest(null)
-        }}
-      >
-        <View style={styles.permissionModalContent}>
-          <Text style={styles.permissionModalTitle}>{`${permissionDisplay} Permission Request`}</Text>
-          <Text style={styles.permissionModalText}>
-            {`${domain} wants to use your ${permissionDisplay.toLowerCase()}`}
-          </Text>
-          <View style={styles.permissionModalButtons}>
-            <TouchableOpacity
-              style={[styles.permissionModalButton, styles.permissionModalButtonDeny]}
-              onPress={() => {
-                if (permissionResolverRef.current) {
-                  permissionResolverRef.current(false)
-                  permissionResolverRef.current = null
-                }
-                setShowPermissionPrompt(false)
-                setCurrentPermissionRequest(null)
-              }}
-            >
-              <Text style={styles.permissionModalButtonText}>Block</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.permissionModalButton, styles.permissionModalButtonAllow]}
-              onPress={() => {
-                if (permissionResolverRef.current) {
-                  permissionResolverRef.current(true)
-                  permissionResolverRef.current = null
-                }
-                setShowPermissionPrompt(false)
-                setCurrentPermissionRequest(null)
-              }}
-            >
-              <Text style={styles.permissionModalButtonText}>Allow</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    )
-  }
-
   /* -------------------------- ui / animation state -------------------------- */
   const addressEditing = useRef(false)
   const [addressText, setAddressText] = useState(kNEW_TAB_URL)
@@ -446,9 +437,10 @@ function Browser() {
 
   // Permission-related state variables
   const [permissionsDeniedForCurrentDomain, setPermissionsDeniedForCurrentDomain] = useState<PermissionType[]>([])
-  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false)
-  const [currentPermissionRequest, setCurrentPermissionRequest] = useState<{domain: string; permission: PermissionType} | null>(null)
-  const permissionResolverRef = useRef<((granted: boolean) => void) | null>(null)
+  const [permissionModalVisible, setPermissionModalVisible] = useState(false)
+  const [pendingPermission, setPendingPermission] = useState<PermissionType | null>(null)
+  const [pendingDomain, setPendingDomain] = useState<string | null>(null)
+  const [pendingCallback, setPendingCallback] = useState<((granted: boolean) => void) | null>(null)
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<
@@ -1126,6 +1118,7 @@ function Browser() {
       let msg
       try {
         msg = JSON.parse(event.nativeEvent.data)
+        console.log(`[WebView Message] Received message of type: ${msg?.type}`, JSON.stringify(msg))
       } catch (error) {
         console.error('Failed to parse WebView message:', error)
         return
@@ -1141,130 +1134,142 @@ function Browser() {
         return
       }
 
-      // Handle camera permission request
-      if (msg.type === 'REQUEST_CAMERA') {
-        const domain = domainForUrl(activeTab.url)
-        const permState = await getPermissionState(domain, 'CAMERA')
+      // Helper function to send permission results to WebView
+      const sendPermissionResultToWebView = (permissionType: string, granted: boolean) => {
+        if (!activeTab?.webviewRef?.current) return
 
-        if (permState === 'deny') {
-          activeTab.webviewRef?.current?.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'CAMERA_PERMISSION_RESULT',
-                granted: false
-              })
-            }));
-          `)
-          return
-        }
-
-        if (permState === 'ask') {
-          const granted = await promptUserForPermission(domain, 'CAMERA')
-          activeTab.webviewRef?.current?.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'CAMERA_PERMISSION_RESULT',
-                granted: ${granted}
-              })
-            }));
-          `)
-          return
-        }
-
-        const granted = await checkPermissionForDomain(domain, 'CAMERA')
-        activeTab.webviewRef?.current?.injectJavaScript(`
+        activeTab.webviewRef.current.injectJavaScript(`
           window.dispatchEvent(new MessageEvent('message', {
             data: JSON.stringify({
-              type: 'CAMERA_PERMISSION_RESULT',
+              type: '${permissionType}_PERMISSION_RESULT',
               granted: ${granted}
             })
           }));
         `)
+      }
+
+      // Generic permission request handler
+      const handlePermissionRequest = async (
+        messageType: string,
+        permissionType: PermissionType,
+        resultType: string
+      ) => {
+        console.log(`[PERMISSION DEBUG] Starting handlePermissionRequest for ${messageType}, ${permissionType}, ${resultType}`)
+        try {
+          const domain = domainForUrl(activeTab.url)
+          console.log(`[${messageType}] Permission request from ${domain} for ${permissionType}`)
+          console.log(`[PERMISSION DEBUG] Active tab URL: ${activeTab?.url || 'undefined'}`)
+          console.log(`[PERMISSION DEBUG] Domain extracted: ${domain}`)
+          if (!domain) {
+            console.error(`[PERMISSION ERROR] Cannot get domain from URL: ${activeTab?.url}`)
+            sendPermissionResultToWebView(resultType, false)
+            return
+          }
+
+          // Check the domain-specific permission state
+          const permState = await getPermissionState(domain, permissionType)
+          console.log(`[${messageType}] Domain permission state: ${permState}`)
+
+          if (permState === 'deny') {
+            // If explicitly denied for this domain, reject immediately
+            console.log(`[${messageType}] Permission already denied for ${domain}, rejecting request`)
+            sendPermissionResultToWebView(resultType, false)
+            return
+          }
+
+          if (permState === 'allow') {
+            // If allowed for this domain, check OS permission
+            console.log(`[${messageType}] Permission already allowed for ${domain}, checking OS permission`)
+            const granted = await checkPermissionForDomain(domain, permissionType)
+            sendPermissionResultToWebView(resultType, granted)
+            return
+          }
+
+          // If 'ask' (or undefined), show the permission prompt
+          console.log(`[${messageType}] Permission state is 'ask', showing permission modal for ${domain}`)
+
+          return new Promise(resolve => {
+            // Direct call to showPermissionModal to ensure visibility
+            setPendingDomain(domain)
+            setPendingPermission(permissionType)
+            setPendingCallback((granted: boolean) => {
+              console.log(`[${messageType}] User responded to permission prompt: ${granted ? 'granted' : 'denied'}`)
+              sendPermissionResultToWebView(resultType, granted)
+              resolve(granted)
+            })
+
+            // Force modal visibility in next tick to ensure state updates
+            setTimeout(() => {
+              setPermissionModalVisible(true)
+              console.log(`[${messageType}] Permission modal visibility set to true`)
+            }, 0)
+          })
+        } catch (error) {
+          console.error(`[PERMISSION ERROR] Error handling permission request:`, error)
+          sendPermissionResultToWebView(resultType, false)
+          return false
+        }
+      }
+
+      // Handle camera permission request
+      if (msg.type === 'REQUEST_CAMERA') {
+        console.log('[WebView] Camera permission request detected')
+        await handlePermissionRequest('CAMERA', 'CAMERA', 'CAMERA')
         return
       }
 
       // Handle microphone permission request
-      if (msg.type === 'REQUEST_MICROPHONE') {
-        const domain = domainForUrl(activeTab.url)
-        const permState = await getPermissionState(domain, 'RECORD_AUDIO')
-
-        if (permState === 'deny') {
-          activeTab.webviewRef?.current?.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'MICROPHONE_PERMISSION_RESULT',
-                granted: false
-              })
-            }));
-          `)
-          return
-        }
-
-        if (permState === 'ask') {
-          const granted = await promptUserForPermission(domain, 'RECORD_AUDIO')
-          activeTab.webviewRef?.current?.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'MICROPHONE_PERMISSION_RESULT',
-                granted: ${granted}
-              })
-            }));
-          `)
-          return
-        }
-
-        const granted = await checkPermissionForDomain(domain, 'RECORD_AUDIO')
-        activeTab.webviewRef?.current?.injectJavaScript(`
-          window.dispatchEvent(new MessageEvent('message', {
-            data: JSON.stringify({
-              type: 'MICROPHONE_PERMISSION_RESULT',
-              granted: ${granted}
-            })
-          }));
-        `)
+      if (msg.type === 'REQUEST_MICROPHONE' ||
+        (msg.type === 'CONSOLE' &&
+          msg.args &&
+          msg.args.some((arg: any) => typeof arg === 'string' && arg.includes('microphone')))) {
+        console.log('[WebView] Microphone permission request detected')
+        await handlePermissionRequest('MICROPHONE', 'RECORD_AUDIO', 'MICROPHONE')
         return
       }
 
       // Handle location permission request
-      if (msg.type === 'REQUEST_LOCATION') {
-        const domain = domainForUrl(activeTab.url)
-        const permState = await getPermissionState(domain, 'ACCESS_FINE_LOCATION')
-
-        if (permState === 'deny') {
-          activeTab.webviewRef?.current?.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'LOCATION_PERMISSION_RESULT',
-                granted: false
-              })
-            }));
-          `)
-          return
-        }
-
-        if (permState === 'ask') {
-          const granted = await promptUserForPermission(domain, 'ACCESS_FINE_LOCATION')
-          activeTab.webviewRef?.current?.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'LOCATION_PERMISSION_RESULT',
-                granted: ${granted}
-              })
-            }));
-          `)
-          return
-        }
-
-        const granted = await checkPermissionForDomain(domain, 'ACCESS_FINE_LOCATION')
-        activeTab.webviewRef?.current?.injectJavaScript(`
-          window.dispatchEvent(new MessageEvent('message', {
-            data: JSON.stringify({
-              type: 'LOCATION_PERMISSION_RESULT',
-              granted: ${granted}
-            })
-          }));
-        `)
+      if (msg.type === 'REQUEST_LOCATION' ||
+        (msg.type === 'CONSOLE' &&
+          msg.args &&
+          msg.args.some((arg: any) => typeof arg === 'string' && arg.includes('location')))) {
+        console.log('[WebView] Location permission request detected')
+        await handlePermissionRequest('LOCATION', 'ACCESS_FINE_LOCATION', 'LOCATION')
         return
+      }
+
+      // Handle generic permission requests that might come in different formats
+      if (msg.type && msg.type.includes('PERMISSION') ||
+        (msg.type === 'CONSOLE' &&
+          msg.args &&
+          msg.args.some((arg: any) => typeof arg === 'string' && arg.includes('permission')))) {
+        console.log('[WebView] Generic permission request detected, attempting to parse')
+
+        // Try to determine permission type from the message
+        let permType: PermissionType | null = null
+
+        if (msg.args && Array.isArray(msg.args)) {
+          if (msg.args.some((arg: any) => typeof arg === 'string' &&
+            (arg.includes('camera') || arg.includes('video')))) {
+            permType = 'CAMERA'
+          } else if (msg.args.some((arg: any) => typeof arg === 'string' &&
+            (arg.includes('microphone') || arg.includes('audio')))) {
+            permType = 'RECORD_AUDIO'
+          } else if (msg.args.some((arg: any) => typeof arg === 'string' &&
+            arg.includes('location'))) {
+            permType = 'ACCESS_FINE_LOCATION'
+          }
+        }
+
+        if (permType) {
+          console.log(`[WebView] Identified permission type: ${permType}`)
+          await handlePermissionRequest(
+            permType,
+            permType,
+            permType === 'RECORD_AUDIO' ? 'MICROPHONE' : permType
+          )
+          return
+        }
       }
 
       // Handle console logs from WebView
@@ -1776,8 +1781,63 @@ function Browser() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      {/* Permission prompt modal */}
-      {renderPermissionPrompt()}
+      {/* Permission modal */}
+      {/* Test button for permission modal - only in dev mode */}
+      {__DEV__ && (
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            top: 100,
+            right: 20,
+            backgroundColor: 'rgba(0,0,255,0.7)',
+            padding: 10,
+            zIndex: 9999
+          }}
+          onPress={() => {
+            console.log('TEST: Opening permission modal manually')
+            setPendingDomain(tabStore.activeTab?.url ? new URL(tabStore.activeTab.url).hostname : 'example.com')
+            setPendingPermission('CAMERA')
+            setPendingCallback(() => (granted: boolean) => {
+              console.log('TEST: Permission decision:', granted ? 'GRANTED' : 'DENIED')
+            })
+            setPermissionModalVisible(true)
+          }}
+        >
+          <Text style={{ color: 'white' }}>Test Permission</Text>
+        </TouchableOpacity>
+      )}
+
+      <PermissionModal
+        visible={permissionModalVisible}
+        domain={pendingDomain ?? ''}
+        permission={pendingPermission ?? 'CAMERA'}
+        onDecision={(granted) => {
+          if (pendingDomain && pendingPermission) {
+            // Update permission in storage
+            setDomainPermission(pendingDomain, pendingPermission, granted ? 'allow' : 'deny')
+              .then(() => {
+                // Update the denied permissions list
+                updateDeniedPermissionsForDomain(activeTab?.url || '')
+
+                // If we're on the same domain where the permission was changed,
+                // reload the current page to apply the new permission settings
+                if (activeTab?.url && domainForUrl(activeTab.url) === pendingDomain) {
+                  console.log(`Reloading WebView to apply new permission settings for ${pendingDomain}`)
+                  activeTab.webviewRef?.current?.reload()
+                }
+              })
+          }
+
+          // Call the callback with the user's decision
+          pendingCallback?.(granted)
+
+          // Reset modal state
+          setPermissionModalVisible(false)
+          setPendingDomain(null)
+          setPendingPermission(null)
+          setPendingCallback(null)
+        }}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={addressFocused ? (Platform.OS === 'ios' ? 'padding' : 'height') : undefined}
@@ -1843,7 +1903,7 @@ function Browser() {
                 >
                   <Ionicons name="contract-outline" size={20} color="white" />
                 </TouchableOpacity>
-              )}    
+              )}
               <WebView
                 ref={activeTab?.webviewRef}
                 source={{
@@ -1894,15 +1954,44 @@ function Browser() {
                 }
                 injectedJavaScriptBeforeContentLoaded={`
                 (function() {
+                  // List of permissions denied for this domain
                   const denied = ${JSON.stringify(permissionsDeniedForCurrentDomain)}
-                  if (denied.includes("CAMERA")) {
-                    navigator.mediaDevices.getUserMedia = () => {
-                      throw new Error("Camera access is blocked for this site.");
+                  
+                  // Handle camera and microphone access
+                  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+                    
+                    navigator.mediaDevices.getUserMedia = function(constraints) {
+                      // Check if requesting camera access when it's denied
+                      if (denied.includes("CAMERA") && constraints && constraints.video) {
+                        return Promise.reject(new DOMException("Camera access denied by site settings", "NotAllowedError"));
+                      }
+                      
+                      // Check if requesting microphone access when it's denied
+                      if (denied.includes("RECORD_AUDIO") && constraints && constraints.audio) {
+                        return Promise.reject(new DOMException("Microphone access denied by site settings", "NotAllowedError"));
+                      }
+                      
+                      // If we got here, the requested media types are allowed
+                      return originalGetUserMedia.call(navigator.mediaDevices, constraints);
                     };
                   }
-                  if (denied.includes("RECORD_AUDIO")) {
-                    navigator.mediaDevices.getUserMedia = () => {
-                      throw new Error("Microphone access is blocked for this site.");
+                  
+                  // Handle location access
+                  if (denied.includes("ACCESS_FINE_LOCATION") && navigator.geolocation) {
+                    // Override the geolocation API methods
+                    navigator.geolocation.getCurrentPosition = function(success, error) {
+                      if (error) {
+                        error(new Error("Location access denied by site settings"));
+                      }
+                      return undefined;
+                    };
+                    
+                    navigator.geolocation.watchPosition = function(success, error) {
+                      if (error) {
+                        error(new Error("Location access denied by site settings"));
+                      }
+                      return 0; // Return a fake watch ID
                     };
                   }
                 })();
@@ -2512,11 +2601,14 @@ const SubDrawerView = React.memo(
         </View>
         <View style={styles.subDrawerContent}>
           {route === 'permissions' ? (
-            <View>
+            <View style={{ paddingHorizontal: 20, flex: 1 }}>
               <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>
                 Manage permissions from websites and apps.
               </Text>
-              <PermissionsScreen origin={'peepee.com'} /> {/* TODO: get origin from active tab!!!!!! */}
+
+              {tabStore.activeTab?.url && (
+                <PermissionsScreen origin={new URL(tabStore.activeTab.url).hostname} />
+              )}
             </View>
           ) : (
             // Only show web3 screens when not in web2 mode
@@ -2932,50 +3024,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1
   },
-  permissionModalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  permissionModalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  permissionModalText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  permissionModalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  permissionModalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    minWidth: '40%',
-    alignItems: 'center',
-  },
-  permissionModalButtonDeny: {
-    backgroundColor: '#f44336',
-  },
-  permissionModalButtonAllow: {
-    backgroundColor: '#4caf50',
-  },
-  permissionModalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  }
+  // Permission modal styles have been moved to PermissionModal.tsx
 })
