@@ -191,7 +191,7 @@ export default function LoginScreen() {
                 )
               }}
             >
-              <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>Continue without login</Text>
+              <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>{t('continue_without_login')}</Text>
             </TouchableOpacity>
 
             <Text style={[styles.termsText, { color: colors.textSecondary }]}>{t('terms_privacy_agreement')}</Text>
