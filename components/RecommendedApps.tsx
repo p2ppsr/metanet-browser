@@ -10,7 +10,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  Linking,
   ActivityIndicator
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
