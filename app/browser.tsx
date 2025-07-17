@@ -342,6 +342,31 @@ function Browser() {
   const [isDesktopView, setIsDesktopView] = useState(false)
   const [isToggleDesktopCooldown, setIsToggleDesktopCooldown] = useState(false)
 
+  // Orientation handling
+  const [orientation, setOrientation] = useState('portrait')
+  const [screenDimensions, setScreenDimensions] = useState(Dimensions.get('window'))
+
+  // Handle orientation changes
+  useEffect(() => {
+    const updateOrientation = () => {
+      const windowDimensions = Dimensions.get('window')
+      setScreenDimensions(windowDimensions)
+      const newOrientation = windowDimensions.width > windowDimensions.height ? 'landscape' : 'portrait'
+      setOrientation(newOrientation)
+      console.log(`📱 Orientation changed to: ${newOrientation} (${windowDimensions.width}x${windowDimensions.height})`)
+    }
+
+    // Listen for orientation changes
+    const subscription = Dimensions.addEventListener('change', updateOrientation)
+    
+    // Initial check
+    updateOrientation()
+
+    return () => {
+      subscription?.remove()
+    }
+  }, [])
+
   const addressInputRef = useRef<TextInput>(null)
   const [consoleLogs, setConsoleLogs] = useState<any[]>([])
   const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest()
