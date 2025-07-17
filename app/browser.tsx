@@ -783,17 +783,13 @@ function Browser() {
   }
   const getDesktopUserAgent = () => {
     const osVersion = Platform.Version
-    if (Platform.OS === 'ios') {
-      // For desktop view on iOS, use macOS format with actual iOS version converted to macOS style
-      const iosVersion = typeof osVersion === 'string' ? osVersion : '16.0'
-      // Convert iOS version to macOS version format (e.g., 16.0 -> 12_0, 15.4 -> 11_4)
-      const macOSVersion = iosVersion.replace(/\./g, '_')
-      return `Mozilla/5.0 (Macintosh; Intel Mac OS X ${macOSVersion}) AppleWebKit/537.36 (KHTML, like Gecko) Metanet/${metanetVersion}`
-    } else {
-      // For desktop view on Android, use Linux format but identify as Metanet
-      const androidVersion = typeof osVersion === 'number' ? osVersion : 13
-      return `Mozilla/5.0 (X11; Linux x86_64; Android ${androidVersion}) AppleWebKit/537.36 (KHTML, like Gecko) Metanet/${metanetVersion}`
-    }
+     if (Platform.OS === 'ios') {
+    // Use a clean macOS format that focuses on Metanet identity
+    return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Metanet/${metanetVersion}`
+  } else {
+    // Use Windows format for maximum desktop compatibility on Android
+    return `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Metanet/${metanetVersion}`
+  }
   }
   const mobileUserAgent = getMobileUserAgent()
   const desktopUserAgent = getDesktopUserAgent()
