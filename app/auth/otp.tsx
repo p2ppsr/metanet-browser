@@ -55,7 +55,6 @@ export default function OtpScreen() {
   }, [])
 
   // Handle OTP verification
-<
   const handleVerify = useCallback(async (otp: string) => {
     console.log({ otp })
     if (otp.length !== 6) return; // Ensure OTP is complete

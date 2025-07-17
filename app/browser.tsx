@@ -745,7 +745,6 @@ const navFwd = useCallback(() => {
     if (!currentTab) return
 
     if (currentTab.isLoading) {
-<
       return currentTab.webviewRef?.current?.stopLoading()
     } else {
       return currentTab.webviewRef?.current?.reload();
