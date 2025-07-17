@@ -142,7 +142,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
     allPermCount: ALL_PERMISSIONS.length
   })
 
-  // Debug what categories and permissions we're rendering
+  // Transform categories into sections for SectionList
   const sectionsToRender = PERMISSION_CATEGORIES.map(category => {
     const permissionsInCategory = category.data
     const isExpanded = expandedCategories[category.title] ?? false
@@ -156,12 +156,19 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
     })
 
     console.log(`[PermissionsScreen] Category ${category.title} has ${availablePermissions.length} available permissions after filtering`)
-
+    
+    // Always include the category in sections, even when empty
+    // If there are no permissions available for this category, exclude it entirely
+    if (availablePermissions.length === 0) {
+      return null
+    }
+    
     return {
       title: category.title,
-      data: isExpanded ? availablePermissions : []
+      data: isExpanded ? availablePermissions : [],
+      isExpanded: isExpanded // Add the expanded state for rendering
     }
-  }).filter(section => section.data.length > 0) // Only include sections with data
+  }).filter((section): section is {title: string, data: PermissionType[], isExpanded: boolean} => section !== null)
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -198,7 +205,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
                   style={[styles.sectionHeader, { backgroundColor: colors.inputBackground || '#f0f0f0' }]}
                 >
                   <Text style={[styles.sectionHeaderText, { color: colors.textPrimary }]}>
-                    {isExpanded ? '▼ ' : '▶ '}
+                    {isExpanded ? '▼ ' : '▶ ' }
                     {title}
                   </Text>
                 </Pressable>
@@ -216,7 +223,9 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
                     values={[t('allow') || 'Allow', t('ask') || 'Ask', t('deny') || 'Deny']}
                     selectedIndex={selectedIndex}
                     onValueChange={value => handleValueChange(perm, value)}
-                    tintColor={colors.primary}
+                    tintColor={colors.buttonBackground}
+                    fontStyle={{ color: colors.buttonText }}
+                    activeFontStyle={{ color: colors.buttonText, fontWeight: '600' }}
                     style={{ width: 180 }}
                   />
                 </View>
@@ -238,7 +247,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
                 </Text>
               </View>
             }
-            stickySectionHeadersEnabled
+            stickySectionHeadersEnabled={false}
           />
         </View>
       )}

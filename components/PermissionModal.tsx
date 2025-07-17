@@ -24,16 +24,16 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, domain, perm
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              onPress={() => onDecision(true)}
-              style={[styles.button, { backgroundColor: colors.primary }]}
-            >
-              <Text style={styles.buttonText}>Allow</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
               onPress={() => onDecision(false)}
-              style={[styles.button, { backgroundColor: colors.inputBorder }]}
+              style={[styles.button, { backgroundColor: colors.buttonBackgroundDisabled }]}
             >
               <Text style={styles.buttonText}>Deny</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => onDecision(true)}
+              style={[styles.button, { backgroundColor: colors.buttonBackgroundDisabled }]}
+            >
+              <Text style={styles.buttonText}>Allow</Text>
             </TouchableOpacity>
           </View>
         </View>
