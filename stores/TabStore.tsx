@@ -119,20 +119,13 @@ export class TabStore {
       `goBack(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoBack=${tab?.canGoBack}`
     )
 
-<<<<<<< HEAD
     //console.log(`goBack(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoBack=${tab?.canGoBack}`)
 
-=======
->>>>>>> dev
     if (tab && history && currentIndex > 0) {
       const newIndex = currentIndex - 1
       const url = history[newIndex]
 
-<<<<<<< HEAD
       //console.log(`🔙 Going back to: ${url} (index ${newIndex})`)
-=======
-      console.log(`🔙 Going back to: ${url} (index ${newIndex})`)
->>>>>>> dev
 
       this.tabHistoryIndexes[tabId] = newIndex
 
@@ -157,20 +150,13 @@ export class TabStore {
       `goForward(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoForward=${tab?.canGoForward}`
     )
 
-<<<<<<< HEAD
     //console.log(`goForward(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoForward=${tab?.canGoForward}`)
 
-=======
->>>>>>> dev
     if (tab && history && currentIndex < history.length - 1) {
       const newIndex = currentIndex + 1
       const url = history[newIndex]
 
-<<<<<<< HEAD
       //console.log(`🔜 Going forward to: ${url} (index ${newIndex})`)
-=======
-      console.log(`🔜 Going forward to: ${url} (index ${newIndex})`)
->>>>>>> dev
 
       this.tabHistoryIndexes[tabId] = newIndex
 
@@ -217,13 +203,7 @@ export class TabStore {
       return
     }
 
-<<<<<<< HEAD
     // console.log(`handleNavigationStateChange(): tabId=${tabId}, url=${navState.url}, webview_canGoBack=${navState.canGoBack}, webview_canGoForward=${navState.canGoForward}`)
-=======
-    console.log(
-      `handleNavigationStateChange(): tabId=${tabId}, url=${navState.url}, webview_canGoBack=${navState.canGoBack}, webview_canGoForward=${navState.canGoForward}`
-    )
->>>>>>> dev
 
     // Always update loading state and basic tab info
     tab.isLoading = navState.loading
@@ -271,13 +251,7 @@ export class TabStore {
       tab.canGoBack = currentIdx > 0
       tab.canGoForward = currentIdx < currentHistory.length - 1
 
-<<<<<<< HEAD
       //console.log(`🧭 Navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}, historyIndex=${currentIdx}/${currentHistory.length - 1}`)
-=======
-      console.log(
-        `🧭 Navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}, historyIndex=${currentIdx}/${currentHistory.length - 1}`
-      )
->>>>>>> dev
 
       // Log state changes
       if (prevCanGoBack !== tab.canGoBack || prevCanGoForward !== tab.canGoForward) {
@@ -290,7 +264,6 @@ export class TabStore {
     }
   }
 
-<<<<<<< HEAD
   async clearAllTabs() {
     console.log('clearAllTabs() called')
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -312,12 +285,6 @@ export class TabStore {
       .catch
       //console.error
       ()
-=======
-  async saveTabs() {
-    if (!this.tabs) this.tabs = [] // Prevent undefined
-    const serializableTabs = this.tabs.map(({ webviewRef, ...rest }) => rest)
-    await AsyncStorage.setItem('tabs', JSON.stringify(serializableTabs)).catch(console.error)
->>>>>>> dev
   }
 
   async loadTabs() {

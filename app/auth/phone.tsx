@@ -28,11 +28,7 @@ export default function PhoneScreen() {
   const [showCountryPicker, setShowCountryPicker] = useState(false)
   const [loading, setLoading] = useState(false)
   const { managers } = useWallet()
-<<<<<<< HEAD
   const { showWeb3Benefits, setWeb2Mode } = useBrowserMode()
-=======
-  const { showWeb3Benefits } = useBrowserMode()
->>>>>>> dev
 
   // Get theme styles and colors
   const { colors, isDark } = useTheme()
@@ -82,10 +78,7 @@ export default function PhoneScreen() {
     showWeb3Benefits(
       // onContinue - if they still want to skip
       () => {
-<<<<<<< HEAD
         setWeb2Mode(true)
-=======
->>>>>>> dev
         router.replace({
           pathname: '/browser',
           params: { mode: 'web2' }
@@ -223,11 +216,7 @@ export default function PhoneScreen() {
             onPress={handleSkipLogin}
             disabled={loading}
           >
-<<<<<<< HEAD
             <Text style={[styles.buttonText, { color: colors.textPrimary }]}>{t('continue_without_login')}</Text>
-=======
-            <Text style={[styles.buttonText, { color: colors.textPrimary }]}>Continue without login</Text>
->>>>>>> dev
           </TouchableOpacity>
 
           <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 10 }}>

@@ -20,48 +20,13 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
   const { colors } = useTheme()
   const { t } = useTranslation()
 
-<<<<<<< HEAD
-=======
-  const benefits = [
-    {
-      icon: 'key-outline' as const,
-      title: 'Never login again',
-      description: 'One identity for every Web3 app. No more passwords or sign-ups.'
-    },
-    {
-      icon: 'flash-outline' as const,
-      title: 'Instant everything',
-      description: 'Payments, access, verification - all happen in seconds.'
-    },
-    {
-      icon: 'shield-checkmark-outline' as const,
-      title: 'You own your data',
-      description: 'No companies tracking you or selling your information.'
-    },
-    {
-      icon: 'planet-outline' as const,
-      title: 'Works everywhere',
-      description: 'Access thousands of Web3 apps with the same identity.'
-    },
-    {
-      icon: 'trending-up-outline' as const,
-      title: 'Future-proof',
-      description: 'Be early to the next generation of the internet.'
-    }
-  ]
-
->>>>>>> dev
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onDismiss}>
       <View style={styles.modalContainer}>
         <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
           {/* Header */}
           <View style={styles.header}>
-<<<<<<< HEAD
             <Text style={[styles.title, { color: colors.textPrimary }]}>{t('web3_benefits_title')}</Text>
-=======
-            <Text style={[styles.title, { color: colors.textPrimary }]}>Are you sure?</Text>
->>>>>>> dev
             <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -99,13 +64,9 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.secondaryButton} onPress={onContinueWithoutLogin}>
-<<<<<<< HEAD
               <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
                 {t('web3_benefits_maybe_later')}
               </Text>
-=======
-              <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>Maybe later</Text>
->>>>>>> dev
             </TouchableOpacity>
           </View>
         </View>
@@ -183,12 +144,8 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 11,
     fontWeight: '300',
-<<<<<<< HEAD
 
     opacity: 1
-=======
-    opacity: 0.5
->>>>>>> dev
   }
 })
 

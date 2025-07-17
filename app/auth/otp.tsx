@@ -9,7 +9,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
-  TextInput
+  TextInput,
+  Keyboard
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -53,7 +54,6 @@ export default function OtpScreen() {
   }, [])
 
   // Handle OTP verification
-<<<<<<< HEAD
   const handleVerify = useCallback(async (otp: string) => {
     console.log({ otp })
     if (otp.length !== 6) return; // Ensure OTP is complete
@@ -82,36 +82,6 @@ export default function OtpScreen() {
     }
   }, [otp, managers, phoneNumber])
   
-=======
-  const handleVerify = useCallback(
-    async (otp: string) => {
-      console.log({ otp })
-      if (otp.length !== 6) return // Ensure OTP is complete
-
-      setLoading(true)
-
-      try {
-        await managers!.walletManager!.completeAuth({
-          phoneNumber,
-          otp
-        })
-
-        // Navigate to password screen after OTP verification
-        router.push({
-          pathname: '/auth/password',
-          params: { phoneNumber: phoneNumber }
-        })
-      } catch (error) {
-        console.error('Error verifying OTP:', error)
-        Alert.alert(t('verification_failed'), t('code_incorrect_try_again'))
-      } finally {
-        setLoading(false)
-      }
-    },
-    [otp, managers, phoneNumber]
-  )
-
->>>>>>> dev
   // Handle resend OTP
   const handleResend = useCallback(async () => {
     if (!canResend) return

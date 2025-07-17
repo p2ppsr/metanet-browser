@@ -18,12 +18,8 @@
     "configure": "./configure.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-<<<<<<< HEAD
     "fix": "npm run format && npm run lint:fix",
     "clean": "rm -rf node_modules && rm -rf package-lock.json && rm -rf yarn.lock && rm -rf .expo && rm -rf .expo-shared && rm -rf .vscode && rm -rf .idea && rm -rf ios/Pods && rm -rf android/.gradle && rm -rf android/app/build && npm install"
-=======
-    "fix": "npm run format && npm run lint:fix"
->>>>>>> dev
   },
   "dependencies": {
     "@bsv/sdk": "^1.6.12",

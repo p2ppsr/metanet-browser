@@ -3,12 +3,8 @@
     "name": "Metanet",
     "slug": "metanet-mobile",
     "version": "0.2.3",
-<<<<<<< HEAD
     "orientation": "all",
 
-=======
-    "orientation": "portrait",
->>>>>>> dev
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
     "userInterfaceStyle": "automatic",
@@ -90,7 +86,6 @@
               "scheme": "metanet"
             }
           ],
-<<<<<<< HEAD
           "category": ["BROWSABLE", "DEFAULT"]
         },
         {
@@ -101,12 +96,6 @@
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
-=======
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
->>>>>>> dev
         }
       ]
     },
@@ -122,24 +111,10 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "org.bsvblockchain.metanet.urlscheme",
-<<<<<<< HEAD
             "CFBundleURLSchemes": ["metanet", "http", "https", "uhrp"]
           }
         ],
         "LSApplicationQueriesSchemes": ["https", "http", "uhrp"]
-=======
-            "CFBundleURLSchemes": [
-              "metanet",
-              "http",
-              "https"
-            ]
-          }
-        ],
-        "LSApplicationQueriesSchemes": [
-          "https",
-          "http"
-        ]
->>>>>>> dev
       },
       "entitlements": {
         "aps-environment": "development",

@@ -9,13 +9,9 @@ import {
   TextInput,
   Modal,
   Pressable,
-<<<<<<< HEAD
   ScrollView,
   Linking,
   ActivityIndicator
-=======
-  ScrollView
->>>>>>> dev
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Fuse from 'fuse.js'
@@ -23,10 +19,7 @@ import { useTheme } from '@/context/theme/ThemeContext'
 import { useWallet } from '@/context/WalletContext'
 import { useBrowserMode } from '@/context/BrowserModeContext'
 import { useTranslation } from 'react-i18next'
-<<<<<<< HEAD
 import { uhrpHandler } from '@/utils/uhrpProtocol'
-=======
->>>>>>> dev
 
 interface App {
   domain: string
@@ -125,7 +118,6 @@ export const RecommendedApps = ({
   const [isDesktopView, setIsDesktopView] = useState(false)
 
   // Context menu state
-<<<<<<< HEAD
 
   const [contextMenuVisible, setContextMenuVisible] = useState(false)
   const [selectedApp, setSelectedApp] = useState<App | null>(null)
@@ -217,10 +209,6 @@ export const RecommendedApps = ({
     },
     [setStartingUrl]
   )
-=======
-  const [contextMenuVisible, setContextMenuVisible] = useState(false)
-  const [selectedApp, setSelectedApp] = useState<App | null>(null)
->>>>>>> dev
 
   /* -------------------------- helper functions -------------------------- */
   const isBookmark = useCallback(
@@ -612,7 +600,6 @@ export const RecommendedApps = ({
           </Pressable>
         </Modal>
       )}
-<<<<<<< HEAD
 
       {/* UHRP Loading Overlay */}
       {uhrpLoading && (
@@ -666,8 +653,6 @@ export const RecommendedApps = ({
           </View>
         </View>
       )}
-=======
->>>>>>> dev
     </View>
   )
 }

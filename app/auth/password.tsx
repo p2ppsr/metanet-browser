@@ -8,12 +8,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   TextInput,
-<<<<<<< HEAD
   Alert,
   Keyboard
-=======
-  Alert
->>>>>>> dev
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -54,16 +50,10 @@ export default function PasswordScreen() {
   // Handle password submission
   const handleSubmit = async () => {
     if (!isButtonEnabled()) return
-<<<<<<< HEAD
     Keyboard.dismiss()
     setLoading(true)
     //wait 20 ms for better UX
     await new Promise(resolve => setTimeout(resolve, 20))
-=======
-
-    setLoading(true)
-
->>>>>>> dev
     try {
       await managers!.walletManager!.providePassword(password)
 

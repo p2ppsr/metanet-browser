@@ -3,10 +3,7 @@ import { Linking } from 'react-native'
 import { router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useWebAppManifest } from './useWebAppManifest'
-<<<<<<< HEAD
 import { uhrpHandler } from '@/utils/uhrpProtocol'
-=======
->>>>>>> dev
 
 const PENDING_URL_KEY = 'pendingDeepLinkUrl'
 
@@ -34,7 +31,6 @@ export function useDeepLinking() {
   }, [])
 
   const handleDeepLink = async (url: string) => {
-<<<<<<< HEAD
     console.log('🔗 [DeepLink] Processing deep link:', url)
     try {
       // Check if this is a UHRP URL first
@@ -51,12 +47,6 @@ export function useDeepLinking() {
         await handleManifestAwareDeepLink(url)
       } else if (url.startsWith('metanet://')) {
         console.log('🔗 [DeepLink] Metanet URL detected:', url)
-=======
-    try {
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        await handleManifestAwareDeepLink(url)
-      } else if (url.startsWith('metanet://')) {
->>>>>>> dev
         // Handle custom scheme URLs
         const route = url.replace('metanet://', '')
 
@@ -67,10 +57,7 @@ export function useDeepLinking() {
           router.push('/browser')
         }
       } else {
-<<<<<<< HEAD
         console.log('🔗 [DeepLink] Unknown URL scheme, defaulting to browser:', url)
-=======
->>>>>>> dev
         router.push('/browser')
       }
     } catch (error) {

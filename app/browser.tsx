@@ -559,15 +559,6 @@ function Browser() {
     if (!currentTab) return
 
     if (currentTab.isLoading) {
-<<<<<<< HEAD
-=======
-      console.log('🛑 Stopping Page Load:', {
-        url: currentTab.url,
-        canGoBack: currentTab.canGoBack,
-        canGoForward: currentTab.canGoForward,
-        timestamp: new Date().toISOString()
-      })
->>>>>>> dev
       return currentTab.webviewRef?.current?.stopLoading()
     } else {
       console.log('🔄 Reloading Page:', {

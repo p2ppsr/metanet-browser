@@ -120,11 +120,8 @@ const resources = {
       history: 'History',
       clear: 'Clear',
 
-<<<<<<< HEAD
       clear_all: 'Clear All',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'Untitled',
       website_notification: 'Website Notification',
@@ -147,11 +144,8 @@ const resources = {
       yes: 'Yes',
       no: 'No',
 
-<<<<<<< HEAD
       later: 'Later',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: 'Switch to Mobile View',
       switch_to_desktop_view: 'Switch to Desktop View',
@@ -286,11 +280,8 @@ const resources = {
       select_country: 'Select Country',
       terms_privacy_agree: 'By continuing, you agree to our Terms of Service and Privacy Policy',
 
-<<<<<<< HEAD
       continue_without_login: 'Continue without login',
 
-=======
->>>>>>> dev
       // Auth - OTP
       verification_code: 'Verification Code',
       enter_6_digit_code: 'Enter the 6-digit code sent to',
@@ -310,7 +301,6 @@ const resources = {
       browser_with_identity_payments: 'Browser with identity and payments built in',
       get_started: 'Get Started',
       terms_privacy_agreement: 'By continuing, you agree to our Terms of Service and Privacy Policy',
-<<<<<<< HEAD
 
       configure_providers: 'Configure Providers',
 
@@ -329,9 +319,6 @@ const resources = {
       web3_benefit_future_proof_desc: 'Be early to the next generation of the internet.',
       web3_benefits_get_identity: '🚀 Get My Web3 Identity (30s)',
       web3_benefits_maybe_later: 'Maybe later'
-=======
-      configure_providers: 'Configure Providers'
->>>>>>> dev
     }
   },
   zh: {
@@ -359,11 +346,8 @@ const resources = {
       history: '历史记录',
       clear: '清除',
 
-<<<<<<< HEAD
       clear_all: '全部清除',
 
-=======
->>>>>>> dev
       // General UI
       untitled: '无标题',
       website_notification: '网站通知',
@@ -386,11 +370,8 @@ const resources = {
       yes: '是',
       no: '否',
 
-<<<<<<< HEAD
       later: '稍后',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: '切换到移动视图',
       switch_to_desktop_view: '切换到桌面视图',
@@ -525,11 +506,8 @@ const resources = {
       select_country: '选择国家',
       terms_privacy_agree: '继续即表示您同意我们的服务条款和隐私政策',
 
-<<<<<<< HEAD
       continue_without_login: '不登录继续',
 
-=======
->>>>>>> dev
       // Auth - OTP
       verification_code: '验证码',
       enter_6_digit_code: '输入发送到以下号码的6位数字代码',
@@ -549,7 +527,6 @@ const resources = {
       browser_with_identity_payments: '内置身份和支付功能的浏览器',
       get_started: '开始使用',
       terms_privacy_agreement: '继续即表示您同意我们的服务条款和隐私政策',
-<<<<<<< HEAD
 
       configure_providers: '配置提供商',
 
@@ -568,9 +545,6 @@ const resources = {
       web3_benefit_future_proof_desc: '成为下一代互联网的早期用户。',
       web3_benefits_get_identity: '🚀 获取我的Web3身份（30秒）',
       web3_benefits_maybe_later: '稍后再说'
-=======
-      configure_providers: '配置提供商'
->>>>>>> dev
     }
   },
   hi: {
@@ -598,11 +572,8 @@ const resources = {
       history: 'इतिहास',
       clear: 'साफ़ करें',
 
-<<<<<<< HEAD
       clear_all: 'सभी साफ़ करें',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'बिना शीर्षक',
       website_notification: 'वेबसाइट सूचना',
@@ -625,11 +596,8 @@ const resources = {
       yes: 'हाँ',
       no: 'नहीं',
 
-<<<<<<< HEAD
       later: 'बाद में',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: 'मोबाइल दृश्य पर स्विच करें',
       switch_to_desktop_view: 'डेस्कटॉप दृश्य पर स्विच करें',
@@ -772,19 +740,15 @@ const resources = {
       send_verification_code: 'सत्यापन कोड भेजें',
       invalid_phone_number: 'अमान्य फोन नंबर',
 
-<<<<<<< HEAD
       select_country: 'देश चुनें',
       terms_privacy_agree: 'जारी रखकर, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
       continue_without_login: 'बिना लॉगिन के जारी रखें',
 
-=======
->>>>>>> dev
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'पहचान और भुगतान सुविधा के साथ ब्राउज़र',
       get_started: 'शुरू करें',
       terms_privacy_agreement: 'जारी रखकर, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
-<<<<<<< HEAD
 
       configure_providers: 'प्रदाता कॉन्फ़िगर करें',
 
@@ -803,9 +767,6 @@ const resources = {
       web3_benefit_future_proof_desc: 'इंटरनेट की अगली पीढ़ी के लिए जल्दी तैयार हो जाएं।',
       web3_benefits_get_identity: '🚀 मेरी Web3 पहचान प्राप्त करें (30 सेकंड)',
       web3_benefits_maybe_later: 'बाद में शायद'
-=======
-      configure_providers: 'प्रदाता कॉन्फ़िगर करें'
->>>>>>> dev
     }
   },
   es: {
@@ -833,11 +794,8 @@ const resources = {
       history: 'Historial',
       clear: 'Limpiar',
 
-<<<<<<< HEAD
       clear_all: 'Limpiar Todo',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'Sin título',
       website_notification: 'Notificación del sitio web',
@@ -859,10 +817,7 @@ const resources = {
       ok: 'OK',
       yes: 'Sí',
       no: 'No',
-<<<<<<< HEAD
       later: 'Más tarde',
-=======
->>>>>>> dev
 
       // Navigation actions
       switch_to_mobile_view: 'Cambiar a Vista Móvil',
@@ -919,7 +874,6 @@ const resources = {
       // Trust
       trust_network: 'Red de Confianza',
 
-<<<<<<< HEAD
       // Security
       security: 'Seguridad',
       manage_password_recovery: 'Gestiona tu contraseña y clave de recuperación.',
@@ -940,8 +894,6 @@ const resources = {
       password_changed_mock: 'Contraseña cambiada (simulado)',
       recovery_key_mock: '•••••••••••••• (simulado)',
 
-=======
->>>>>>> dev
       // Auth - Password
       enter_password: 'Ingresa tu Contraseña',
       enter_password_subtitle: 'Por favor ingresa tu contraseña para acceder a tu billetera',
@@ -953,7 +905,6 @@ const resources = {
       auth_failed_maybe_password: 'La autenticación falló, ¿quizás la contraseña es incorrecta?',
       auth_failed_try_again: 'La autenticación falló. Por favor, inténtalo de nuevo.',
 
-<<<<<<< HEAD
       // Auth - Phone
       enter_phone_number: 'Ingresa tu número de teléfono',
       send_verification_code: 'Te enviaremos un código de verificación',
@@ -962,14 +913,11 @@ const resources = {
       terms_privacy_agree: 'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad',
       continue_without_login: 'Continuar sin iniciar sesión',
 
-=======
->>>>>>> dev
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Navegador con identidad y pagos integrados',
       get_started: 'Comenzar',
       terms_privacy_agreement: 'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad',
-<<<<<<< HEAD
 
       configure_providers: 'Configurar Proveedores',
 
@@ -988,9 +936,6 @@ const resources = {
       web3_benefit_future_proof_desc: 'Sé temprano en la próxima generación de internet.',
       web3_benefits_get_identity: '🚀 Obtener Mi Identidad Web3 (30s)',
       web3_benefits_maybe_later: 'Tal vez más tarde'
-=======
-      configure_providers: 'Configurar Proveedores'
->>>>>>> dev
     }
   },
   fr: {
@@ -1018,11 +963,8 @@ const resources = {
       history: 'Historique',
       clear: 'Effacer',
 
-<<<<<<< HEAD
       clear_all: 'Tout Effacer',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'Sans titre',
       website_notification: 'Notification du site web',
@@ -1045,11 +987,8 @@ const resources = {
       yes: 'Oui',
       no: 'Non',
 
-<<<<<<< HEAD
       later: 'Plus tard',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: 'Passer à la Vue Mobile',
       switch_to_desktop_view: 'Passer à la Vue de Bureau',
@@ -1110,7 +1049,6 @@ const resources = {
       no_trusted_origins: 'Aucune origine de confiance pour le moment.',
       trusted: 'Approuvé',
 
-<<<<<<< HEAD
       // Security
       security: 'Sécurité',
       manage_password_recovery: 'Gérez votre mot de passe et votre clé de récupération.',
@@ -1132,8 +1070,6 @@ const resources = {
       password_changed_mock: 'Mot de passe changé (simulé)',
       recovery_key_mock: '•••••••••••••• (simulé)',
 
-=======
->>>>>>> dev
       // Auth - Password
       enter_password: 'Entrer le Mot de Passe',
       enter_password_subtitle: 'Veuillez entrer votre mot de passe pour accéder à votre portefeuille',
@@ -1158,19 +1094,15 @@ const resources = {
       phone_number: 'Numéro de Téléphone',
       send_verification_code: 'Envoyer le Code de Vérification',
       invalid_phone_number: 'Numéro de téléphone invalide',
-<<<<<<< HEAD
       select_country: 'Sélectionner le Pays',
       terms_privacy_agree:
         'En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité',
       continue_without_login: 'Continuer sans se connecter',
-=======
->>>>>>> dev
 
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Navigateur avec identité et paiements intégrés',
       get_started: 'Commencer',
-<<<<<<< HEAD
 
       terms_privacy_agreement:
         'En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité',
@@ -1192,11 +1124,6 @@ const resources = {
       web3_benefit_future_proof_desc: "Soyez en avance sur la prochaine génération d'internet.",
       web3_benefits_get_identity: '🚀 Obtenir Mon Identité Web3 (30s)',
       web3_benefits_maybe_later: 'Peut-être plus tard'
-=======
-      terms_privacy_agreement:
-        'En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité',
-      configure_providers: 'Configurer les Fournisseurs'
->>>>>>> dev
     }
   },
   ar: {
@@ -1224,11 +1151,8 @@ const resources = {
       history: 'التاريخ',
       clear: 'مسح',
 
-<<<<<<< HEAD
       clear_all: 'مسح الكل',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'بدون عنوان',
       website_notification: 'إشعار الموقع',
@@ -1251,11 +1175,8 @@ const resources = {
       yes: 'نعم',
       no: 'لا',
 
-<<<<<<< HEAD
       later: 'لاحقاً',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: 'التبديل إلى العرض المحمول',
       switch_to_desktop_view: 'التبديل إلى عرض سطح المكتب',
@@ -1309,7 +1230,6 @@ const resources = {
       no_trusted_origins: 'لا توجد مصادر موثوقة بعد.',
       trusted: 'موثوق',
 
-<<<<<<< HEAD
       // Security
       security: 'الأمان',
       manage_password_recovery: 'إدارة كلمة المرور ومفتاح الاسترداد.',
@@ -1330,8 +1250,6 @@ const resources = {
       password_changed_mock: 'تم تغيير كلمة المرور (وهمي)',
       recovery_key_mock: '•••••••••••••• (وهمي)',
 
-=======
->>>>>>> dev
       // Auth - Password
       enter_password: 'أدخل كلمة المرور',
       enter_password_subtitle: 'يرجى إدخال كلمة المرور للوصول إلى محفظتك',
@@ -1357,19 +1275,15 @@ const resources = {
       send_verification_code: 'إرسال رمز التحقق',
       invalid_phone_number: 'رقم هاتف غير صالح',
 
-<<<<<<< HEAD
       select_country: 'اختر البلد',
       terms_privacy_agree: 'من خلال المتابعة، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا',
       continue_without_login: 'المتابعة بدون تسجيل الدخول',
 
-=======
->>>>>>> dev
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'متصفح مع الهوية والمدفوعات المدمجة',
       get_started: 'ابدأ',
       terms_privacy_agreement: 'من خلال المتابعة، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا',
-<<<<<<< HEAD
 
       configure_providers: 'تكوين موفري الخدمة',
 
@@ -1388,9 +1302,6 @@ const resources = {
       web3_benefit_future_proof_desc: 'كن مبكرًا في الجيل القادم من الإنترنت.',
       web3_benefits_get_identity: '🚀 احصل على هويتي الويب3 (30 ثانية)',
       web3_benefits_maybe_later: 'ربما لاحقاً'
-=======
-      configure_providers: 'تكوين موفري الخدمة'
->>>>>>> dev
     }
   },
   pt: {
@@ -1418,11 +1329,8 @@ const resources = {
       history: 'Histórico',
       clear: 'Limpar',
 
-<<<<<<< HEAD
       clear_all: 'Limpar Tudo',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'Sem título',
       website_notification: 'Notificação do site',
@@ -1445,11 +1353,8 @@ const resources = {
       yes: 'Sim',
       no: 'Não',
 
-<<<<<<< HEAD
       later: 'Mais tarde',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: 'Alternar para Visualização Móvel',
       switch_to_desktop_view: 'Alternar para Visualização Desktop',
@@ -1510,7 +1415,6 @@ const resources = {
       no_trusted_origins: 'Nenhuma origem confiável ainda.',
       trusted: 'Confiável',
 
-<<<<<<< HEAD
       // Security
       security: 'Segurança',
       manage_password_recovery: 'Gerencie sua senha e chave de recuperação.',
@@ -1532,8 +1436,6 @@ const resources = {
       password_changed_mock: 'Senha alterada (simulado)',
       recovery_key_mock: '•••••••••••••• (simulado)',
 
-=======
->>>>>>> dev
       // Auth - Password
       enter_password: 'Digite a Senha',
       enter_password_subtitle: 'Por favor, digite sua senha para acessar sua carteira',
@@ -1559,19 +1461,15 @@ const resources = {
       send_verification_code: 'Enviar Código de Verificação',
       invalid_phone_number: 'Número de telefone inválido',
 
-<<<<<<< HEAD
       select_country: 'Selecionar País',
       terms_privacy_agree: 'Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade',
       continue_without_login: 'Continuar sem fazer login',
 
-=======
->>>>>>> dev
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Navegador com identidade e pagamentos integrados',
       get_started: 'Começar',
       terms_privacy_agreement: 'Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade',
-<<<<<<< HEAD
 
       configure_providers: 'Configurar Provedores',
 
@@ -1590,9 +1488,6 @@ const resources = {
       web3_benefit_future_proof_desc: 'Seja pioneiro na próxima geração da internet.',
       web3_benefits_get_identity: '🚀 Obter Minha Identidade Web3 (30s)',
       web3_benefits_maybe_later: 'Talvez mais tarde'
-=======
-      configure_providers: 'Configurar Provedores'
->>>>>>> dev
     }
   },
   bn: {
@@ -1620,11 +1515,8 @@ const resources = {
       history: 'ইতিহাস',
       clear: 'পরিষ্কার',
 
-<<<<<<< HEAD
       clear_all: 'সব পরিষ্কার',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'শিরোনামহীন',
       website_notification: 'ওয়েবসাইট বিজ্ঞপ্তি',
@@ -1647,11 +1539,8 @@ const resources = {
       yes: 'হ্যাঁ',
       no: 'না',
 
-<<<<<<< HEAD
       later: 'পরে',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: 'মোবাইল ভিউতে পরিবর্তন করুন',
       switch_to_desktop_view: 'ডেস্কটপ ভিউতে পরিবর্তন করুন',
@@ -1705,7 +1594,6 @@ const resources = {
       no_trusted_origins: 'এখনও কোন বিশ্বস্ত উৎস নেই।',
       trusted: 'বিশ্বস্ত',
 
-<<<<<<< HEAD
       // Security
       security: 'নিরাপত্তা',
       manage_password_recovery: 'আপনার পাসওয়ার্ড এবং পুনরুদ্ধার কী পরিচালনা করুন।',
@@ -1727,8 +1615,6 @@ const resources = {
       password_changed_mock: 'পাসওয়ার্ড পরিবর্তিত (নকল)',
       recovery_key_mock: '•••••••••••••• (নকল)',
 
-=======
->>>>>>> dev
       // Auth - Password
       enter_password: 'পাসওয়ার্ড লিখুন',
       enter_password_subtitle: 'আপনার ওয়ালেট অ্যাক্সেস করতে অনুগ্রহ করে আপনার পাসওয়ার্ড লিখুন',
@@ -1754,19 +1640,15 @@ const resources = {
       send_verification_code: 'যাচাইকরণ কোড পাঠান',
       invalid_phone_number: 'অবৈধ ফোন নম্বর',
 
-<<<<<<< HEAD
       select_country: 'দেশ নির্বাচন করুন',
       terms_privacy_agree: 'চালিয়ে যেতে, আপনি আমাদের সেবার শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মত হচ্ছেন',
       continue_without_login: 'লগইন ছাড়া চালিয়ে যান',
 
-=======
->>>>>>> dev
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'পরিচয় এবং পেমেন্ট সুবিধা সহ ব্রাউজার',
       get_started: 'শুরু করুন',
       terms_privacy_agreement: 'চালিয়ে যেতে, আপনি আমাদের সেবার শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মত হচ্ছেন',
-<<<<<<< HEAD
 
       configure_providers: 'প্রদানকারী কনফিগার করুন',
 
@@ -1785,9 +1667,6 @@ const resources = {
       web3_benefit_future_proof_desc: 'ইন্টারনেটের পরবর্তী প্রজন্মে তাড়াতাড়ি থাকুন।',
       web3_benefits_get_identity: '🚀 আমার Web3 পরিচয় পান (৩০ সেকেন্ড)',
       web3_benefits_maybe_later: 'হয়তো পরে'
-=======
-      configure_providers: 'প্রদানকারী কনফিগার করুন'
->>>>>>> dev
     }
   },
   ru: {
@@ -1815,11 +1694,8 @@ const resources = {
       history: 'История',
       clear: 'Очистить',
 
-<<<<<<< HEAD
       clear_all: 'Очистить Всё',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'Без названия',
       website_notification: 'Уведомление сайта',
@@ -1842,11 +1718,8 @@ const resources = {
       yes: 'Да',
       no: 'Нет',
 
-<<<<<<< HEAD
       later: 'Позже',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: 'Переключить на Мобильный Вид',
       switch_to_desktop_view: 'Переключить на Вид Рабочего Стола',
@@ -1900,7 +1773,6 @@ const resources = {
       no_trusted_origins: 'Пока нет доверенных источников.',
       trusted: 'Доверенный',
 
-<<<<<<< HEAD
       // Security
       security: 'Безопасность',
       manage_password_recovery: 'Управляйте своим паролем и ключом восстановления.',
@@ -1921,8 +1793,6 @@ const resources = {
       password_changed_mock: 'Пароль изменен (макет)',
       recovery_key_mock: '•••••••••••••• (макет)',
 
-=======
->>>>>>> dev
       // Auth - Password
       enter_password: 'Введите Пароль',
       enter_password_subtitle: 'Пожалуйста, введите свой пароль для доступа к кошельку',
@@ -1948,18 +1818,14 @@ const resources = {
       send_verification_code: 'Отправить Код Подтверждения',
       invalid_phone_number: 'Неверный номер телефона',
 
-<<<<<<< HEAD
       select_country: 'Выберите Страну',
       terms_privacy_agree: 'Продолжая, вы соглашаетесь с нашими Условиями обслуживания и Политикой конфиденциальности',
       continue_without_login: 'Продолжить без входа',
 
-=======
->>>>>>> dev
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Браузер со встроенной идентификацией и платежами',
       get_started: 'Начать',
-<<<<<<< HEAD
 
       terms_privacy_agreement:
         'Продолжая, вы соглашаетесь с нашими Условиями обслуживания и Политикой конфиденциальности',
@@ -1981,11 +1847,6 @@ const resources = {
       web3_benefit_future_proof_desc: 'Будьте на раннем этапе следующего поколения интернета.',
       web3_benefits_get_identity: '🚀 Получить Мою Web3 Идентичность (30с)',
       web3_benefits_maybe_later: 'Может быть позже'
-=======
-      terms_privacy_agreement:
-        'Продолжая, вы соглашаетесь с нашими Условиями обслуживания и Политикой конфиденциальности',
-      configure_providers: 'Настроить Провайдеров'
->>>>>>> dev
     }
   },
   id: {
@@ -2013,11 +1874,8 @@ const resources = {
       history: 'Riwayat',
       clear: 'Bersihkan',
 
-<<<<<<< HEAD
       clear_all: 'Bersihkan Semua',
 
-=======
->>>>>>> dev
       // General UI
       untitled: 'Tanpa judul',
       website_notification: 'Notifikasi situs web',
@@ -2040,11 +1898,8 @@ const resources = {
       yes: 'Ya',
       no: 'Tidak',
 
-<<<<<<< HEAD
       later: 'Nanti',
 
-=======
->>>>>>> dev
       // Navigation actions
       switch_to_mobile_view: 'Beralih ke Tampilan Mobile',
       switch_to_desktop_view: 'Beralih ke Tampilan Desktop',
@@ -2123,19 +1978,15 @@ const resources = {
       send_verification_code: 'Kirim Kode Verifikasi',
       invalid_phone_number: 'Nomor telepon tidak valid',
 
-<<<<<<< HEAD
       select_country: 'Pilih Negara',
       terms_privacy_agree: 'Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi kami',
       continue_without_login: 'Lanjutkan tanpa masuk',
 
-=======
->>>>>>> dev
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Browser dengan identitas dan pembayaran terintegrasi',
       get_started: 'Mulai',
       terms_privacy_agreement: 'Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi kami',
-<<<<<<< HEAD
 
       configure_providers: 'Konfigurasi Penyedia',
 
@@ -2155,9 +2006,6 @@ const resources = {
       web3_benefit_future_proof_desc: 'Jadilah yang terdepan dalam generasi internet berikutnya.',
       web3_benefits_get_identity: '🚀 Dapatkan Identitas Web3 Saya (30 detik)',
       web3_benefits_maybe_later: 'Mungkin nanti'
-=======
-      configure_providers: 'Konfigurasi Penyedia'
->>>>>>> dev
     }
   }
 }
