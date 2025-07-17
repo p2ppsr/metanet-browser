@@ -2424,51 +2424,6 @@ const navFwd = useCallback(() => {
               placeholderTextColor={colors.textSecondary}
             />
 
-              <TextInput
-                ref={addressInputRef}
-                editable
-                value={addressDisplay === 'new-tab-page' ? '' : addressDisplay}
-                onChangeText={onChangeAddressText}
-                onFocus={() => {
-                  addressEditing.current = true
-                  setAddressFocused(true)
-                  // Set the text to empty if it's the new tab URL
-                  if (activeTab?.url === kNEW_TAB_URL) {
-                    setAddressText('')
-                  }
-                  setTimeout(() => {
-                    const textToSelect = activeTab?.url === kNEW_TAB_URL ? '' : addressText
-                    addressInputRef.current?.setNativeProps({
-                      selection: { start: 0, end: textToSelect.length }
-                    })
-                  }, 0)
-                }}
-                onBlur={() => {
-                  addressEditing.current = false
-                  setAddressFocused(false)
-                  setAddressSuggestions([])
-                  // Reset to the actual URL when losing focus
-                  if (!addressEditing.current) {
-                    setAddressText(activeTab?.url ? activeTab.url : kNEW_TAB_URL)
-                  }
-                }}
-                onSubmitEditing={onAddressSubmit}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="go"
-                style={[
-                  styles.addressInput,
-                  {
-                    flex: 1,
-                    backgroundColor: colors.background,
-                    color: colors.textPrimary,
-                    textAlign: addressFocused ? 'left' : 'center'
-                  }
-                ]}
-                placeholder={t('search_placeholder')}
-                placeholderTextColor={colors.textSecondary}
-              />
-
               <TouchableOpacity
                 onPress={addressFocused ? () => setAddressText('') : navReloadOrStop}
                 style={styles.addressBarIcon}
