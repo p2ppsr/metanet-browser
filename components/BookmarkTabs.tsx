@@ -9,16 +9,14 @@ type BookmarkTabProps = {
   removeTab: (index: number) => void
 }
 
-const BookmarkTabs: React.FC<BookmarkTabProps> = observer(
-  ({ tab, index, removeTab }) => {
-    return (
-      <View style={styles.tab}>
-        <Text style={styles.title}>{tab.title}</Text>
-        <Button title="Close" onPress={() => removeTab(index)} />
-      </View>
-    )
-  }
-)
+const BookmarkTabs: React.FC<BookmarkTabProps> = observer(({ tab, index, removeTab }) => {
+  return (
+    <View style={styles.tab}>
+      <Text style={styles.title}>{tab.title}</Text>
+      <Button title="Close" onPress={() => removeTab(index)} />
+    </View>
+  )
+})
 
 export default BookmarkTabs
 

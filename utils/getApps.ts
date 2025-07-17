@@ -15,13 +15,16 @@ export const getApps = async ({
 }: GetAppsParams): Promise<string[]> => {
   try {
     // Fetch transaction outputs from the specified basket.
-    const { outputs } = await permissionsManager.listOutputs({
-      basket: 'admin protocol-permission',
-      includeTags: true,
-      includeLabels: true,
-      limit,
-      offset
-    }, adminOriginator)
+    const { outputs } = await permissionsManager.listOutputs(
+      {
+        basket: 'admin protocol-permission',
+        includeTags: true,
+        includeLabels: true,
+        limit,
+        offset
+      },
+      adminOriginator
+    )
 
     // Collect unique originator names from the outputs in reverse order (most recent first)
     const originatorNames: string[] = []
@@ -29,7 +32,7 @@ export const getApps = async ({
 
     // Iterate backwards so that the first occurrence is the most recent one.
     for (let i = outputs.length - 1; i >= 0; i--) {
-      const output = outputs[i];
+      const output = outputs[i]
       if (output.tags && Array.isArray(output.tags)) {
         const originatorTag = output.tags.find(tag => tag.startsWith('originator'))
         if (originatorTag) {
@@ -48,4 +51,3 @@ export const getApps = async ({
     return []
   }
 }
-

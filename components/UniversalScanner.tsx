@@ -1,12 +1,6 @@
-const F = 'components/UniversalScanner'; // Defined at the top for consistent logging
+const F = 'components/UniversalScanner' // Defined at the top for consistent logging
 
-import React, {
-  ForwardedRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState
-} from 'react';
+import React, { ForwardedRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import {
   Alert,
   Modal,
@@ -16,187 +10,163 @@ import {
   TouchableWithoutFeedback,
   View,
   Platform
-} from 'react-native';
+} from 'react-native'
 import {
   useCameraDevice,
   useCameraPermission,
   useCodeScanner,
   Camera,
   CameraDeviceFormat
-} from 'react-native-vision-camera';
-import { Audio } from 'expo-av';
+} from 'react-native-vision-camera'
+import { Audio } from 'expo-av'
 
-import type { Code } from 'react-native-vision-camera';
-import { logWithTimestamp } from '@/utils/logging';
+import type { Code } from 'react-native-vision-camera'
+import { logWithTimestamp } from '@/utils/logging'
 
 declare global {
   interface Window {
     ReactNativeWebView?: {
-      postMessage(message: string): void;
-    };
+      postMessage(message: string): void
+    }
   }
 }
 
 // Type declaration for deprecated Sound class
 declare module 'expo-av' {
   export class Sound {
-    static createAsync(
-      uri: any,
-      onPlaybackStatusUpdate?: any,
-      onError?: any
-    ): Promise<{ sound: Sound; status: any }>;
-    unloadAsync(): Promise<void>;
-    replayAsync(): Promise<void>;
+    static createAsync(uri: any, onPlaybackStatusUpdate?: any, onError?: any): Promise<{ sound: Sound; status: any }>
+    unloadAsync(): Promise<void>
+    replayAsync(): Promise<void>
   }
 }
 
 export interface ScannerHandle {
-  dismiss: () => void;
+  dismiss: () => void
 }
 
 export interface ScannerProps {
-  scannedData: string | null;
-  setScannedData: (data: string | null) => void;
-  showScanner: boolean;
-  onDismiss: () => void;
-  fullscreen?: boolean;
+  scannedData: string | null
+  setScannedData: (data: string | null) => void
+  showScanner: boolean
+  onDismiss: () => void
+  fullscreen?: boolean
 }
 
-let scanAlreadyHandled = false;
+let scanAlreadyHandled = false
 
 const UniversalScanner = React.forwardRef<ScannerHandle, ScannerProps>(
   (
-    {
-      scannedData,
-      setScannedData,
-      showScanner,
-      onDismiss,
-      fullscreen
-    }: ScannerProps,
+    { scannedData, setScannedData, showScanner, onDismiss, fullscreen }: ScannerProps,
     ref: ForwardedRef<ScannerHandle>
   ) => {
-    logWithTimestamp(F, `fullscreen=${fullscreen}`);
+    logWithTimestamp(F, `fullscreen=${fullscreen}`)
 
-    const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-    const [scanned, setScanned] = useState(false);
-    const [torchOn, setTorchOn] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
-    const [showDismiss, setShowDismiss] = useState(false);
-    const [isDismissing, setIsDismissing] = useState(false);
-    const mountTimeRef = useRef<number | null>(null);
-    const dismissTimerRef = useRef<number | null>(null);
-    const cameraRef = useRef<Camera | null>(null);
-    const sound = useRef<Audio.Sound | null>(null);
+    const [hasPermission, setHasPermission] = useState<boolean | null>(null)
+    const [scanned, setScanned] = useState(false)
+    const [torchOn, setTorchOn] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
+    const [showDismiss, setShowDismiss] = useState(false)
+    const [isDismissing, setIsDismissing] = useState(false)
+    const mountTimeRef = useRef<number | null>(null)
+    const dismissTimerRef = useRef<number | null>(null)
+    const cameraRef = useRef<Camera | null>(null)
+    const sound = useRef<Audio.Sound | null>(null)
 
-    const { hasPermission: visionPermission, requestPermission } =
-      useCameraPermission();
+    const { hasPermission: visionPermission, requestPermission } = useCameraPermission()
     const device = useCameraDevice('back', {
       physicalDevices: ['wide-angle-camera']
-    });
+    })
 
     useEffect(() => {
       const checkPermissionsAndSetup = async () => {
         if (scanAlreadyHandled || !showScanner) {
-          logWithTimestamp(
-            F,
-            'Skipping scanner setup: already handled or scanner not visible'
-          );
-          return;
+          logWithTimestamp(F, 'Skipping scanner setup: already handled or scanner not visible')
+          return
         }
 
-        logWithTimestamp(
-          F,
-          `Checking camera permission and mounting (fullscreen=${fullscreen})`
-        );
+        logWithTimestamp(F, `Checking camera permission and mounting (fullscreen=${fullscreen})`)
 
         if (isWebPlatform(Platform.OS)) {
-          logWithTimestamp(F, 'Web not supported, permission check skipped');
-          setHasPermission(false);
-          return;
+          logWithTimestamp(F, 'Web not supported, permission check skipped')
+          setHasPermission(false)
+          return
         }
 
         try {
-          const status = await requestPermission();
-          logWithTimestamp(F, 'Permission request result', { status });
-          setHasPermission(status);
+          const status = await requestPermission()
+          logWithTimestamp(F, 'Permission request result', { status })
+          setHasPermission(status)
 
           if (status) {
-            setIsMounted(true); // Only mount after permission
+            setIsMounted(true) // Only mount after permission
           } else {
-            Alert.alert(
-              'Camera Permission Required',
-              'Please grant camera permission to scan codes.',
-              [
-                { text: 'Cancel', onPress: () => setScannedData('') },
-                { text: 'OK', onPress: () => checkPermissionsAndSetup() }
-              ]
-            );
+            Alert.alert('Camera Permission Required', 'Please grant camera permission to scan codes.', [
+              { text: 'Cancel', onPress: () => setScannedData('') },
+              { text: 'OK', onPress: () => checkPermissionsAndSetup() }
+            ])
           }
         } catch (error) {
-          logWithTimestamp(F, 'Error during scanner setup', { error });
+          logWithTimestamp(F, 'Error during scanner setup', { error })
         }
-      };
+      }
 
-      checkPermissionsAndSetup();
+      checkPermissionsAndSetup()
 
       return () => {
-        scanAlreadyHandled = false;
-        logWithTimestamp(F, 'scanAlreadyHandled reset on unmount');
-      };
-    }, [showScanner]);
+        scanAlreadyHandled = false
+        logWithTimestamp(F, 'scanAlreadyHandled reset on unmount')
+      }
+    }, [showScanner])
 
     // Load and unload sound for reliable click audio
     useEffect(() => {
       const loadSound = async () => {
         try {
-          const { sound: newSound } = await Audio.Sound.createAsync(
-            require('@/assets/camera-shutter-click.mp3')
-          );
-          sound.current = newSound;
-          logWithTimestamp(F, 'Sound loaded successfully');
+          const { sound: newSound } = await Audio.Sound.createAsync(require('@/assets/camera-shutter-click.mp3'))
+          sound.current = newSound
+          logWithTimestamp(F, 'Sound loaded successfully')
         } catch (error) {
-          logWithTimestamp(F, 'Error loading sound', { error });
+          logWithTimestamp(F, 'Error loading sound', { error })
         }
-      };
+      }
 
-      loadSound();
+      loadSound()
 
       return () => {
         if (sound.current) {
-          sound.current.unloadAsync();
-          sound.current = null;
+          sound.current.unloadAsync()
+          sound.current = null
         }
-      };
-    }, []);
+      }
+    }, [])
 
     // Problem of intermittent audio overcome
-    let isClickPlaying = false;
+    let isClickPlaying = false
 
     const playClickSound = async () => {
-      if (isClickPlaying) return;
-      isClickPlaying = true;
+      if (isClickPlaying) return
+      isClickPlaying = true
 
       try {
-        const { sound } = await Audio.Sound.createAsync(
-          require('@/assets/camera-shutter-click.mp3'),
-          { shouldPlay: true }
-        );
+        const { sound } = await Audio.Sound.createAsync(require('@/assets/camera-shutter-click.mp3'), {
+          shouldPlay: true
+        })
 
         sound.setOnPlaybackStatusUpdate(status => {
           if (status.isLoaded && status.didJustFinish) {
-            sound.unloadAsync();
-            isClickPlaying = false;
+            sound.unloadAsync()
+            isClickPlaying = false
           }
-        });
+        })
 
-        logWithTimestamp(F, 'Click sound played');
+        logWithTimestamp(F, 'Click sound played')
       } catch (error) {
-        isClickPlaying = false;
-        logWithTimestamp(F, 'Error playing sound', { error });
+        isClickPlaying = false
+        logWithTimestamp(F, 'Error playing sound', { error })
       }
-    };
+    }
 
-    const isWebPlatform = (os: string) => os === 'web';
+    const isWebPlatform = (os: string) => os === 'web'
 
     const codeScanner = useCodeScanner({
       codeTypes: [
@@ -218,74 +188,67 @@ const UniversalScanner = React.forwardRef<ScannerHandle, ScannerProps>(
           scanned,
           isMounted,
           isDismissing
-        });
+        })
         if (isDismissing) {
-          logWithTimestamp(F, 'Scanning disabled due to dismissal');
-          return;
+          logWithTimestamp(F, 'Scanning disabled due to dismissal')
+          return
         }
         if (scanAlreadyHandled) {
-          logWithTimestamp(F, 'Duplicate scan ignored');
-          return;
+          logWithTimestamp(F, 'Duplicate scan ignored')
+          return
         }
 
         if (codes.length > 0 && !scanned && isMounted) {
-          const barcode = codes[0];
-          const barcodeText = barcode.value;
+          const barcode = codes[0]
+          const barcodeText = barcode.value
           if (barcodeText) {
-            scanAlreadyHandled = true;
+            scanAlreadyHandled = true
             logWithTimestamp(F, 'Scan detected', {
               type: barcode.type,
               value: barcodeText
-            });
-            setScannedData(barcodeText);
-            setScanned(true);
-            playClickSound();
-            logWithTimestamp(F, 'Scan data set to:', barcodeText);
+            })
+            setScannedData(barcodeText)
+            setScanned(true)
+            playClickSound()
+            logWithTimestamp(F, 'Scan data set to:', barcodeText)
             if (ref && 'current' in ref && ref.current) {
-              ref.current.dismiss();
+              ref.current.dismiss()
             }
           }
         }
       }
-    });
+    })
 
     // Auto-show dismiss button after 10 seconds if not scanned
     useEffect(() => {
       if (showScanner && !scanned && !showDismiss && !isDismissing) {
-        mountTimeRef.current = Date.now();
+        mountTimeRef.current = Date.now()
         dismissTimerRef.current = setTimeout(() => {
-          logWithTimestamp(F, 'Showing dismiss button after 30s');
-          setShowDismiss(true);
-        }, 10000) as any;
+          logWithTimestamp(F, 'Showing dismiss button after 30s')
+          setShowDismiss(true)
+        }, 10000) as any
       }
       return () => {
         if (dismissTimerRef.current) {
-          clearTimeout(dismissTimerRef.current);
-          dismissTimerRef.current = null;
+          clearTimeout(dismissTimerRef.current)
+          dismissTimerRef.current = null
         }
-      };
-    }, [showScanner, scanned, showDismiss, isDismissing]);
+      }
+    }, [showScanner, scanned, showDismiss, isDismissing])
 
     // Select a lower resolution format with the highest maxFps
     const format: CameraDeviceFormat | undefined = device?.formats
       .filter(f => f.videoWidth <= 640 && f.videoHeight <= 480)
-      .reduce(
-        (prev, current) => (prev.maxFps > current.maxFps ? prev : current),
-        device?.formats[0]
-      );
+      .reduce((prev, current) => (prev.maxFps > current.maxFps ? prev : current), device?.formats[0])
 
     return (
-      <Modal
-        visible={showScanner && !isDismissing}
-        transparent
-        animationType="slide"
-      >
+      <Modal visible={showScanner && !isDismissing} transparent animationType="slide">
         <View style={styles.container}>
           {!fullscreen && (
             <TouchableWithoutFeedback
               onPress={() => {
-                logWithTimestamp(F, 'Top half (webview) tap detected');
-                onDismiss();
+                logWithTimestamp(F, 'Top half (webview) tap detected')
+                onDismiss()
               }}
             >
               <View style={styles.topDismissOverlay} />
@@ -293,16 +256,8 @@ const UniversalScanner = React.forwardRef<ScannerHandle, ScannerProps>(
           )}
 
           {isMounted && hasPermission ? (
-            <View
-              style={fullscreen ? styles.fullScreenCamera : styles.bottomHalf}
-            >
-              <View
-                style={
-                  fullscreen
-                    ? styles.cameraFullContainer
-                    : styles.cameraContainer
-                }
-              >
+            <View style={fullscreen ? styles.fullScreenCamera : styles.bottomHalf}>
+              <View style={fullscreen ? styles.cameraFullContainer : styles.cameraContainer}>
                 <Camera
                   ref={cameraRef}
                   style={StyleSheet.absoluteFill}
@@ -313,9 +268,7 @@ const UniversalScanner = React.forwardRef<ScannerHandle, ScannerProps>(
                   fps={format?.maxFps || 30}
                   videoStabilizationMode="off"
                   format={format}
-                  onError={error =>
-                    logWithTimestamp(F, 'Camera error', { error })
-                  }
+                  onError={error => logWithTimestamp(F, 'Camera error', { error })}
                 />
 
                 {/* Overlay with tap shield */}
@@ -326,10 +279,7 @@ const UniversalScanner = React.forwardRef<ScannerHandle, ScannerProps>(
                   </TouchableWithoutFeedback>
 
                   {/* Protect scan area from dismiss taps */}
-                  <View
-                    pointerEvents="box-only"
-                    style={styles.scanAreaTouchBlock}
-                  >
+                  <View pointerEvents="box-only" style={styles.scanAreaTouchBlock}>
                     <View style={styles.scanArea} />
                   </View>
 
@@ -339,8 +289,8 @@ const UniversalScanner = React.forwardRef<ScannerHandle, ScannerProps>(
                       <TouchableOpacity
                         style={styles.dismissButton}
                         onPress={() => {
-                          logWithTimestamp(F, 'Dismiss button pressed');
-                          onDismiss();
+                          logWithTimestamp(F, 'Dismiss button pressed')
+                          onDismiss()
                         }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
@@ -350,15 +300,13 @@ const UniversalScanner = React.forwardRef<ScannerHandle, ScannerProps>(
                     <TouchableOpacity
                       style={styles.torchButton}
                       onPress={() => {
-                        logWithTimestamp(F, 'Torch toggle');
-                        setTorchOn(!torchOn);
+                        logWithTimestamp(F, 'Torch toggle')
+                        setTorchOn(!torchOn)
                       }}
                       disabled={Platform.OS === 'web'}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                      <Text style={styles.torchText}>
-                        {torchOn ? 'Turn Torch Off' : 'Turn Torch On'}
-                      </Text>
+                      <Text style={styles.torchText}>{torchOn ? 'Turn Torch Off' : 'Turn Torch On'}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -374,9 +322,9 @@ const UniversalScanner = React.forwardRef<ScannerHandle, ScannerProps>(
           )}
         </View>
       </Modal>
-    );
+    )
   }
-);
+)
 
 const styles = StyleSheet.create({
   cameraFullContainer: {
@@ -502,6 +450,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     zIndex: 100001
   }
-});
+})
 
-export default UniversalScanner;
+export default UniversalScanner

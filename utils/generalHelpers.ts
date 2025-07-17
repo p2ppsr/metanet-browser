@@ -16,11 +16,7 @@ export function isValidUrl(url: string): boolean {
   
   try {
     new URL(url.startsWith('http') ? url : `https://${url}`)
-    return (
-      url.startsWith('http://') ||
-      url.startsWith('https://') ||
-      url === kNEW_TAB_URL
-    )
+    return url.startsWith('http://') || url.startsWith('https://') || url === kNEW_TAB_URL
   } catch {
     return false
   }

@@ -7,11 +7,7 @@ type SwipeableTabProps = {
   removeTab: (index: number) => void
 }
 
-const SwipeableTab: React.FC<SwipeableTabProps> = ({
-  tab,
-  index,
-  removeTab
-}) => {
+const SwipeableTab: React.FC<SwipeableTabProps> = ({ tab, index, removeTab }) => {
   const translateX = useRef(new Animated.Value(0)).current
 
   const panResponder = useRef(
@@ -40,10 +36,7 @@ const SwipeableTab: React.FC<SwipeableTabProps> = ({
   ).current
 
   return (
-    <Animated.View
-      style={[styles.tab, { transform: [{ translateX }] }]}
-      {...panResponder.panHandlers}
-    >
+    <Animated.View style={[styles.tab, { transform: [{ translateX }] }]} {...panResponder.panHandlers}>
       <Text style={styles.tabText}>{tab}</Text>
     </Animated.View>
   )

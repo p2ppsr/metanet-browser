@@ -1,5 +1,5 @@
-import Constants from 'expo-constants';
+import Constants from 'expo-constants'
 
-const useFirebase: boolean = Constants.expoConfig?.extra?.useFirebase ?? false;
+const useFirebase: boolean = Constants.expoConfig?.extra?.useFirebase ?? false
 
-export default { useFirebase };
+export default { useFirebase }

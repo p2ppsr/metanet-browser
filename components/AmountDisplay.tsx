@@ -6,11 +6,11 @@ import { useTheme } from '@/context/theme/ThemeContext'
 import { useWallet } from '@/context/WalletContext'
 
 type Props = {
-  abbreviate?: boolean,
-  showPlus?: boolean,
-  description?: string,
-  color?: string,
-  children: ReactNode,
+  abbreviate?: boolean
+  showPlus?: boolean
+  description?: string
+  color?: string
+  children: ReactNode
   showFiatAsInteger?: boolean
 }
 
@@ -42,11 +42,17 @@ const AmountDisplay: React.FC<Props> = ({ color, abbreviate, showPlus, descripti
   const ctx = useContext<any>(ExchangeRateContext)
   const {
     // Exchange rate context...
-    satoshisPerUSD, eurPerUSD, gbpPerUSD,
+    satoshisPerUSD,
+    eurPerUSD,
+    gbpPerUSD,
     // Shared display format context...
-    isFiatPreferred, fiatFormatIndex, satsFormatIndex,
+    isFiatPreferred,
+    fiatFormatIndex,
+    satsFormatIndex,
     // display format update methods...
-    toggleIsFiatPreferred, cycleFiatFormat, cycleSatsFormat
+    toggleIsFiatPreferred,
+    cycleFiatFormat,
+    cycleSatsFormat
   } = ctx
 
   const opts = satoshisOptions
@@ -68,10 +74,10 @@ const AmountDisplay: React.FC<Props> = ({ color, abbreviate, showPlus, descripti
       } else if (description === 'Spend from your Metanet Balance') {
         setFormattedSatoshis(`-${satoshisToDisplay}`)
         setTextColor(colors.error)
-      } else if (satoshisToDisplay.startsWith('+')) { 
+      } else if (satoshisToDisplay.startsWith('+')) {
         setFormattedSatoshis(satoshisToDisplay)
         setTextColor(colors.success)
-      } else if (satoshisToDisplay.startsWith('-')) { 
+      } else if (satoshisToDisplay.startsWith('-')) {
         setFormattedSatoshis(satoshisToDisplay)
         setTextColor(colors.error)
       } else {
@@ -82,34 +88,35 @@ const AmountDisplay: React.FC<Props> = ({ color, abbreviate, showPlus, descripti
       setSatoshis(0)
       setFormattedSatoshis('...')
     }
-  }, [children, showPlus, abbreviate, satsFormat, settingsCurrency, settings, colors]) 
+  }, [children, showPlus, abbreviate, satsFormat, settingsCurrency, settings, colors])
 
   // When satoshis or the exchange rate context changes, update the formatted fiat amount
   useEffect(() => {
     if (!isNaN(satoshis) && satoshisPerUSD) {
-      const newFormattedFiat = formatSatoshisAsFiat(satoshis, satoshisPerUSD, fiatFormat, settingsCurrency, eurPerUSD, gbpPerUSD, showFiatAsInteger)
-      setFormattedFiatAmount(newFormattedFiat || '...') 
+      const newFormattedFiat = formatSatoshisAsFiat(
+        satoshis,
+        satoshisPerUSD,
+        fiatFormat,
+        settingsCurrency,
+        eurPerUSD,
+        gbpPerUSD,
+        showFiatAsInteger
+      )
+      setFormattedFiatAmount(newFormattedFiat || '...')
     } else {
       setFormattedFiatAmount('...')
     }
-  }, [satoshis, satoshisPerUSD, fiatFormat, settingsCurrency, settings]) 
+  }, [satoshis, satoshisPerUSD, fiatFormat, settingsCurrency, settings])
 
   // Mobile component rendering
   if (settingsCurrency) {
     // Currency preference is set in settings
-    const isFiatCurrency = ['USD', 'EUR', 'GBP'].indexOf(settingsCurrency) > -1;
-    
-    return (<>
-        {isFiatCurrency ? formattedFiatAmount : formattedSatoshis}
-    </>);
+    const isFiatCurrency = ['USD', 'EUR', 'GBP'].indexOf(settingsCurrency) > -1
+
+    return <>{isFiatCurrency ? formattedFiatAmount : formattedSatoshis}</>
   } else {
     // Use preferred display format based on context
-    return (<>
-        {isFiatPreferred
-          ? formattedFiatAmount
-          : formattedSatoshis
-        }
-    </>);
+    return <>{isFiatPreferred ? formattedFiatAmount : formattedSatoshis}</>
   }
 }
 

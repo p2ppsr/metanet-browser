@@ -1,12 +1,12 @@
-import isImageUrl from './isImageUrl';
-import parseAppManifest from './parseAppManifest';
+import isImageUrl from './isImageUrl'
+import parseAppManifest from './parseAppManifest'
 
 interface AppManifest {
-  name?: string;
+  name?: string
   // Add other properties if needed
 }
 
-type SetStateString = React.Dispatch<React.SetStateAction<string>>;
+type SetStateString = React.Dispatch<React.SetStateAction<string>>
 
 /**
  * Fetches and caches the favicon and manifest data for a given app domain.
@@ -22,8 +22,8 @@ async function fetchAndCacheAppData(
   setAppName: SetStateString,
   DEFAULT_APP_ICON: string
 ): Promise<void> {
-  const faviconKey = `favicon_${appDomain}`;
-  const manifestKey = `manifest_${appDomain}`;
+  const faviconKey = `favicon_${appDomain}`
+  const manifestKey = `manifest_${appDomain}`
 
   // Try to load data from cache first
   // const cachedFavicon = window.localStorage.getItem(faviconKey);
@@ -32,8 +32,8 @@ async function fetchAndCacheAppData(
   // if (cachedFavicon) {
   //   setAppIcon(cachedFavicon);
   // } else {
-    // If no cache, default to fallback icon
-  setAppIcon(DEFAULT_APP_ICON);
+  // If no cache, default to fallback icon
+  setAppIcon(DEFAULT_APP_ICON)
   // }
 
   // if (cachedManifest) {
@@ -42,26 +42,26 @@ async function fetchAndCacheAppData(
 
   // Always fetch the latest data
   try {
-    const manifest: AppManifest | null = await parseAppManifest({ domain: appDomain });
+    const manifest: AppManifest | null = await parseAppManifest({ domain: appDomain })
     if (manifest) {
-      const faviconUrl = appDomain.startsWith('http') ? appDomain : `https://${appDomain}/favicon.ico`;
-      const isValidImage = await isImageUrl(faviconUrl);
+      const faviconUrl = appDomain.startsWith('http') ? appDomain : `https://${appDomain}/favicon.ico`
+      const isValidImage = await isImageUrl(faviconUrl)
 
       if (isValidImage) {
-        setAppIcon(faviconUrl);
+        setAppIcon(faviconUrl)
         // window.localStorage.setItem(faviconKey, faviconUrl);
       } else {
-        setAppIcon(DEFAULT_APP_ICON);
+        setAppIcon(DEFAULT_APP_ICON)
       }
 
       if (typeof manifest.name === 'string') {
-        setAppName(manifest.name);
+        setAppName(manifest.name)
         // window.localStorage.setItem(manifestKey, manifest.name);
       }
     }
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
 }
 
-export default fetchAndCacheAppData;
+export default fetchAndCacheAppData
