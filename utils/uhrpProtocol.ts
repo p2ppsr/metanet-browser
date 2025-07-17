@@ -1,87 +1,87 @@
-import { StorageDownloader, StorageUtils, Hash, Utils } from '@bsv/sdk';
+import { StorageDownloader, StorageUtils, Hash, Utils } from '@bsv/sdk'
 
 export interface UHRPResolvedContent {
-  url: string;
-  content: Uint8Array;
-  mimeType: string;
-  size: number;
-  metadata?: Record<string, any>;
-  resolvedUrl?: string; // The actual HTTP URL after resolution
+  url: string
+  content: Uint8Array
+  mimeType: string
+  size: number
+  metadata?: Record<string, any>
+  resolvedUrl?: string // The actual HTTP URL after resolution
 }
 
 export interface UHRPError {
-  code: string;
-  message: string;
-  originalUrl: string;
+  code: string
+  message: string
+  originalUrl: string
 }
 
 export class UHRPProtocolHandler {
-  private static instance: UHRPProtocolHandler;
-  private downloader: StorageDownloader;
-  private resolvedUrls: Record<string, string> = {}; // Cache resolved URLs
+  private static instance: UHRPProtocolHandler
+  private downloader: StorageDownloader
+  private resolvedUrls: Record<string, string> = {} // Cache resolved URLs
 
   private constructor() {
-    this.downloader = new StorageDownloader();
+    this.downloader = new StorageDownloader()
   }
 
   public static getInstance(): UHRPProtocolHandler {
     if (!UHRPProtocolHandler.instance) {
-      UHRPProtocolHandler.instance = new UHRPProtocolHandler();
+      UHRPProtocolHandler.instance = new UHRPProtocolHandler()
     }
-    return UHRPProtocolHandler.instance;
+    return UHRPProtocolHandler.instance
   }
 
   public isUHRPUrl(url: string): boolean {
-    let hashToCheck = url;
+    let hashToCheck = url
     if (url.toLowerCase().startsWith('uhrp://')) {
-      const match = url.match(/^uhrp:\/\/(.+)$/i);
-      if (!match) return false;
-      hashToCheck = match[1];
+      const match = url.match(/^uhrp:\/\/(.+)$/i)
+      if (!match) return false
+      hashToCheck = match[1]
     }
-    
-    return StorageUtils.isValidURL(hashToCheck);
+
+    return StorageUtils.isValidURL(hashToCheck)
   }
 
   private extractHashFromUHRPUrl(url: string): string {
     if (url.toLowerCase().startsWith('uhrp://')) {
-      const match = url.match(/^uhrp:\/\/(.+)$/i);
+      const match = url.match(/^uhrp:\/\/(.+)$/i)
       if (!match) {
-        throw new Error('Invalid UHRP URL format');
+        throw new Error('Invalid UHRP URL format')
       }
-      return match[1];
+      return match[1]
     }
-    return url;
+    return url
   }
 
   private async resolveToHttpUrl(uhrpUrl: string): Promise<string> {
     if (this.resolvedUrls[uhrpUrl]) {
-      return this.resolvedUrls[uhrpUrl];
+      return this.resolvedUrls[uhrpUrl]
     }
 
     if (!this.isUHRPUrl(uhrpUrl)) {
-      this.resolvedUrls[uhrpUrl] = uhrpUrl;
-      return uhrpUrl;
+      this.resolvedUrls[uhrpUrl] = uhrpUrl
+      return uhrpUrl
     }
 
-    const hash = this.extractHashFromUHRPUrl(uhrpUrl);
+    const hash = this.extractHashFromUHRPUrl(uhrpUrl)
 
     try {
-      const resolved = await this.downloader.resolve(hash);
+      const resolved = await this.downloader.resolve(hash)
       if (!resolved || resolved.length === 0) {
-        throw new Error(`UHRP content not found for hash: ${hash}`);
+        throw new Error(`UHRP content not found for hash: ${hash}`)
       }
-      
-      const [resolvedUrl] = resolved;
-      this.resolvedUrls[uhrpUrl] = resolvedUrl;
-      return resolvedUrl;
+
+      const [resolvedUrl] = resolved
+      this.resolvedUrls[uhrpUrl] = resolvedUrl
+      return resolvedUrl
     } catch (error) {
-      console.error('UHRP resolution failed:', error);
-      throw error;
+      console.error('UHRP resolution failed:', error)
+      throw error
     }
   }
 
   public async findUHRPHOST(url: string): Promise<string | null> {
-      if (!StorageUtils.isValidURL(url)) {
+    if (!StorageUtils.isValidURL(url)) {
       throw new Error('Invalid parameter UHRP url')
     }
     const hash = StorageUtils.getHashFromURL(url)
@@ -112,7 +112,6 @@ export class UHRPProtocolHandler {
         }
 
         return downloadURLs[i]
-        
       } catch (error) {
         continue
       }
@@ -122,24 +121,24 @@ export class UHRPProtocolHandler {
 
   public async resolveUHRPUrl(url: string): Promise<UHRPResolvedContent> {
     try {
-      console.log('Resolving UHRP URL:', url);
+      console.log('Resolving UHRP URL:', url)
 
-      const resolvedHttpUrl = await this.resolveToHttpUrl(url);
-      
-      console.log('Resolved UHRP URL to:', resolvedHttpUrl);
+      const resolvedHttpUrl = await this.resolveToHttpUrl(url)
 
-      const response = await fetch(resolvedHttpUrl);
-      
+      console.log('Resolved UHRP URL to:', resolvedHttpUrl)
+
+      const response = await fetch(resolvedHttpUrl)
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const arrayBuffer = await response.arrayBuffer();
-      const content = new Uint8Array(arrayBuffer);
-      
-      let mimeType = response.headers.get('content-type') || 'application/octet-stream';
-      mimeType = mimeType.split(';')[0].trim();
-      
+      const arrayBuffer = await response.arrayBuffer()
+      const content = new Uint8Array(arrayBuffer)
+
+      let mimeType = response.headers.get('content-type') || 'application/octet-stream'
+      mimeType = mimeType.split(';')[0].trim()
+
       return {
         url,
         content,
@@ -151,16 +150,16 @@ export class UHRPProtocolHandler {
           contentLength: response.headers.get('content-length'),
           lastModified: response.headers.get('last-modified')
         }
-      };
+      }
     } catch (error) {
-      console.error('Error resolving UHRP URL:', error);
+      console.error('Error resolving UHRP URL:', error)
       throw {
         code: 'UHRP_RESOLUTION_FAILED',
         message: error instanceof Error ? error.message : 'Unknown error occurred',
         originalUrl: url
-      } as UHRPError;
+      } as UHRPError
     }
   }
 }
 
-export const uhrpHandler = UHRPProtocolHandler.getInstance();
+export const uhrpHandler = UHRPProtocolHandler.getInstance()

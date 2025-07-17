@@ -121,13 +121,13 @@ export class TabStore {
     const currentIndex = this.tabHistoryIndexes[tabId]
 
     //console.log(`goBack(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoBack=${tab?.canGoBack}`)
-    
+
     if (tab && history && currentIndex > 0) {
       const newIndex = currentIndex - 1
       const url = history[newIndex]
-      
+
       //console.log(`🔙 Going back to: ${url} (index ${newIndex})`)
-      
+
       this.tabHistoryIndexes[tabId] = newIndex
 
       // Update tab's canGoBack/canGoForward based on new position
@@ -149,13 +149,13 @@ export class TabStore {
     const currentIndex = this.tabHistoryIndexes[tabId]
 
     //console.log(`goForward(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoForward=${tab?.canGoForward}`)
-    
+
     if (tab && history && currentIndex < history.length - 1) {
       const newIndex = currentIndex + 1
       const url = history[newIndex]
-      
+
       //console.log(`🔜 Going forward to: ${url} (index ${newIndex})`)
-      
+
       this.tabHistoryIndexes[tabId] = newIndex
 
       // Update tab's canGoBack/canGoForward based on new position
@@ -200,7 +200,6 @@ export class TabStore {
     if (!tab || tabId !== this.activeTabId || this.isSwitchingTabs) {
       return
     }
-
 
     // console.log(`handleNavigationStateChange(): tabId=${tabId}, url=${navState.url}, webview_canGoBack=${navState.canGoBack}, webview_canGoForward=${navState.canGoForward}`)
 
@@ -250,9 +249,8 @@ export class TabStore {
       tab.canGoBack = currentIdx > 0
       tab.canGoForward = currentIdx < currentHistory.length - 1
 
-      
       //console.log(`🧭 Navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}, historyIndex=${currentIdx}/${currentHistory.length - 1}`)
-      
+
       // Log state changes
       if (prevCanGoBack !== tab.canGoBack || prevCanGoForward !== tab.canGoForward) {
         //console.log(`🔄 Navigation state changed: canGoBack: ${prevCanGoBack} → ${tab.canGoBack}, canGoForward: ${prevCanGoForward} → ${tab.canGoForward}`)
@@ -271,7 +269,7 @@ export class TabStore {
     this.tabNavigationHistories = {}
     this.tabHistoryIndexes = {}
     this.saveTabs()
-    
+
     // Always create a new tab after clearing all tabs
     this.newTab()
   }
@@ -279,9 +277,10 @@ export class TabStore {
     if (!this.tabs) this.tabs = [] // Prevent undefined
     const serializableTabs = this.tabs.map(({ webviewRef, ...rest }) => rest)
 
-    await AsyncStorage.setItem('tabs', JSON.stringify(serializableTabs)).catch(
+    await AsyncStorage.setItem('tabs', JSON.stringify(serializableTabs))
+      .catch
       //console.error
-    )
+      ()
   }
 
   async loadTabs() {

@@ -121,7 +121,7 @@ const resources = {
       clear: 'Clear',
 
       clear_all: 'Clear All',
-      
+
       // General UI
       untitled: 'Untitled',
       website_notification: 'Website Notification',
@@ -145,7 +145,7 @@ const resources = {
       no: 'No',
 
       later: 'Later',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'Switch to Mobile View',
       switch_to_desktop_view: 'Switch to Desktop View',
@@ -281,7 +281,7 @@ const resources = {
       terms_privacy_agree: 'By continuing, you agree to our Terms of Service and Privacy Policy',
 
       continue_without_login: 'Continue without login',
-      
+
       // Auth - OTP
       verification_code: 'Verification Code',
       enter_6_digit_code: 'Enter the 6-digit code sent to',
@@ -303,7 +303,7 @@ const resources = {
       terms_privacy_agreement: 'By continuing, you agree to our Terms of Service and Privacy Policy',
 
       configure_providers: 'Configure Providers',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: 'Are you sure?',
       web3_benefits_description: 'The benefits of web3 are as follows:',
@@ -318,7 +318,7 @@ const resources = {
       web3_benefit_future_proof: 'Future-proof',
       web3_benefit_future_proof_desc: 'Be early to the next generation of the internet.',
       web3_benefits_get_identity: '🚀 Get My Web3 Identity (30s)',
-      web3_benefits_maybe_later: 'Maybe later',
+      web3_benefits_maybe_later: 'Maybe later'
     }
   },
   zh: {
@@ -347,7 +347,7 @@ const resources = {
       clear: '清除',
 
       clear_all: '全部清除',
-      
+
       // General UI
       untitled: '无标题',
       website_notification: '网站通知',
@@ -371,7 +371,7 @@ const resources = {
       no: '否',
 
       later: '稍后',
-      
+
       // Navigation actions
       switch_to_mobile_view: '切换到移动视图',
       switch_to_desktop_view: '切换到桌面视图',
@@ -507,7 +507,7 @@ const resources = {
       terms_privacy_agree: '继续即表示您同意我们的服务条款和隐私政策',
 
       continue_without_login: '不登录继续',
-      
+
       // Auth - OTP
       verification_code: '验证码',
       enter_6_digit_code: '输入发送到以下号码的6位数字代码',
@@ -529,7 +529,7 @@ const resources = {
       terms_privacy_agreement: '继续即表示您同意我们的服务条款和隐私政策',
 
       configure_providers: '配置提供商',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: '您确定吗？',
       web3_benefits_description: 'Web3的好处如下：',
@@ -544,7 +544,7 @@ const resources = {
       web3_benefit_future_proof: '面向未来',
       web3_benefit_future_proof_desc: '成为下一代互联网的早期用户。',
       web3_benefits_get_identity: '🚀 获取我的Web3身份（30秒）',
-      web3_benefits_maybe_later: '稍后再说',
+      web3_benefits_maybe_later: '稍后再说'
     }
   },
   hi: {
@@ -573,7 +573,7 @@ const resources = {
       clear: 'साफ़ करें',
 
       clear_all: 'सभी साफ़ करें',
-      
+
       // General UI
       untitled: 'बिना शीर्षक',
       website_notification: 'वेबसाइट सूचना',
@@ -597,7 +597,7 @@ const resources = {
       no: 'नहीं',
 
       later: 'बाद में',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'मोबाइल दृश्य पर स्विच करें',
       switch_to_desktop_view: 'डेस्कटॉप दृश्य पर स्विच करें',
@@ -743,7 +743,7 @@ const resources = {
       select_country: 'देश चुनें',
       terms_privacy_agree: 'जारी रखकर, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
       continue_without_login: 'बिना लॉगिन के जारी रखें',
-      
+
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'पहचान और भुगतान सुविधा के साथ ब्राउज़र',
@@ -751,7 +751,7 @@ const resources = {
       terms_privacy_agreement: 'जारी रखकर, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
 
       configure_providers: 'प्रदाता कॉन्फ़िगर करें',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: 'क्या आप वाकई चाहते हैं?',
       web3_benefits_description: 'Web3 के फायदे निम्नलिखित हैं:',
@@ -766,7 +766,7 @@ const resources = {
       web3_benefit_future_proof: 'भविष्य के लिए तैयार',
       web3_benefit_future_proof_desc: 'इंटरनेट की अगली पीढ़ी के लिए जल्दी तैयार हो जाएं।',
       web3_benefits_get_identity: '🚀 मेरी Web3 पहचान प्राप्त करें (30 सेकंड)',
-      web3_benefits_maybe_later: 'बाद में शायद',
+      web3_benefits_maybe_later: 'बाद में शायद'
     }
   },
   es: {
@@ -795,7 +795,7 @@ const resources = {
       clear: 'Limpiar',
 
       clear_all: 'Limpiar Todo',
-      
+
       // General UI
       untitled: 'Sin título',
       website_notification: 'Notificación del sitio web',
@@ -818,7 +818,7 @@ const resources = {
       yes: 'Sí',
       no: 'No',
       later: 'Más tarde',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'Cambiar a Vista Móvil',
       switch_to_desktop_view: 'Cambiar a Vista de Escritorio',
@@ -893,7 +893,7 @@ const resources = {
       success: 'Éxito',
       password_changed_mock: 'Contraseña cambiada (simulado)',
       recovery_key_mock: '•••••••••••••• (simulado)',
-      
+
       // Auth - Password
       enter_password: 'Ingresa tu Contraseña',
       enter_password_subtitle: 'Por favor ingresa tu contraseña para acceder a tu billetera',
@@ -912,7 +912,7 @@ const resources = {
       select_country: 'Seleccionar País',
       terms_privacy_agree: 'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad',
       continue_without_login: 'Continuar sin iniciar sesión',
-      
+
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Navegador con identidad y pagos integrados',
@@ -920,7 +920,7 @@ const resources = {
       terms_privacy_agreement: 'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad',
 
       configure_providers: 'Configurar Proveedores',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: '¿Estás seguro?',
       web3_benefits_description: 'Los beneficios de web3 son los siguientes:',
@@ -935,7 +935,7 @@ const resources = {
       web3_benefit_future_proof: 'A prueba de futuro',
       web3_benefit_future_proof_desc: 'Sé temprano en la próxima generación de internet.',
       web3_benefits_get_identity: '🚀 Obtener Mi Identidad Web3 (30s)',
-      web3_benefits_maybe_later: 'Tal vez más tarde',
+      web3_benefits_maybe_later: 'Tal vez más tarde'
     }
   },
   fr: {
@@ -964,7 +964,7 @@ const resources = {
       clear: 'Effacer',
 
       clear_all: 'Tout Effacer',
-      
+
       // General UI
       untitled: 'Sans titre',
       website_notification: 'Notification du site web',
@@ -988,7 +988,7 @@ const resources = {
       no: 'Non',
 
       later: 'Plus tard',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'Passer à la Vue Mobile',
       switch_to_desktop_view: 'Passer à la Vue de Bureau',
@@ -1049,7 +1049,6 @@ const resources = {
       no_trusted_origins: 'Aucune origine de confiance pour le moment.',
       trusted: 'Approuvé',
 
-      
       // Security
       security: 'Sécurité',
       manage_password_recovery: 'Gérez votre mot de passe et votre clé de récupération.',
@@ -1061,7 +1060,8 @@ const resources = {
       forgot_password_flow: 'Flux de mot de passe oublié',
       change: 'Changer',
       recovery_key: 'Clé de Récupération',
-      recovery_key_description: 'Vous aurez besoin de votre clé de récupération si vous oubliez votre mot de passe ou perdez votre téléphone.',
+      recovery_key_description:
+        'Vous aurez besoin de votre clé de récupération si vous oubliez votre mot de passe ou perdez votre téléphone.',
       view: 'Voir',
       change_recovery_key: 'Changer la clé de récupération (simulé)',
       password_too_short: 'Mot de passe trop court',
@@ -1069,7 +1069,7 @@ const resources = {
       success: 'Succès',
       password_changed_mock: 'Mot de passe changé (simulé)',
       recovery_key_mock: '•••••••••••••• (simulé)',
-      
+
       // Auth - Password
       enter_password: 'Entrer le Mot de Passe',
       enter_password_subtitle: 'Veuillez entrer votre mot de passe pour accéder à votre portefeuille',
@@ -1095,32 +1095,35 @@ const resources = {
       send_verification_code: 'Envoyer le Code de Vérification',
       invalid_phone_number: 'Numéro de téléphone invalide',
       select_country: 'Sélectionner le Pays',
-      terms_privacy_agree: 'En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité',
+      terms_privacy_agree:
+        'En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité',
       continue_without_login: 'Continuer sans se connecter',
-      
+
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Navigateur avec identité et paiements intégrés',
       get_started: 'Commencer',
 
-      terms_privacy_agreement: 'En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité',
+      terms_privacy_agreement:
+        'En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité',
       configure_providers: 'Configurer les Fournisseurs',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: 'Êtes-vous sûr ?',
       web3_benefits_description: 'Les avantages du web3 sont les suivants :',
       web3_benefit_never_login: 'Plus jamais de connexion',
-      web3_benefit_never_login_desc: 'Une identité pour chaque application Web3. Plus de mots de passe ou d\'inscriptions.',
+      web3_benefit_never_login_desc:
+        "Une identité pour chaque application Web3. Plus de mots de passe ou d'inscriptions.",
       web3_benefit_instant: 'Tout instantané',
       web3_benefit_instant_desc: 'Paiements, accès, vérification - tout se passe en quelques secondes.',
       web3_benefit_own_data: 'Vos données vous appartiennent',
       web3_benefit_own_data_desc: 'Aucune entreprise ne vous suit ou ne vend vos informations.',
       web3_benefit_works_everywhere: 'Fonctionne partout',
-      web3_benefit_works_everywhere_desc: 'Accédez à des milliers d\'applications Web3 avec la même identité.',
-      web3_benefit_future_proof: 'À l\'épreuve du futur',
-      web3_benefit_future_proof_desc: 'Soyez en avance sur la prochaine génération d\'internet.',
+      web3_benefit_works_everywhere_desc: "Accédez à des milliers d'applications Web3 avec la même identité.",
+      web3_benefit_future_proof: "À l'épreuve du futur",
+      web3_benefit_future_proof_desc: "Soyez en avance sur la prochaine génération d'internet.",
       web3_benefits_get_identity: '🚀 Obtenir Mon Identité Web3 (30s)',
-      web3_benefits_maybe_later: 'Peut-être plus tard',
+      web3_benefits_maybe_later: 'Peut-être plus tard'
     }
   },
   ar: {
@@ -1149,7 +1152,7 @@ const resources = {
       clear: 'مسح',
 
       clear_all: 'مسح الكل',
-      
+
       // General UI
       untitled: 'بدون عنوان',
       website_notification: 'إشعار الموقع',
@@ -1173,7 +1176,7 @@ const resources = {
       no: 'لا',
 
       later: 'لاحقاً',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'التبديل إلى العرض المحمول',
       switch_to_desktop_view: 'التبديل إلى عرض سطح المكتب',
@@ -1227,7 +1230,6 @@ const resources = {
       no_trusted_origins: 'لا توجد مصادر موثوقة بعد.',
       trusted: 'موثوق',
 
-      
       // Security
       security: 'الأمان',
       manage_password_recovery: 'إدارة كلمة المرور ومفتاح الاسترداد.',
@@ -1247,7 +1249,7 @@ const resources = {
       success: 'نجح',
       password_changed_mock: 'تم تغيير كلمة المرور (وهمي)',
       recovery_key_mock: '•••••••••••••• (وهمي)',
-      
+
       // Auth - Password
       enter_password: 'أدخل كلمة المرور',
       enter_password_subtitle: 'يرجى إدخال كلمة المرور للوصول إلى محفظتك',
@@ -1276,7 +1278,7 @@ const resources = {
       select_country: 'اختر البلد',
       terms_privacy_agree: 'من خلال المتابعة، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا',
       continue_without_login: 'المتابعة بدون تسجيل الدخول',
-      
+
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'متصفح مع الهوية والمدفوعات المدمجة',
@@ -1284,7 +1286,7 @@ const resources = {
       terms_privacy_agreement: 'من خلال المتابعة، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا',
 
       configure_providers: 'تكوين موفري الخدمة',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: 'هل أنت متأكد؟',
       web3_benefits_description: 'فوائد الويب3 هي كما يلي:',
@@ -1299,7 +1301,7 @@ const resources = {
       web3_benefit_future_proof: 'جاهز للمستقبل',
       web3_benefit_future_proof_desc: 'كن مبكرًا في الجيل القادم من الإنترنت.',
       web3_benefits_get_identity: '🚀 احصل على هويتي الويب3 (30 ثانية)',
-      web3_benefits_maybe_later: 'ربما لاحقاً',
+      web3_benefits_maybe_later: 'ربما لاحقاً'
     }
   },
   pt: {
@@ -1328,7 +1330,7 @@ const resources = {
       clear: 'Limpar',
 
       clear_all: 'Limpar Tudo',
-      
+
       // General UI
       untitled: 'Sem título',
       website_notification: 'Notificação do site',
@@ -1352,7 +1354,7 @@ const resources = {
       no: 'Não',
 
       later: 'Mais tarde',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'Alternar para Visualização Móvel',
       switch_to_desktop_view: 'Alternar para Visualização Desktop',
@@ -1424,7 +1426,8 @@ const resources = {
       forgot_password_flow: 'Fluxo de senha esquecida',
       change: 'Alterar',
       recovery_key: 'Chave de Recuperação',
-      recovery_key_description: 'Você precisará de sua chave de recuperação se esquecer sua senha ou perder seu telefone.',
+      recovery_key_description:
+        'Você precisará de sua chave de recuperação se esquecer sua senha ou perder seu telefone.',
       view: 'Visualizar',
       change_recovery_key: 'Alterar chave de recuperação (simulado)',
       password_too_short: 'Senha muito curta',
@@ -1432,7 +1435,7 @@ const resources = {
       success: 'Sucesso',
       password_changed_mock: 'Senha alterada (simulado)',
       recovery_key_mock: '•••••••••••••• (simulado)',
-      
+
       // Auth - Password
       enter_password: 'Digite a Senha',
       enter_password_subtitle: 'Por favor, digite sua senha para acessar sua carteira',
@@ -1461,7 +1464,7 @@ const resources = {
       select_country: 'Selecionar País',
       terms_privacy_agree: 'Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade',
       continue_without_login: 'Continuar sem fazer login',
-      
+
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Navegador com identidade e pagamentos integrados',
@@ -1469,7 +1472,7 @@ const resources = {
       terms_privacy_agreement: 'Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade',
 
       configure_providers: 'Configurar Provedores',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: 'Tem certeza?',
       web3_benefits_description: 'Os benefícios do web3 são os seguintes:',
@@ -1484,7 +1487,7 @@ const resources = {
       web3_benefit_future_proof: 'À prova de futuro',
       web3_benefit_future_proof_desc: 'Seja pioneiro na próxima geração da internet.',
       web3_benefits_get_identity: '🚀 Obter Minha Identidade Web3 (30s)',
-      web3_benefits_maybe_later: 'Talvez mais tarde',
+      web3_benefits_maybe_later: 'Talvez mais tarde'
     }
   },
   bn: {
@@ -1513,7 +1516,7 @@ const resources = {
       clear: 'পরিষ্কার',
 
       clear_all: 'সব পরিষ্কার',
-      
+
       // General UI
       untitled: 'শিরোনামহীন',
       website_notification: 'ওয়েবসাইট বিজ্ঞপ্তি',
@@ -1537,7 +1540,7 @@ const resources = {
       no: 'না',
 
       later: 'পরে',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'মোবাইল ভিউতে পরিবর্তন করুন',
       switch_to_desktop_view: 'ডেস্কটপ ভিউতে পরিবর্তন করুন',
@@ -1591,7 +1594,6 @@ const resources = {
       no_trusted_origins: 'এখনও কোন বিশ্বস্ত উৎস নেই।',
       trusted: 'বিশ্বস্ত',
 
-      
       // Security
       security: 'নিরাপত্তা',
       manage_password_recovery: 'আপনার পাসওয়ার্ড এবং পুনরুদ্ধার কী পরিচালনা করুন।',
@@ -1603,7 +1605,8 @@ const resources = {
       forgot_password_flow: 'পাসওয়ার্ড ভুলে যাওয়ার প্রক্রিয়া',
       change: 'পরিবর্তন',
       recovery_key: 'পুনরুদ্ধার কী',
-      recovery_key_description: 'আপনি যদি আপনার পাসওয়ার্ড ভুলে যান বা আপনার ফোন হারিয়ে ফেলেন তাহলে আপনার পুনরুদ্ধার কী প্রয়োজন হবে।',
+      recovery_key_description:
+        'আপনি যদি আপনার পাসওয়ার্ড ভুলে যান বা আপনার ফোন হারিয়ে ফেলেন তাহলে আপনার পুনরুদ্ধার কী প্রয়োজন হবে।',
       view: 'দেখুন',
       change_recovery_key: 'পুনরুদ্ধার কী পরিবর্তন করুন (নকল)',
       password_too_short: 'পাসওয়ার্ড খুব ছোট',
@@ -1611,7 +1614,7 @@ const resources = {
       success: 'সফল',
       password_changed_mock: 'পাসওয়ার্ড পরিবর্তিত (নকল)',
       recovery_key_mock: '•••••••••••••• (নকল)',
-      
+
       // Auth - Password
       enter_password: 'পাসওয়ার্ড লিখুন',
       enter_password_subtitle: 'আপনার ওয়ালেট অ্যাক্সেস করতে অনুগ্রহ করে আপনার পাসওয়ার্ড লিখুন',
@@ -1640,7 +1643,7 @@ const resources = {
       select_country: 'দেশ নির্বাচন করুন',
       terms_privacy_agree: 'চালিয়ে যেতে, আপনি আমাদের সেবার শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মত হচ্ছেন',
       continue_without_login: 'লগইন ছাড়া চালিয়ে যান',
-      
+
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'পরিচয় এবং পেমেন্ট সুবিধা সহ ব্রাউজার',
@@ -1648,7 +1651,7 @@ const resources = {
       terms_privacy_agreement: 'চালিয়ে যেতে, আপনি আমাদের সেবার শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মত হচ্ছেন',
 
       configure_providers: 'প্রদানকারী কনফিগার করুন',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: 'আপনি কি নিশ্চিত?',
       web3_benefits_description: 'Web3 এর সুবিধাগুলি নিম্নরূপ:',
@@ -1663,7 +1666,7 @@ const resources = {
       web3_benefit_future_proof: 'ভবিষ্যত-প্রমাণিত',
       web3_benefit_future_proof_desc: 'ইন্টারনেটের পরবর্তী প্রজন্মে তাড়াতাড়ি থাকুন।',
       web3_benefits_get_identity: '🚀 আমার Web3 পরিচয় পান (৩০ সেকেন্ড)',
-      web3_benefits_maybe_later: 'হয়তো পরে',
+      web3_benefits_maybe_later: 'হয়তো পরে'
     }
   },
   ru: {
@@ -1692,7 +1695,7 @@ const resources = {
       clear: 'Очистить',
 
       clear_all: 'Очистить Всё',
-      
+
       // General UI
       untitled: 'Без названия',
       website_notification: 'Уведомление сайта',
@@ -1716,7 +1719,7 @@ const resources = {
       no: 'Нет',
 
       later: 'Позже',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'Переключить на Мобильный Вид',
       switch_to_desktop_view: 'Переключить на Вид Рабочего Стола',
@@ -1770,7 +1773,6 @@ const resources = {
       no_trusted_origins: 'Пока нет доверенных источников.',
       trusted: 'Доверенный',
 
-      
       // Security
       security: 'Безопасность',
       manage_password_recovery: 'Управляйте своим паролем и ключом восстановления.',
@@ -1790,7 +1792,7 @@ const resources = {
       success: 'Успех',
       password_changed_mock: 'Пароль изменен (макет)',
       recovery_key_mock: '•••••••••••••• (макет)',
-      
+
       // Auth - Password
       enter_password: 'Введите Пароль',
       enter_password_subtitle: 'Пожалуйста, введите свой пароль для доступа к кошельку',
@@ -1819,20 +1821,22 @@ const resources = {
       select_country: 'Выберите Страну',
       terms_privacy_agree: 'Продолжая, вы соглашаетесь с нашими Условиями обслуживания и Политикой конфиденциальности',
       continue_without_login: 'Продолжить без входа',
-      
+
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Браузер со встроенной идентификацией и платежами',
       get_started: 'Начать',
 
-      terms_privacy_agreement: 'Продолжая, вы соглашаетесь с нашими Условиями обслуживания и Политикой конфиденциальности',
+      terms_privacy_agreement:
+        'Продолжая, вы соглашаетесь с нашими Условиями обслуживания и Политикой конфиденциальности',
       configure_providers: 'Настроить Провайдеров',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: 'Вы уверены?',
       web3_benefits_description: 'Преимущества web3 следующие:',
       web3_benefit_never_login: 'Никогда больше не входить в систему',
-      web3_benefit_never_login_desc: 'Одна идентичность для каждого Web3 приложения. Больше никаких паролей или регистраций.',
+      web3_benefit_never_login_desc:
+        'Одна идентичность для каждого Web3 приложения. Больше никаких паролей или регистраций.',
       web3_benefit_instant: 'Все мгновенно',
       web3_benefit_instant_desc: 'Платежи, доступ, проверка - все происходит за секунды.',
       web3_benefit_own_data: 'Ваши данные принадлежат вам',
@@ -1842,7 +1846,7 @@ const resources = {
       web3_benefit_future_proof: 'Готовность к будущему',
       web3_benefit_future_proof_desc: 'Будьте на раннем этапе следующего поколения интернета.',
       web3_benefits_get_identity: '🚀 Получить Мою Web3 Идентичность (30с)',
-      web3_benefits_maybe_later: 'Может быть позже',
+      web3_benefits_maybe_later: 'Может быть позже'
     }
   },
   id: {
@@ -1871,7 +1875,7 @@ const resources = {
       clear: 'Bersihkan',
 
       clear_all: 'Bersihkan Semua',
-      
+
       // General UI
       untitled: 'Tanpa judul',
       website_notification: 'Notifikasi situs web',
@@ -1895,7 +1899,7 @@ const resources = {
       no: 'Tidak',
 
       later: 'Nanti',
-      
+
       // Navigation actions
       switch_to_mobile_view: 'Beralih ke Tampilan Mobile',
       switch_to_desktop_view: 'Beralih ke Tampilan Desktop',
@@ -1977,7 +1981,7 @@ const resources = {
       select_country: 'Pilih Negara',
       terms_privacy_agree: 'Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi kami',
       continue_without_login: 'Lanjutkan tanpa masuk',
-      
+
       // Login/Welcome Screen
       metanet: 'Metanet',
       browser_with_identity_payments: 'Browser dengan identitas dan pembayaran terintegrasi',
@@ -1985,12 +1989,13 @@ const resources = {
       terms_privacy_agreement: 'Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi kami',
 
       configure_providers: 'Konfigurasi Penyedia',
-      
+
       // Web3 Benefits Modal
       web3_benefits_title: 'Apakah Anda yakin?',
       web3_benefits_description: 'Manfaat web3 adalah sebagai berikut:',
       web3_benefit_never_login: 'Tidak pernah login lagi',
-      web3_benefit_never_login_desc: 'Satu identitas untuk setiap aplikasi Web3. Tidak ada lagi kata sandi atau pendaftaran.',
+      web3_benefit_never_login_desc:
+        'Satu identitas untuk setiap aplikasi Web3. Tidak ada lagi kata sandi atau pendaftaran.',
       web3_benefit_instant: 'Semua instan',
       web3_benefit_instant_desc: 'Pembayaran, akses, verifikasi - semuanya terjadi dalam hitungan detik.',
       web3_benefit_own_data: 'Data Anda milik Anda',
@@ -2000,7 +2005,7 @@ const resources = {
       web3_benefit_future_proof: 'Tahan masa depan',
       web3_benefit_future_proof_desc: 'Jadilah yang terdepan dalam generasi internet berikutnya.',
       web3_benefits_get_identity: '🚀 Dapatkan Identitas Web3 Saya (30 detik)',
-      web3_benefits_maybe_later: 'Mungkin nanti',
+      web3_benefits_maybe_later: 'Mungkin nanti'
     }
   }
 }

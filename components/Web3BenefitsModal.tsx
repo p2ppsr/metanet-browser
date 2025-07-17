@@ -20,17 +20,13 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
   const { colors } = useTheme()
   const { t } = useTranslation()
 
-
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onDismiss}>
       <View style={styles.modalContainer}>
         <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
           {/* Header */}
           <View style={styles.header}>
-
-            <Text style={[styles.title, { color: colors.textPrimary }]}>
-              {t('web3_benefits_title')}
-            </Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{t('web3_benefits_title')}</Text>
             <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -67,12 +63,8 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
               </Text>
             </TouchableOpacity>
 
-
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={onContinueWithoutLogin}
-            >
-              <Text style={[styles.secondaryButtonText, { color: colors.textSecondary } ]}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={onContinueWithoutLogin}>
+              <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
                 {t('web3_benefits_maybe_later')}
               </Text>
             </TouchableOpacity>
@@ -153,8 +145,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '300',
 
-    opacity: 1,
-  },
-});
+    opacity: 1
+  }
+})
 
 export default Web3BenefitsModal

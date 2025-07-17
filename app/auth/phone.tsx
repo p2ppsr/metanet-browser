@@ -22,15 +22,14 @@ import { useBrowserMode } from '@/context/BrowserModeContext'
 import { countryCodes } from '@/utils/countryCodes'
 
 export default function PhoneScreen() {
+  const { t } = useTranslation()
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [selectedCountry, setSelectedCountry] = useState(countryCodes[222])
+  const [showCountryPicker, setShowCountryPicker] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const { managers } = useWallet()
+  const { showWeb3Benefits, setWeb2Mode } = useBrowserMode()
 
-  const { t } = useTranslation();
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState(countryCodes[222]);
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { managers } = useWallet();
-  const { showWeb3Benefits, setWeb2Mode } = useBrowserMode();
-  
   // Get theme styles and colors
   const { colors, isDark } = useTheme()
   const styles = useThemeStyles()
@@ -79,7 +78,7 @@ export default function PhoneScreen() {
     showWeb3Benefits(
       // onContinue - if they still want to skip
       () => {
-        setWeb2Mode(true);
+        setWeb2Mode(true)
         router.replace({
           pathname: '/browser',
           params: { mode: 'web2' }
@@ -217,10 +216,7 @@ export default function PhoneScreen() {
             onPress={handleSkipLogin}
             disabled={loading}
           >
-
-            <Text style={[styles.buttonText, { color: colors.textPrimary }]}>
-              {t('continue_without_login')}
-            </Text>
+            <Text style={[styles.buttonText, { color: colors.textPrimary }]}>{t('continue_without_login')}</Text>
           </TouchableOpacity>
 
           <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 10 }}>

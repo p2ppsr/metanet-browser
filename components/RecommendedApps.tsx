@@ -9,18 +9,17 @@ import {
   TextInput,
   Modal,
   Pressable,
-
   ScrollView,
   Linking,
-  ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Fuse from 'fuse.js';
-import { useTheme } from '@/context/theme/ThemeContext';
-import { useWallet } from '@/context/WalletContext';
-import { useBrowserMode } from '@/context/BrowserModeContext';
-import { useTranslation } from 'react-i18next';
-import { uhrpHandler } from '@/utils/uhrpProtocol';
+  ActivityIndicator
+} from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import Fuse from 'fuse.js'
+import { useTheme } from '@/context/theme/ThemeContext'
+import { useWallet } from '@/context/WalletContext'
+import { useBrowserMode } from '@/context/BrowserModeContext'
+import { useTranslation } from 'react-i18next'
+import { uhrpHandler } from '@/utils/uhrpProtocol'
 
 interface App {
   domain: string
@@ -120,41 +119,42 @@ export const RecommendedApps = ({
 
   // Context menu state
 
-  const [contextMenuVisible, setContextMenuVisible] = useState(false);
-  const [selectedApp, setSelectedApp] = useState<App | null>(null);
-  
+  const [contextMenuVisible, setContextMenuVisible] = useState(false)
+  const [selectedApp, setSelectedApp] = useState<App | null>(null)
+
   // UHRP loading state
-  const [uhrpLoading, setUhrpLoading] = useState<string | null>(null);
+  const [uhrpLoading, setUhrpLoading] = useState<string | null>(null)
 
   /* -------------------------- navigation handler -------------------------- */
-  const handleAppNavigation = useCallback(async (url: string) => {
-    console.log('🔗 [RecommendedApps] Navigation requested:', url);
-    console.log('🔗 [RecommendedApps] isUHRPUrl check:', uhrpHandler.isUHRPUrl(url));
-    
-    // Check if this is a UHRP URL
-    if (uhrpHandler.isUHRPUrl(url)) {
-      console.log('🔗 [RecommendedApps] UHRP URL detected, resolving directly:', url);
-      
-      // Set loading state
-      setUhrpLoading(url);
-      
-      try {
-        // Resolve UHRP URL directly to a data URL
-        console.log('🔗 [RecommendedApps] About to call uhrpHandler.resolveUHRPUrl...');
-        const resolvedContent = await uhrpHandler.resolveUHRPUrl(url);
+  const handleAppNavigation = useCallback(
+    async (url: string) => {
+      console.log('🔗 [RecommendedApps] Navigation requested:', url)
+      console.log('🔗 [RecommendedApps] isUHRPUrl check:', uhrpHandler.isUHRPUrl(url))
+
+      // Check if this is a UHRP URL
+      if (uhrpHandler.isUHRPUrl(url)) {
+        console.log('🔗 [RecommendedApps] UHRP URL detected, resolving directly:', url)
+
+        // Set loading state
+        setUhrpLoading(url)
+
+        try {
+          // Resolve UHRP URL directly to a data URL
+          console.log('🔗 [RecommendedApps] About to call uhrpHandler.resolveUHRPUrl...')
+          const resolvedContent = await uhrpHandler.resolveUHRPUrl(url)
           if (resolvedContent.resolvedUrl) {
-          console.log('🔗 [RecommendedApps] Using HTTP URL:', resolvedContent.resolvedUrl);
-          setStartingUrl(resolvedContent.resolvedUrl);
-        }
-        
-        // Clear loading state
-        setUhrpLoading(null);
-      } catch (error) {
-        // Clear loading state on error
-        setUhrpLoading(null);
-        console.error('🔗 [RecommendedApps] UHRP resolution failed:', error);
-        // Fallback: show error by navigating to a data URL with error content
-        const errorHtml = `
+            console.log('🔗 [RecommendedApps] Using HTTP URL:', resolvedContent.resolvedUrl)
+            setStartingUrl(resolvedContent.resolvedUrl)
+          }
+
+          // Clear loading state
+          setUhrpLoading(null)
+        } catch (error) {
+          // Clear loading state on error
+          setUhrpLoading(null)
+          console.error('🔗 [RecommendedApps] UHRP resolution failed:', error)
+          // Fallback: show error by navigating to a data URL with error content
+          const errorHtml = `
           <!DOCTYPE html>
           <html>
             <head>
@@ -198,15 +198,17 @@ export const RecommendedApps = ({
               </div>
             </body>
           </html>
-        `;
-        setStartingUrl(`data:text/html,${encodeURIComponent(errorHtml)}`);
+        `
+          setStartingUrl(`data:text/html,${encodeURIComponent(errorHtml)}`)
+        }
+      } else {
+        // Normal HTTP/HTTPS URL, use regular navigation
+        console.log('🔗 [RecommendedApps] Regular URL, using setStartingUrl:', url)
+        setStartingUrl(url)
       }
-    } else {
-      // Normal HTTP/HTTPS URL, use regular navigation
-      console.log('🔗 [RecommendedApps] Regular URL, using setStartingUrl:', url);
-      setStartingUrl(url);
-    }
-  }, [setStartingUrl]);
+    },
+    [setStartingUrl]
+  )
 
   /* -------------------------- helper functions -------------------------- */
   const isBookmark = useCallback(
@@ -601,46 +603,53 @@ export const RecommendedApps = ({
 
       {/* UHRP Loading Overlay */}
       {uhrpLoading && (
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-        }}>
-          <View style={{
-            backgroundColor: colors.background,
-            padding: 30,
-            borderRadius: 15,
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            justifyContent: 'center',
             alignItems: 'center',
-            minWidth: 250,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 8,
-          }}>
+            zIndex: 1000
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.background,
+              padding: 30,
+              borderRadius: 15,
+              alignItems: 'center',
+              minWidth: 250,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8
+            }}
+          >
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={{
-              marginTop: 20,
-              fontSize: 18,
-              fontWeight: '600',
-              color: colors.textPrimary,
-              textAlign: 'center',
-            }}>
+            <Text
+              style={{
+                marginTop: 20,
+                fontSize: 18,
+                fontWeight: '600',
+                color: colors.textPrimary,
+                textAlign: 'center'
+              }}
+            >
               Loading UHRP Content...
             </Text>
-            <Text style={{
-              marginTop: 8,
-              fontSize: 14,
-              color: colors.textSecondary,
-              textAlign: 'center',
-            }}>
-            </Text>
+            <Text
+              style={{
+                marginTop: 8,
+                fontSize: 14,
+                color: colors.textSecondary,
+                textAlign: 'center'
+              }}
+            ></Text>
           </View>
         </View>
       )}

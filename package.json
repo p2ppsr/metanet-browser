@@ -14,7 +14,6 @@
     "ios": "expo start --dev-client --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-
     "lint:fix": "expo lint --fix",
     "configure": "./configure.sh",
     "format": "prettier --write .",
@@ -25,7 +24,6 @@
   "dependencies": {
     "@bsv/sdk": "^1.6.12",
     "@bsv/wallet-toolbox-mobile": "^1.5.9",
-
     "@dicebear/core": "^9.2.2",
     "@dicebear/identicon": "^9.2.2",
     "@expo/vector-icons": "^14.1.0",
