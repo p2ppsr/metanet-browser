@@ -18,7 +18,7 @@ export class TabStore {
   private tabHistoryIndexes: { [tabId: number]: number } = {} // Track current position in history per tab
 
   constructor() {
-    //console.log('TabStore constructor called')
+    console.log('TabStore constructor called')
     makeAutoObservable(this)
     // Preserve existing tabs during hot reload
     if (this.tabs.length === 0) {
@@ -34,7 +34,7 @@ export class TabStore {
   }
 
   createTab(url: string = kNEW_TAB_URL): Tab {
-    //console.log(`createTab(): url=${url}, tabid=${this.nextId + 1}`)
+    console.log(`createTab(): url=${url}, tabid=${this.nextId + 1}`)
     const safeUrl = isValidUrl(url) ? url : kNEW_TAB_URL
     return {
       id: this.nextId++,
@@ -46,11 +46,7 @@ export class TabStore {
       isLoading: false
     }
   }
-  /**
-   * Creates a new tab with the specified URL or a blank page.
-   * Initializes navigation history for the new tab.
-   * @param initialUrl The URL to open in the new tab, defaults to kNEW_TAB_URL.
-   */
+
   newTab = (initialUrl: string = kNEW_TAB_URL) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     const newTab = this.createTab(initialUrl)
@@ -119,14 +115,24 @@ export class TabStore {
     const tab = this.tabs.find(t => t.id === tabId)
     const history = this.tabNavigationHistories[tabId]
     const currentIndex = this.tabHistoryIndexes[tabId]
+    console.log(
+      `goBack(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoBack=${tab?.canGoBack}`
+    )
 
+<<<<<<< HEAD
     //console.log(`goBack(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoBack=${tab?.canGoBack}`)
 
+=======
+>>>>>>> dev
     if (tab && history && currentIndex > 0) {
       const newIndex = currentIndex - 1
       const url = history[newIndex]
 
+<<<<<<< HEAD
       //console.log(`🔙 Going back to: ${url} (index ${newIndex})`)
+=======
+      console.log(`🔙 Going back to: ${url} (index ${newIndex})`)
+>>>>>>> dev
 
       this.tabHistoryIndexes[tabId] = newIndex
 
@@ -139,7 +145,7 @@ export class TabStore {
         tab.webviewRef.current.injectJavaScript(`window.location.href = "${url}";`)
       }
     } else {
-      //console.log(`Cannot go back: tab=${!!tab}, history=${history?.length}, currentIndex=${currentIndex}`)
+      console.log(`Cannot go back: tab=${!!tab}, history=${history?.length}, currentIndex=${currentIndex}`)
     }
   }
 
@@ -147,14 +153,24 @@ export class TabStore {
     const tab = this.tabs.find(t => t.id === tabId)
     const history = this.tabNavigationHistories[tabId]
     const currentIndex = this.tabHistoryIndexes[tabId]
+    console.log(
+      `goForward(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoForward=${tab?.canGoForward}`
+    )
 
+<<<<<<< HEAD
     //console.log(`goForward(): tabId=${tabId}, currentIndex=${currentIndex}, history=${history?.length} items, canGoForward=${tab?.canGoForward}`)
 
+=======
+>>>>>>> dev
     if (tab && history && currentIndex < history.length - 1) {
       const newIndex = currentIndex + 1
       const url = history[newIndex]
 
+<<<<<<< HEAD
       //console.log(`🔜 Going forward to: ${url} (index ${newIndex})`)
+=======
+      console.log(`🔜 Going forward to: ${url} (index ${newIndex})`)
+>>>>>>> dev
 
       this.tabHistoryIndexes[tabId] = newIndex
 
@@ -201,7 +217,13 @@ export class TabStore {
       return
     }
 
+<<<<<<< HEAD
     // console.log(`handleNavigationStateChange(): tabId=${tabId}, url=${navState.url}, webview_canGoBack=${navState.canGoBack}, webview_canGoForward=${navState.canGoForward}`)
+=======
+    console.log(
+      `handleNavigationStateChange(): tabId=${tabId}, url=${navState.url}, webview_canGoBack=${navState.canGoBack}, webview_canGoForward=${navState.canGoForward}`
+    )
+>>>>>>> dev
 
     // Always update loading state and basic tab info
     tab.isLoading = navState.loading
@@ -227,11 +249,11 @@ export class TabStore {
 
         if (urlIndex !== -1) {
           // This is back/forward navigation - update index
-          //console.log(`📍 Found URL in history at index ${urlIndex}, updating position`)
+          console.log(`📍 Found URL in history at index ${urlIndex}, updating position`)
           this.tabHistoryIndexes[tabId] = urlIndex
         } else {
           // This is new navigation - add to history
-          //console.log(`📝 Adding new URL to history: ${navState.url}`)
+          console.log(`📝 Adding new URL to history: ${navState.url}`)
           const newHistory = currentIndex >= 0 ? history.slice(0, currentIndex + 1) : []
           newHistory.push(navState.url)
           this.tabNavigationHistories[tabId] = newHistory
@@ -249,17 +271,26 @@ export class TabStore {
       tab.canGoBack = currentIdx > 0
       tab.canGoForward = currentIdx < currentHistory.length - 1
 
+<<<<<<< HEAD
       //console.log(`🧭 Navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}, historyIndex=${currentIdx}/${currentHistory.length - 1}`)
+=======
+      console.log(
+        `🧭 Navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}, historyIndex=${currentIdx}/${currentHistory.length - 1}`
+      )
+>>>>>>> dev
 
       // Log state changes
       if (prevCanGoBack !== tab.canGoBack || prevCanGoForward !== tab.canGoForward) {
-        //console.log(`🔄 Navigation state changed: canGoBack: ${prevCanGoBack} → ${tab.canGoBack}, canGoForward: ${prevCanGoForward} → ${tab.canGoForward}`)
+        console.log(
+          `🔄 Navigation state changed: canGoBack: ${prevCanGoBack} → ${tab.canGoBack}, canGoForward: ${prevCanGoForward} → ${tab.canGoForward}`
+        )
       }
 
       this.saveTabs()
     }
   }
 
+<<<<<<< HEAD
   async clearAllTabs() {
     console.log('clearAllTabs() called')
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -281,6 +312,12 @@ export class TabStore {
       .catch
       //console.error
       ()
+=======
+  async saveTabs() {
+    if (!this.tabs) this.tabs = [] // Prevent undefined
+    const serializableTabs = this.tabs.map(({ webviewRef, ...rest }) => rest)
+    await AsyncStorage.setItem('tabs', JSON.stringify(serializableTabs)).catch(console.error)
+>>>>>>> dev
   }
 
   async loadTabs() {

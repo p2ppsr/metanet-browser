@@ -9,16 +9,14 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
-
-  TextInput,
-  Keyboard
-} from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/context/theme/ThemeContext';
-import { useThemeStyles } from '@/context/theme/useThemeStyles';
-import { useWallet } from '@/context/WalletContext';
+  TextInput
+} from 'react-native'
+import { router, useLocalSearchParams } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
+import { useTranslation } from 'react-i18next'
+import { useTheme } from '@/context/theme/ThemeContext'
+import { useThemeStyles } from '@/context/theme/useThemeStyles'
+import { useWallet } from '@/context/WalletContext'
 
 export default function OtpScreen() {
   const { t } = useTranslation()
@@ -55,6 +53,7 @@ export default function OtpScreen() {
   }, [])
 
   // Handle OTP verification
+<<<<<<< HEAD
   const handleVerify = useCallback(async (otp: string) => {
     console.log({ otp })
     if (otp.length !== 6) return; // Ensure OTP is complete
@@ -83,6 +82,36 @@ export default function OtpScreen() {
     }
   }, [otp, managers, phoneNumber])
   
+=======
+  const handleVerify = useCallback(
+    async (otp: string) => {
+      console.log({ otp })
+      if (otp.length !== 6) return // Ensure OTP is complete
+
+      setLoading(true)
+
+      try {
+        await managers!.walletManager!.completeAuth({
+          phoneNumber,
+          otp
+        })
+
+        // Navigate to password screen after OTP verification
+        router.push({
+          pathname: '/auth/password',
+          params: { phoneNumber: phoneNumber }
+        })
+      } catch (error) {
+        console.error('Error verifying OTP:', error)
+        Alert.alert(t('verification_failed'), t('code_incorrect_try_again'))
+      } finally {
+        setLoading(false)
+      }
+    },
+    [otp, managers, phoneNumber]
+  )
+
+>>>>>>> dev
   // Handle resend OTP
   const handleResend = useCallback(async () => {
     if (!canResend) return
@@ -108,11 +137,7 @@ export default function OtpScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-
-      <KeyboardAvoidingView 
-        behavior={'padding'}
-        style={styles.keyboardAvoidingView}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
         <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{t('verification_code')}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
