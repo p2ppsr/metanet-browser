@@ -136,15 +136,12 @@ export const RecommendedApps = ({
       
       try {
         // Resolve UHRP URL directly to a data URL
-        console.log('🔗 [RecommendedApps] About to call uhrpHandler.resolveUHRPToDataUrl...');
-        const resolvedContent = await uhrpHandler.resolveUHRPToDataUrl(url);
-        console.log('🔗 [RecommendedApps] resolveUHRPToDataUrl returned:', {
-          mimeType: resolvedContent.mimeType,
-          dataUrlLength: resolvedContent.dataUrl.length
-        });
-        
-        console.log('🔗 [RecommendedApps] Using data URL with MIME type:', resolvedContent.mimeType);
-        setStartingUrl(resolvedContent.dataUrl);
+        console.log('🔗 [RecommendedApps] About to call uhrpHandler.resolveUHRPUrl...');
+        const resolvedContent = await uhrpHandler.resolveUHRPUrl(url);
+          if (resolvedContent.resolvedUrl) {
+          console.log('🔗 [RecommendedApps] Using HTTP URL:', resolvedContent.resolvedUrl);
+          setStartingUrl(resolvedContent.resolvedUrl);
+        }
         
         // Clear loading state
         setUhrpLoading(null);
@@ -646,7 +643,6 @@ export const RecommendedApps = ({
               color: colors.textSecondary,
               textAlign: 'center',
             }}>
-              Downloading and processing data
             </Text>
           </View>
         </View>

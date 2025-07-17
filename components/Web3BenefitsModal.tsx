@@ -83,7 +83,7 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
               style={styles.secondaryButton}
               onPress={onContinueWithoutLogin}
             >
-              <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
+              <Text style={[styles.secondaryButtonText, { color: colors.textSecondary } ]}>
                 {t('web3_benefits_maybe_later')}
               </Text>
             </TouchableOpacity>
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 11,
     fontWeight: '300',
-    opacity: 0.5,
+    opacity: 1,
   },
 });
 

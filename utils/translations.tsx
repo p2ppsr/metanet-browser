@@ -120,6 +120,7 @@ const resources = {
       // History
       history: 'History',
       clear: 'Clear',
+      clear_all: 'Clear All',
       
       // General UI
       untitled: 'Untitled',
@@ -142,6 +143,7 @@ const resources = {
       ok: 'OK',
       yes: 'Yes',
       no: 'No',
+      later: 'Later',
       
       // Navigation actions
       switch_to_mobile_view: 'Switch to Mobile View',
@@ -340,6 +342,7 @@ const resources = {
       // History
       history: '历史记录',
       clear: '清除',
+      clear_all: '全部清除',
       
       // General UI
       untitled: '无标题',
@@ -362,6 +365,7 @@ const resources = {
       ok: '确定',
       yes: '是',
       no: '否',
+      later: '稍后',
       
       // Navigation actions
       switch_to_mobile_view: '切换到移动视图',
@@ -560,6 +564,7 @@ const resources = {
       // History
       history: 'इतिहास',
       clear: 'साफ़ करें',
+      clear_all: 'सभी साफ़ करें',
       
       // General UI
       untitled: 'बिना शीर्षक',
@@ -582,6 +587,7 @@ const resources = {
       ok: 'ठीक है',
       yes: 'हाँ',
       no: 'नहीं',
+      later: 'बाद में',
       
       // Navigation actions
       switch_to_mobile_view: 'मोबाइल दृश्य पर स्विच करें',
@@ -775,6 +781,7 @@ const resources = {
       // History
       history: 'Historial',
       clear: 'Limpiar',
+      clear_all: 'Limpiar Todo',
       
       // General UI
       untitled: 'Sin título',
@@ -797,6 +804,7 @@ const resources = {
       ok: 'OK',
       yes: 'Sí',
       no: 'No',
+      later: 'Más tarde',
       
       // Navigation actions
       switch_to_mobile_view: 'Cambiar a Vista Móvil',
@@ -940,6 +948,7 @@ const resources = {
       // History
       history: 'Historique',
       clear: 'Effacer',
+      clear_all: 'Tout Effacer',
       
       // General UI
       untitled: 'Sans titre',
@@ -962,6 +971,7 @@ const resources = {
       ok: 'OK',
       yes: 'Oui',
       no: 'Non',
+      later: 'Plus tard',
       
       // Navigation actions
       switch_to_mobile_view: 'Passer à la Vue Mobile',
@@ -1119,6 +1129,7 @@ const resources = {
       // History
       history: 'التاريخ',
       clear: 'مسح',
+      clear_all: 'مسح الكل',
       
       // General UI
       untitled: 'بدون عنوان',
@@ -1141,6 +1152,7 @@ const resources = {
       ok: 'موافق',
       yes: 'نعم',
       no: 'لا',
+      later: 'لاحقاً',
       
       // Navigation actions
       switch_to_mobile_view: 'التبديل إلى العرض المحمول',
@@ -1291,6 +1303,7 @@ const resources = {
       // History
       history: 'Histórico',
       clear: 'Limpar',
+      clear_all: 'Limpar Tudo',
       
       // General UI
       untitled: 'Sem título',
@@ -1313,6 +1326,7 @@ const resources = {
       ok: 'OK',
       yes: 'Sim',
       no: 'Não',
+      later: 'Mais tarde',
       
       // Navigation actions
       switch_to_mobile_view: 'Alternar para Visualização Móvel',
@@ -1470,6 +1484,7 @@ const resources = {
       // History
       history: 'ইতিহাস',
       clear: 'পরিষ্কার',
+      clear_all: 'সব পরিষ্কার',
       
       // General UI
       untitled: 'শিরোনামহীন',
@@ -1492,6 +1507,7 @@ const resources = {
       ok: 'ঠিক আছে',
       yes: 'হ্যাঁ',
       no: 'না',
+      later: 'পরে',
       
       // Navigation actions
       switch_to_mobile_view: 'মোবাইল ভিউতে পরিবর্তন করুন',
@@ -1642,6 +1658,7 @@ const resources = {
       // History
       history: 'История',
       clear: 'Очистить',
+      clear_all: 'Очистить Всё',
       
       // General UI
       untitled: 'Без названия',
@@ -1664,6 +1681,7 @@ const resources = {
       ok: 'OK',
       yes: 'Да',
       no: 'Нет',
+      later: 'Позже',
       
       // Navigation actions
       switch_to_mobile_view: 'Переключить на Мобильный Вид',
@@ -1814,6 +1832,7 @@ const resources = {
       // History
       history: 'Riwayat',
       clear: 'Bersihkan',
+      clear_all: 'Bersihkan Semua',
       
       // General UI
       untitled: 'Tanpa judul',
@@ -1836,6 +1855,7 @@ const resources = {
       ok: 'OK',
       yes: 'Ya',
       no: 'Tidak',
+      later: 'Nanti',
       
       // Navigation actions
       switch_to_mobile_view: 'Beralih ke Tampilan Mobile',

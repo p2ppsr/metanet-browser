@@ -1,19 +1,24 @@
-import { StorageDownloader, StorageUtils } from '@bsv/sdk';
+import { StorageDownloader, StorageUtils, Hash, Utils } from '@bsv/sdk';
 
-export interface DownloadResult {
-  data: number[]
-  mimeType: string | null
+export interface UHRPResolvedContent {
+  url: string;
+  content: Uint8Array;
+  mimeType: string;
+  size: number;
+  metadata?: Record<string, any>;
+  resolvedUrl?: string; // The actual HTTP URL after resolution
 }
 
-export interface ResolvedDataUrl {
-  dataUrl: string
-  mimeType: string | null
+export interface UHRPError {
+  code: string;
+  message: string;
+  originalUrl: string;
 }
+
 export class UHRPProtocolHandler {
   private static instance: UHRPProtocolHandler;
   private downloader: StorageDownloader;
-  private resolvedUrls: Record<string, DownloadResult> = {}; // Cache resolved URLs
-  private resolvedDataUrls: Record<string, ResolvedDataUrl> = {}; // Cache resolved data URLs
+  private resolvedUrls: Record<string, string> = {}; // Cache resolved URLs
 
   private constructor() {
     this.downloader = new StorageDownloader();
@@ -33,101 +38,129 @@ export class UHRPProtocolHandler {
       if (!match) return false;
       hashToCheck = match[1];
     }
+    
     return StorageUtils.isValidURL(hashToCheck);
   }
 
-  public extractHashFromUHRPUrl(url: string): string | null {
-    if (this.isUHRPUrl(url)) {
+  private extractHashFromUHRPUrl(url: string): string {
+    if (url.toLowerCase().startsWith('uhrp://')) {
       const match = url.match(/^uhrp:\/\/(.+)$/i);
-      if (match) {
-        return match[1];
-      }
-    }
-    return null;
-  }
-
-  public async resolveUHRPUrl(url: string): Promise<DownloadResult> {
-    if (this.isUHRPUrl(url)) {
-      const hash = this.extractHashFromUHRPUrl(url);
-      if (!hash) {
+      if (!match) {
         throw new Error('Invalid UHRP URL format');
       }
-      if (this.resolvedUrls[hash]) {
-        return this.resolvedUrls[hash];
-      }
-      try {
-        const data = await this.downloader.download(hash);
-        return data;
-      } catch (error) {
-        console.error('Error resolving UHRP URL:', error);
-        throw new Error('Failed to resolve UHRP URL');
-      }
+      return match[1];
     }
-    throw new Error('URL is not a valid UHRP URL');
+    return url;
   }
 
-  public async resolveUHRPToDataUrl(url: string): Promise<ResolvedDataUrl> {
-    if (this.isUHRPUrl(url)) {
-      const hash = this.extractHashFromUHRPUrl(url);
-      if (!hash) {
-        throw new Error('Invalid UHRP URL format');
+  private async resolveToHttpUrl(uhrpUrl: string): Promise<string> {
+    if (this.resolvedUrls[uhrpUrl]) {
+      return this.resolvedUrls[uhrpUrl];
+    }
+
+    if (!this.isUHRPUrl(uhrpUrl)) {
+      this.resolvedUrls[uhrpUrl] = uhrpUrl;
+      return uhrpUrl;
+    }
+
+    const hash = this.extractHashFromUHRPUrl(uhrpUrl);
+
+    try {
+      const resolved = await this.downloader.resolve(hash);
+      if (!resolved || resolved.length === 0) {
+        throw new Error(`UHRP content not found for hash: ${hash}`);
       }
-      if (this.resolvedDataUrls[hash]) {
-        return this.resolvedDataUrls[hash];
-      }
+      
+      const [resolvedUrl] = resolved;
+      this.resolvedUrls[uhrpUrl] = resolvedUrl;
+      return resolvedUrl;
+    } catch (error) {
+      console.error('UHRP resolution failed:', error);
+      throw error;
+    }
+  }
+
+  public async findUHRPHOST(url: string): Promise<string | null> {
+      if (!StorageUtils.isValidURL(url)) {
+      throw new Error('Invalid parameter UHRP url')
+    }
+    const hash = StorageUtils.getHashFromURL(url)
+    const downloadURLs = await this.downloader.resolve(url)
+
+    if (!Array.isArray(downloadURLs) || downloadURLs.length === 0) {
+      throw new Error('No one currently hosts this file!')
+    }
+
+    for (let i = 0; i < downloadURLs.length; i++) {
       try {
-        const downloadResult = await this.downloader.download(hash);
-        
-        // Convert the data array to a Uint8Array and then to base64
-        const uint8Array = new Uint8Array(downloadResult.data);
-        
-        // Convert to base64 in chunks to avoid call stack overflow
-        let binaryString = '';
-        const chunkSize = 1024; // Process in chunks of 1024 bytes
-        for (let i = 0; i < uint8Array.length; i += chunkSize) {
-          const chunk = uint8Array.slice(i, i + chunkSize);
-          binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+        // The url is fetched
+        const result = await fetch(downloadURLs[i], { method: 'GET' })
+
+        // If the request fails, continue to the next url
+        if (!result.ok || result.status >= 400) {
+          continue
         }
-        const base64String = btoa(binaryString);
+        const body = await result.arrayBuffer()
+
+        // The body is loaded into a number array
+        const content: number[] = Array.from(new Uint8Array(body))
+        const contentHash = Hash.sha256(content)
+        for (let j = 0; j < contentHash.length; ++j) {
+          if (contentHash[j] !== hash[j]) {
+            throw new Error('Value of content does not match hash of the url given')
+          }
+        }
+
+        return downloadURLs[i]
         
-        // Determine the MIME type (default to text/html if not specified)
-        const mimeType = downloadResult.mimeType || 'text/html';
-        
-        // Create a data URL with the resolved content
-        const dataUrl = `data:${mimeType};base64,${base64String}`;
-        
-        const result: ResolvedDataUrl = {
-          dataUrl,
-          mimeType: downloadResult.mimeType
-        };
-        
-        // Cache the result
-        this.resolvedDataUrls[hash] = result;
-        
-        return result;
       } catch (error) {
-        console.error('Error resolving UHRP URL to data URL:', error);
-        throw new Error('Failed to resolve UHRP URL to data URL');
+        continue
       }
     }
-    throw new Error('URL is not a valid UHRP URL');
+    throw new Error(`Unable to download content from ${url}`)
+  }
+
+  public async resolveUHRPUrl(url: string): Promise<UHRPResolvedContent> {
+    try {
+      console.log('Resolving UHRP URL:', url);
+
+      const resolvedHttpUrl = await this.resolveToHttpUrl(url);
+      
+      console.log('Resolved UHRP URL to:', resolvedHttpUrl);
+
+      const response = await fetch(resolvedHttpUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const content = new Uint8Array(arrayBuffer);
+      
+      let mimeType = response.headers.get('content-type') || 'application/octet-stream';
+      mimeType = mimeType.split(';')[0].trim();
+      
+      return {
+        url,
+        content,
+        mimeType,
+        size: content.length,
+        resolvedUrl: resolvedHttpUrl,
+        metadata: {
+          originalMimeType: response.headers.get('content-type'),
+          contentLength: response.headers.get('content-length'),
+          lastModified: response.headers.get('last-modified')
+        }
+      };
+    } catch (error) {
+      console.error('Error resolving UHRP URL:', error);
+      throw {
+        code: 'UHRP_RESOLUTION_FAILED',
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        originalUrl: url
+      } as UHRPError;
+    }
   }
 }
- 
-
-  
 
 export const uhrpHandler = UHRPProtocolHandler.getInstance();
-
-// Utility function to handle UHRP navigation
-export function handleUHRPNavigation(url: string): boolean {
-  if (!uhrpHandler.isUHRPUrl(url)) {
-    return false;
-  }
-  
-  console.log('🔗 [UHRP] Handling UHRP navigation:', url);
-  
-  // For now, we'll let the browser handle UHRP URLs
-  // This function returns true to indicate that UHRP handling is available
-  return true;
-}
