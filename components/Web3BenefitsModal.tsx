@@ -35,23 +35,23 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
           {/* Content - Simple approach */}
           <View style={{ padding: 20 }}>
             <Text style={[{ fontSize: 16, marginBottom: 16, color: colors.textPrimary }]}>
-              The benefits of web3 are as follows:
+              {t('web3_benefits_description')}
             </Text>
 
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-              • Never login again - One identity for every Web3 app. No more passwords or sign-ups.
+              • {t('web3_benefit_never_login')} - {t('web3_benefit_never_login_desc')}
             </Text>
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-              • Instant everything - Payments, access, verification - all happen in seconds.
+              • {t('web3_benefit_instant')} - {t('web3_benefit_instant_desc')}
             </Text>
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-              • You own your data - No companies tracking you or selling your information.
+              • {t('web3_benefit_own_data')} - {t('web3_benefit_own_data_desc')}
             </Text>
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-              • Works everywhere - Access thousands of Web3 apps with the same identity.
+              • {t('web3_benefit_works_everywhere')} - {t('web3_benefit_works_everywhere_desc')}
             </Text>
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 20, color: colors.textPrimary }]}>
-              • Future-proof - Be early to the next generation of the internet.
+              • {t('web3_benefit_future_proof')} - {t('web3_benefit_future_proof_desc')}
             </Text>
           </View>
 
@@ -59,7 +59,7 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={onGoToLogin}>
               <Text style={[styles.primaryButtonText, { color: colors.buttonText }]}>
-                🚀 Get My Web3 Identity (30s)
+                {t('web3_benefits_get_identity')}
               </Text>
             </TouchableOpacity>
 
@@ -144,8 +144,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 11,
     fontWeight: '300',
-
-    opacity: 1
+    opacity: 0.5
   }
 })
 

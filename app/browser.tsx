@@ -769,27 +769,27 @@ function Browser() {
 
   // User agent strings
   const getMobileUserAgent = () => {
-  const osVersion = Platform.Version
-  if (Platform.OS === 'ios') {
-    // Convert iOS version to underscored format (e.g., 16.0 -> 16_0)
-    const iosVersion = typeof osVersion === 'string' ? osVersion.replace(/\./g, '_') : '16_0'
-    return `Mozilla/5.0 (iPhone; CPU iPhone OS ${iosVersion} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1 `
-  } else {
-    // Android version is typically a number
-    const androidVersion = typeof osVersion === 'number' ? osVersion : 13
-    return `Mozilla/5.0 (Linux; Android ${androidVersion}; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 `
+    const osVersion = Platform.Version
+    if (Platform.OS === 'ios') {
+      // Convert iOS version to underscored format (e.g., 16.0 -> 16_0)
+      const iosVersion = typeof osVersion === 'string' ? osVersion.replace(/\./g, '_') : '16_0'
+      return `Mozilla/5.0 (iPhone; CPU iPhone OS ${iosVersion} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1 `
+    } else {
+      // Android version is typically a number
+      const androidVersion = typeof osVersion === 'number' ? osVersion : 13
+      return `Mozilla/5.0 (Linux; Android ${androidVersion}; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 `
+    }
   }
-}
 
-const getDesktopUserAgent = () => {
-  if (Platform.OS === 'ios') {
-    // Use standard macOS Safari for maximum compatibility
-    return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15 }`
-  } else {
-    // Use standard Windows Chrome for maximum compatibility
-    return `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 }`
+  const getDesktopUserAgent = () => {
+    if (Platform.OS === 'ios') {
+      // Use standard macOS Safari for maximum compatibility
+      return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15 }`
+    } else {
+      // Use standard Windows Chrome for maximum compatibility
+      return `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 }`
+    }
   }
-}
   const mobileUserAgent = getMobileUserAgent()
   const desktopUserAgent = getDesktopUserAgent()
 

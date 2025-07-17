@@ -317,7 +317,7 @@ const resources = {
       web3_benefit_works_everywhere_desc: 'Access thousands of Web3 apps with the same identity.',
       web3_benefit_future_proof: 'Future-proof',
       web3_benefit_future_proof_desc: 'Be early to the next generation of the internet.',
-      web3_benefits_get_identity: '🚀 Get My Web3 Identity (30s)',
+      web3_benefits_get_identity: 'Get My Web3 Identity (30s)',
       web3_benefits_maybe_later: 'Maybe later'
     }
   },

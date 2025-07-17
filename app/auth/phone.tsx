@@ -94,7 +94,7 @@ export default function PhoneScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={'padding'} style={{ flex: 1 }}>
         <View style={styles.contentContainer}>
           <Text style={styles.title}>{t('enter_phone_number')}</Text>
           <Text style={styles.subtitle}>{t('send_verification_code')}</Text>
