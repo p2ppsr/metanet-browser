@@ -54,34 +54,37 @@ export default function OtpScreen() {
   }, [])
 
   // Handle OTP verification
-  const handleVerify = useCallback(async (otp: string) => {
-    console.log({ otp })
-    if (otp.length !== 6) return; // Ensure OTP is complete
-    
-    setLoading(true);
-    
-    try {
-      await managers!.walletManager!.completeAuth({
-        phoneNumber,
-        otp,
-      });
-      
-      // Dismiss keyboard before navigation to prevent jitter
-      Keyboard.dismiss();
-      
-      // Navigate to password screen after OTP verification
-      router.push({
-        pathname: '/auth/password',
-        params: { phoneNumber: phoneNumber }
-      });
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      Alert.alert(t('verification_failed'), t('code_incorrect_try_again'));
-    } finally {
-      setLoading(false);
-    }
-  }, [otp, managers, phoneNumber])
-  
+  const handleVerify = useCallback(
+    async (otp: string) => {
+      console.log({ otp })
+      if (otp.length !== 6) return // Ensure OTP is complete
+
+      setLoading(true)
+
+      try {
+        await managers!.walletManager!.completeAuth({
+          phoneNumber,
+          otp
+        })
+
+        // Dismiss keyboard before navigation to prevent jitter
+        Keyboard.dismiss()
+
+        // Navigate to password screen after OTP verification
+        router.push({
+          pathname: '/auth/password',
+          params: { phoneNumber: phoneNumber }
+        })
+      } catch (error) {
+        console.error('Error verifying OTP:', error)
+        Alert.alert(t('verification_failed'), t('code_incorrect_try_again'))
+      } finally {
+        setLoading(false)
+      }
+    },
+    [otp, managers, phoneNumber]
+  )
+
   // Handle resend OTP
   const handleResend = useCallback(async () => {
     if (!canResend) return
