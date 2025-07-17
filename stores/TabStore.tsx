@@ -33,7 +33,7 @@ export class TabStore {
     }, 0)
   }
 
-  createTab(url: string = kNEW_TAB_URL): Tab {
+  createTab(url?: string | null): Tab {
     //console.log(`createTab(): url=${url}, tabid=${this.nextId + 1}`)
     // Ensure url is never null or undefined
     const safeUrl = url && isValidUrl(url) ? url : kNEW_TAB_URL
@@ -48,7 +48,7 @@ export class TabStore {
     }
   }
 
-  newTab = (initialUrl: string = kNEW_TAB_URL) => {
+  newTab = (initialUrl?: string | null) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     // Ensure initialUrl is never null or undefined
     const safeInitialUrl = initialUrl || kNEW_TAB_URL
@@ -110,10 +110,10 @@ export class TabStore {
   updateTab(id: number, patch: Partial<Tab>) {
     const tab = this.tabs.find(t => t.id === id)
     if (tab) {
-      const newUrl = patch.url
-      // Ensure URL is never null or undefined
-      if (newUrl !== undefined) {
-        if (!newUrl || !isValidUrl(newUrl)) {
+      // Handle URL updates with null safety
+      if ('url' in patch) {
+        const newUrl = patch.url
+        if (!newUrl || newUrl === null || newUrl === undefined || !isValidUrl(newUrl)) {
           patch.url = kNEW_TAB_URL
         }
       }

@@ -358,7 +358,7 @@ function Browser() {
 
     // Listen for orientation changes
     const subscription = Dimensions.addEventListener('change', updateOrientation)
-    
+
     // Initial check
     updateOrientation()
 
@@ -656,20 +656,31 @@ function Browser() {
       stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n')
     })
 
-    const newUrl = patch.url
-    if (newUrl && !isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
-      console.log('📝 [UPDATE_ACTIVE_TAB] Invalid URL detected, redirecting to new tab:', {
-        originalUrl: newUrl,
-        redirectTo: kNEW_TAB_URL,
-        timestamp: new Date().toISOString()
-      })
-      patch.url = kNEW_TAB_URL
+    // Handle URL updates with strict null safety
+    if ('url' in patch) {
+      const newUrl = patch.url
+      if (!newUrl || newUrl === null || newUrl === undefined) {
+        console.log('📝 [UPDATE_ACTIVE_TAB] Null/undefined URL detected, setting to new tab URL:', {
+          originalUrl: newUrl,
+          redirectTo: kNEW_TAB_URL,
+          timestamp: new Date().toISOString()
+        })
+        patch.url = kNEW_TAB_URL
+      } else if (!isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
+        console.log('📝 [UPDATE_ACTIVE_TAB] Invalid URL detected, redirecting to new tab:', {
+          originalUrl: newUrl,
+          redirectTo: kNEW_TAB_URL,
+          timestamp: new Date().toISOString()
+        })
+        patch.url = kNEW_TAB_URL
+      }
     }
 
-    if (newUrl) {
+    const finalUrl = patch.url
+    if (finalUrl) {
       console.log('📝 [UPDATE_ACTIVE_TAB] URL change will trigger WebView navigation:', {
         from: tabStore.activeTab?.url,
-        to: newUrl,
+        to: finalUrl,
         tabId: tabStore.activeTabId,
         timestamp: new Date().toISOString()
       })
@@ -2129,11 +2140,11 @@ function Browser() {
             >
               <Ionicons name="contract-outline" size={20} color="white" />
             </TouchableOpacity>
-            {activeTab && (
+            {activeTab && activeTab.url && (
               <WebView
                 ref={activeTab.webviewRef}
                 source={{
-                  uri: activeTab.url,
+                  uri: activeTab.url || kNEW_TAB_URL,
                   headers: {
                     'Accept-Language': getAcceptLanguageHeader()
                   }
@@ -2253,7 +2264,7 @@ function Browser() {
               <WebView
                 ref={activeTab?.webviewRef}
                 source={{
-                  uri: activeTab?.url,
+                  uri: activeTab?.url || kNEW_TAB_URL,
                   headers: {
                     'Accept-Language': getAcceptLanguageHeader()
                   }
@@ -2874,7 +2885,12 @@ const TabsViewBase = ({
                 <Text style={{ fontSize: 16, color: colors.textSecondary }}>{t('new_tab')}</Text>
               </View>
             ) : (
-              <WebView source={{ uri: item.url }} style={{ flex: 1 }} scrollEnabled={false} pointerEvents="none" />
+              <WebView
+                source={{ uri: item.url || kNEW_TAB_URL }}
+                style={{ flex: 1 }}
+                scrollEnabled={false}
+                pointerEvents="none"
+              />
             )}
             <View style={[styles.tabTitleBar, { backgroundColor: colors.inputBackground + 'E6' }]}>
               <Text numberOfLines={1} style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}>
