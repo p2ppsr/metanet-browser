@@ -33,6 +33,7 @@
           "defaultChannel": "default"
         }
       ],
+      "@react-native-firebase/app",
       [
         "expo-build-properties",
         {
@@ -78,6 +79,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
+      "googleServicesFile": "google-services.json",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -148,6 +150,7 @@
     },
     "ios": {
       "bundleIdentifier": "org.bsvblockchain.metanet",
+      "googleServicesFile": "GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs camera access to scan QR codes and barcodes.",
         "NSPhotoLibraryUsageDescription": "This app needs photo library access to let you select images.",

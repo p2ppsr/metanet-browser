@@ -16,7 +16,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "lint:fix": "expo lint --fix",
-    "configure": "./configure.sh",
+    "configure": "./scripts/configure.sh",
     "eas-build-post-install": "USE_FIREBASE=true ./scripts/android-firebase-patch.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -24,8 +24,8 @@
     "clean": "rm -rf node_modules && rm -rf package-lock.json && rm -rf yarn.lock && rm -rf .expo && rm -rf .expo-shared && rm -rf .vscode && rm -rf .idea && rm -rf ios/Pods && rm -rf android/.gradle && rm -rf android/app/build && npm install"
   },
   "dependencies": {
-    "@bsv/sdk": "^1.6.16",
-    "@bsv/wallet-toolbox-mobile": "^1.5.15",
+    "@bsv/sdk": "^1.6.17",
+    "@bsv/wallet-toolbox-mobile": "^1.5.16",
     "@dicebear/core": "^9.2.2",
     "@dicebear/identicon": "^9.2.2",
     "@expo/vector-icons": "^14.1.0",

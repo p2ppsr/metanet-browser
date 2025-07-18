@@ -12,9 +12,13 @@ if [[ "$USE_FIREBASE" == "true" ]]; then
                 echo "Added tools namespace to <manifest> in $MANIFEST_PATH"
             fi
 
-            # Patch the meta-data tags to include tools:replace
-            sed -i '' 's|\(<meta-data android:name="com.google.firebase.messaging.default_notification_channel_id"[^>]*\)\(/>\)|\1 tools:replace="android:value"\2|' "$MANIFEST_PATH"
-            sed -i '' 's|\(<meta-data android:name="com.google.firebase.messaging.default_notification_color"[^>]*\)\(/>\)|\1 tools:replace="android:resource"\2|' "$MANIFEST_PATH"
+            # First remove any existing tools:replace attributes to prevent duplicates
+            sed -i '' 's| tools:replace="android:value"||g' "$MANIFEST_PATH"
+            sed -i '' 's| tools:replace="android:resource"||g' "$MANIFEST_PATH"
+            
+            # Now add the tools:replace attributes properly
+            sed -i '' 's|\(<meta-data android:name="com.google.firebase.messaging.default_notification_channel_id"[^>]*\) */\>|\1 tools:replace="android:value" />|' "$MANIFEST_PATH"
+            sed -i '' 's|\(<meta-data android:name="com.google.firebase.messaging.default_notification_color"[^>]*\) */\>|\1 tools:replace="android:resource" />|' "$MANIFEST_PATH"
 
             echo "Patched <meta-data> tags in $MANIFEST_PATH"
 
