@@ -35,7 +35,14 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
   },
   {
     title: 'Phone',
-    data: ['READ_PHONE_STATE', 'CALL_PHONE', 'READ_CALL_LOG', 'WRITE_CALL_LOG', 'READ_PHONE_NUMBERS', 'ANSWER_PHONE_CALLS']
+    data: [
+      'READ_PHONE_STATE',
+      'CALL_PHONE',
+      'READ_CALL_LOG',
+      'WRITE_CALL_LOG',
+      'READ_PHONE_NUMBERS',
+      'ANSWER_PHONE_CALLS'
+    ]
   },
   {
     title: 'Sensors',
@@ -104,15 +111,15 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
   const handleValueChange = (permission: PermissionType, value: string) => {
     const state = value.toLowerCase() as PermissionState
     console.log(`[PermissionsScreen] Setting ${permission} to ${state} for ${origin}`)
-    
+
     // Update local state
     setPermissions(prev => ({ ...prev, [permission]: state }))
-    
+
     // Save to storage
     setDomainPermission(origin, permission, state)
       .then(() => {
         console.log(`[PermissionsScreen] Successfully updated ${permission} to ${state}`)
-        
+
         // Notify parent component (Browser) about the permission change
         if (onPermissionChange) {
           console.log(`[PermissionsScreen] Notifying parent about permission change: ${permission} -> ${state}`)
@@ -144,9 +151,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
   if (!origin) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: colors.textSecondary }}>
-          {t('no_domain') || 'No domain specified'}
-        </Text>
+        <Text style={{ color: colors.textSecondary }}>{t('no_domain') || 'No domain specified'}</Text>
       </View>
     )
   }
@@ -164,7 +169,9 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
   const sectionsToRender = PERMISSION_CATEGORIES.map(category => {
     const permissionsInCategory = category.data
     const isExpanded = expandedCategories[category.title] ?? false
-    console.log(`[PermissionsScreen] Category ${category.title} has ${permissionsInCategory.length} permissions, expanded: ${isExpanded}`)
+    console.log(
+      `[PermissionsScreen] Category ${category.title} has ${permissionsInCategory.length} permissions, expanded: ${isExpanded}`
+    )
 
     // Filter permissions to only those that exist in this domain or have defaults
     const availablePermissions = permissionsInCategory.filter(perm => {
@@ -173,20 +180,22 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       return exists
     })
 
-    console.log(`[PermissionsScreen] Category ${category.title} has ${availablePermissions.length} available permissions after filtering`)
-    
+    console.log(
+      `[PermissionsScreen] Category ${category.title} has ${availablePermissions.length} available permissions after filtering`
+    )
+
     // Always include the category in sections, even when empty
     // If there are no permissions available for this category, exclude it entirely
     if (availablePermissions.length === 0) {
       return null
     }
-    
+
     return {
       title: category.title,
       data: isExpanded ? availablePermissions : [],
       isExpanded: isExpanded // Add the expanded state for rendering
     }
-  }).filter((section): section is {title: string, data: PermissionType[], isExpanded: boolean} => section !== null)
+  }).filter((section): section is { title: string; data: PermissionType[]; isExpanded: boolean } => section !== null)
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -214,20 +223,20 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
             style={{ flex: 1 }}
             contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
             sections={sectionsToRender}
-            keyExtractor={(item) => item}
+            keyExtractor={item => item}
             renderSectionHeader={({ section: { title } }) => {
-              const isExpanded = expandedCategories[title] ?? false;
+              const isExpanded = expandedCategories[title] ?? false
               return (
                 <Pressable
                   onPress={() => setExpandedCategories(prev => ({ ...prev, [title]: !isExpanded }))}
                   style={[styles.sectionHeader, { backgroundColor: colors.inputBackground || '#f0f0f0' }]}
                 >
                   <Text style={[styles.sectionHeaderText, { color: colors.textPrimary }]}>
-                    {isExpanded ? '▼ ' : '▶ ' }
+                    {isExpanded ? '▼ ' : '▶ '}
                     {title}
                   </Text>
                 </Pressable>
-              );
+              )
             }}
             renderItem={({ item: perm }) => {
               const state = permissions[perm] || 'ask'
@@ -276,7 +285,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 0,
+    padding: 0
   },
   centered: {
     justifyContent: 'center',
