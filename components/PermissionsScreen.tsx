@@ -55,9 +55,10 @@ const ALL_PERMISSIONS: PermissionType[] = PERMISSION_CATEGORIES.reduce<Permissio
 
 interface PermissionsScreenProps {
   origin: string
+  onPermissionChange?: (permission: PermissionType, state: PermissionState) => void
 }
 
-const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
+const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermissionChange }) => {
   console.log('[PermissionsScreen] Rendering component with origin:', origin)
   const { colors } = useTheme()
   const { t } = useTranslation()
@@ -102,8 +103,25 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin }) => {
 
   const handleValueChange = (permission: PermissionType, value: string) => {
     const state = value.toLowerCase() as PermissionState
+    console.log(`[PermissionsScreen] Setting ${permission} to ${state} for ${origin}`)
+    
+    // Update local state
     setPermissions(prev => ({ ...prev, [permission]: state }))
+    
+    // Save to storage
     setDomainPermission(origin, permission, state)
+      .then(() => {
+        console.log(`[PermissionsScreen] Successfully updated ${permission} to ${state}`)
+        
+        // Notify parent component (Browser) about the permission change
+        if (onPermissionChange) {
+          console.log(`[PermissionsScreen] Notifying parent about permission change: ${permission} -> ${state}`)
+          onPermissionChange(permission, state)
+        }
+      })
+      .catch(error => {
+        console.error(`[PermissionsScreen] Error setting permission:`, error)
+      })
   }
 
   // Format permission name for better readability

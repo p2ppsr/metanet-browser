@@ -207,6 +207,8 @@ function Browser() {
    * Updates the list of denied permissions for the current domain
    * This is called when navigating to a new URL or when permissions change
    */
+
+
   const updateDeniedPermissionsForDomain = useCallback(async (url: string) => {
     try {
       const domain = domainForUrl(url)
@@ -437,6 +439,103 @@ function Browser() {
 
   // Permission-related state variables
   const [permissionsDeniedForCurrentDomain, setPermissionsDeniedForCurrentDomain] = useState<PermissionType[]>([])
+
+  // Handler for when permissions are changed from the PermissionsScreen
+  const handlePermissionChangeFromScreen = useCallback(async (permission: PermissionType, state: PermissionState) => {
+    console.log(`[Browser] Permission changed in PermissionsScreen: ${permission} -> ${state}`);
+    
+    // Update the WebView with the new permission state
+    if (tabStore.activeTab?.webviewRef?.current && tabStore.activeTab.url) {
+      // Update the denied permissions list for the current domain
+      await updateDeniedPermissionsForDomain(tabStore.activeTab.url);
+      const domain = new URL(tabStore.activeTab.url).hostname;
+      console.log(`[Browser] Updated denied permissions for ${domain}`);
+      
+      // Inject JavaScript to update the WebView's permissions immediately
+      if (tabStore.activeTab?.webviewRef?.current) {
+        const updateScript = `
+          (function() {
+            console.log('[Metanet] Updating permission: ${permission} to ${state}');
+            
+            // Update the denied permissions list
+            window.__metanetDeniedPermissions = ${JSON.stringify(permissionsDeniedForCurrentDomain)};
+            
+            // Check if we need to update specific API overrides
+            if ('${permission}' === 'CAMERA' || '${permission}' === 'RECORD_AUDIO') {
+              // Restore original getUserMedia if permissions are now allowed
+              if ('${state}' === 'allow' && navigator.mediaDevices.__originalGetUserMedia) {
+                console.log('[Metanet] Restoring original getUserMedia for ${permission}');
+                navigator.mediaDevices.getUserMedia = navigator.mediaDevices.__originalGetUserMedia;
+              } 
+              // Override getUserMedia if permissions are now denied
+              else if ('${state}' === 'deny') {
+                console.log('[Metanet] Overriding getUserMedia for ${permission}');
+                if (!navigator.mediaDevices.__originalGetUserMedia) {
+                  navigator.mediaDevices.__originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+                }
+                navigator.mediaDevices.getUserMedia = function(constraints) {
+                  if ('${permission}' === 'CAMERA' && constraints && constraints.video) {
+                    return Promise.reject(new DOMException('Camera access denied by site settings', 'NotAllowedError'));
+                  }
+                  if ('${permission}' === 'RECORD_AUDIO' && constraints && constraints.audio) {
+                    return Promise.reject(new DOMException('Microphone access denied by site settings', 'NotAllowedError'));
+                  }
+                  return navigator.mediaDevices.__originalGetUserMedia.call(navigator.mediaDevices, constraints);
+                };
+              }
+            }
+            
+            // Handle location permission changes
+            if ('${permission}' === 'ACCESS_FINE_LOCATION') {
+              if ('${state}' === 'allow') {
+                // Restore original geolocation methods if permissions are now allowed
+                console.log('[Metanet] Restoring original geolocation methods');
+                if (navigator.geolocation.__originalGetCurrentPosition) {
+                  navigator.geolocation.getCurrentPosition = navigator.geolocation.__originalGetCurrentPosition;
+                }
+                if (navigator.geolocation.__originalWatchPosition) {
+                  navigator.geolocation.watchPosition = navigator.geolocation.__originalWatchPosition;
+                }
+              } else if ('${state}' === 'deny') {
+                // Override geolocation methods if permissions are now denied
+                console.log('[Metanet] Overriding geolocation methods');
+                if (!navigator.geolocation.__originalGetCurrentPosition) {
+                  navigator.geolocation.__originalGetCurrentPosition = navigator.geolocation.getCurrentPosition;
+                }
+                if (!navigator.geolocation.__originalWatchPosition) {
+                  navigator.geolocation.__originalWatchPosition = navigator.geolocation.watchPosition;
+                }
+                
+                navigator.geolocation.getCurrentPosition = function(success, error) {
+                  if (error) {
+                    error(new Error('Location access denied by site settings'));
+                  }
+                  return undefined;
+                };
+                
+                navigator.geolocation.watchPosition = function(success, error) {
+                  if (error) {
+                    error(new Error('Location access denied by site settings'));
+                  }
+                  return 0; // Return a fake watch ID
+                };
+              }
+            }
+            
+            // Notify the page about the permission change
+            const event = new CustomEvent('permissionchange', { 
+              detail: { permission: '${permission}', state: '${state}' }
+            });
+            document.dispatchEvent(event);
+            console.log('[Metanet] Dispatched permissionchange event for ${permission}');
+          })();
+        `;
+        tabStore.activeTab.webviewRef.current.injectJavaScript(updateScript);
+        console.log(`[Browser] Injected permission update script for ${permission}`);
+      }
+    }
+  }, [permissionsDeniedForCurrentDomain]);
+
   const [permissionModalVisible, setPermissionModalVisible] = useState(false)
   const [pendingPermission, setPendingPermission] = useState<PermissionType | null>(null)
   const [pendingDomain, setPendingDomain] = useState<string | null>(null)
@@ -1820,10 +1919,113 @@ function Browser() {
                 updateDeniedPermissionsForDomain(activeTab?.url || '')
 
                 // If we're on the same domain where the permission was changed,
-                // reload the current page to apply the new permission settings
-                if (activeTab?.url && domainForUrl(activeTab.url) === pendingDomain) {
-                  console.log(`Reloading WebView to apply new permission settings for ${pendingDomain}`)
-                  activeTab.webviewRef?.current?.reload()
+                if (activeTab?.url && domainForUrl(activeTab.url) === pendingDomain && activeTab.webviewRef?.current) {
+                  console.log(`Updating permission settings for ${pendingDomain} without page reload`)
+                  
+                  // Update the denied permissions list state
+                  if (granted) {
+                    // Remove from denied list if permission is now allowed
+                    setPermissionsDeniedForCurrentDomain(prev => 
+                      prev.filter(p => p !== pendingPermission)
+                    )
+                  } else {
+                    // Add to denied list if permission is now denied
+                    setPermissionsDeniedForCurrentDomain(prev => 
+                      prev.includes(pendingPermission as PermissionType) ? prev : [...prev, pendingPermission as PermissionType]
+                    )
+                  }
+
+                  // Inject JavaScript to update permission state in the WebView
+                  const updatedDeniedPermissions = granted 
+                    ? permissionsDeniedForCurrentDomain.filter(p => p !== pendingPermission)
+                    : [...permissionsDeniedForCurrentDomain, pendingPermission as PermissionType];
+                    
+                  const permissionUpdateScript = `
+                    (function() {
+                      try {
+                        // Update the permission state dynamically
+                        window.__metanetDeniedPermissions = ${JSON.stringify(updatedDeniedPermissions)};
+                        
+                        // Notify the page that permissions have been updated
+                        const permEvent = new CustomEvent('permissionchange', { 
+                          detail: { 
+                            permission: '${pendingPermission}',
+                            state: '${granted ? 'granted' : 'denied'}' 
+                          } 
+                        });
+                        document.dispatchEvent(permEvent);
+                        console.log('Permission change event dispatched:', '${pendingPermission}', '${granted ? 'granted' : 'denied'}');
+                        
+                        // Dynamically update the permission overrides
+                        if ('${pendingPermission}' === 'CAMERA' || '${pendingPermission}' === 'RECORD_AUDIO') {
+                          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                            const originalGetUserMedia = navigator.mediaDevices.__originalGetUserMedia || navigator.mediaDevices.getUserMedia;
+                            
+                            // Store original if not already stored
+                            if (!navigator.mediaDevices.__originalGetUserMedia) {
+                              navigator.mediaDevices.__originalGetUserMedia = originalGetUserMedia;
+                            }
+                            
+                            // Update the override
+                            navigator.mediaDevices.getUserMedia = function(constraints) {
+                              const denied = window.__metanetDeniedPermissions || [];
+                              
+                              // Check if requesting camera access when it's denied
+                              if (denied.includes("CAMERA") && constraints && constraints.video) {
+                                return Promise.reject(new DOMException("Camera access denied by site settings", "NotAllowedError"));
+                              }
+                              
+                              // Check if requesting microphone access when it's denied
+                              if (denied.includes("RECORD_AUDIO") && constraints && constraints.audio) {
+                                return Promise.reject(new DOMException("Microphone access denied by site settings", "NotAllowedError"));
+                              }
+                              
+                              // If we got here, the requested media types are allowed
+                              return originalGetUserMedia.call(navigator.mediaDevices, constraints);
+                            };
+                          }
+                        }
+                        
+                        // Update geolocation override if that permission changed
+                        if ('${pendingPermission}' === 'ACCESS_FINE_LOCATION') {
+                          if (navigator.geolocation) {
+                            // Store original methods if not already stored
+                            if (!navigator.geolocation.__originalGetCurrentPosition) {
+                              navigator.geolocation.__originalGetCurrentPosition = navigator.geolocation.getCurrentPosition;
+                              navigator.geolocation.__originalWatchPosition = navigator.geolocation.watchPosition;
+                            }
+                            
+                            const denied = window.__metanetDeniedPermissions || [];
+                            
+                            if (denied.includes("ACCESS_FINE_LOCATION")) {
+                              // Override the geolocation API methods to deny access
+                              navigator.geolocation.getCurrentPosition = function(success, error) {
+                                if (error) {
+                                  error(new Error("Location access denied by site settings"));
+                                }
+                                return undefined;
+                              };
+                              
+                              navigator.geolocation.watchPosition = function(success, error) {
+                                if (error) {
+                                  error(new Error("Location access denied by site settings"));
+                                }
+                                return 0; // Return a fake watch ID
+                              };
+                            } else {
+                              // Restore original methods if permission is now granted
+                              navigator.geolocation.getCurrentPosition = navigator.geolocation.__originalGetCurrentPosition;
+                              navigator.geolocation.watchPosition = navigator.geolocation.__originalWatchPosition;
+                            }
+                          }
+                        }
+                      } catch(e) { 
+                        console.error('Error updating permission state:', e); 
+                      }
+                    })();
+                  `;
+                  activeTab.webviewRef.current.injectJavaScript(permissionUpdateScript);
+                  console.log(`Dynamic permission update injected for ${pendingPermission} (${granted ? 'granted' : 'denied'})`);
                 }
               })
           }
@@ -2286,7 +2488,11 @@ function Browser() {
               )}
 
               {infoDrawerRoute !== 'root' && (
-                <SubDrawerView route={infoDrawerRoute} onBack={() => setInfoDrawerRoute('root')} />
+                <SubDrawerView 
+                  route={infoDrawerRoute} 
+                  onBack={() => setInfoDrawerRoute('root')} 
+                  onPermissionChange={handlePermissionChangeFromScreen}
+                />
               )}
             </Animated.View>
           </Modal>
@@ -2570,11 +2776,13 @@ const SubDrawerView = React.memo(
   ({
     route,
     onBack,
-    onOpenNotificationSettings
+    onOpenNotificationSettings,
+    onPermissionChange
   }: {
     route: 'identity' | 'settings' | 'security' | 'trust' | 'permissions'
     onBack: () => void
     onOpenNotificationSettings?: () => void
+    onPermissionChange?: (permission: PermissionType, state: PermissionState) => void
   }) => {
     const { colors } = useTheme()
     const { t } = useTranslation()
@@ -2607,7 +2815,10 @@ const SubDrawerView = React.memo(
               </Text>
 
               {tabStore.activeTab?.url && (
-                <PermissionsScreen origin={new URL(tabStore.activeTab.url).hostname} />
+                <PermissionsScreen 
+                  origin={new URL(tabStore.activeTab.url).hostname} 
+                  onPermissionChange={onPermissionChange}
+                />
               )}
             </View>
           ) : (
