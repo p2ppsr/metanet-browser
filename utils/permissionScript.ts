@@ -1,4 +1,4 @@
-import { PermissionType } from './permissionsManager';
+import { PermissionType } from './permissionsManager'
 
 /**
  * Generates the JavaScript code to be injected into WebView for permission handling
@@ -215,5 +215,5 @@ export const getPermissionScript = (
       };
     }
   }
-})();`;
-};
+})();`
+}

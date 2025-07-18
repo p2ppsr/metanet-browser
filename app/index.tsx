@@ -22,8 +22,8 @@ export default function LoginScreen() {
   const { managers, selectedWabUrl, selectedStorageUrl, selectedMethod, selectedNetwork, finalizeConfig } = useWallet()
   const { getSnap, setItem, getItem } = useLocalStorage()
 
-  const [startButtonText, setStartButtonText] = useState('Get Started')
   const { t } = useTranslation()
+  const [startButtonText, setStartButtonText] = useState(t('Get Started'))
   const { showWeb3Benefits, setWeb2Mode } = useBrowserMode()
   const [loading, setLoading] = React.useState(false)
   const [initializing, setInitializing] = useState(true)
@@ -203,7 +203,9 @@ export default function LoginScreen() {
                 )
               }}
             >
-              <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>Continue without login</Text>
+              <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>
+                {t('continue_without_login')}
+              </Text>
             </TouchableOpacity>
 
             {/** TODO REMOVE */}
