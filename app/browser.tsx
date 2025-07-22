@@ -78,6 +78,8 @@ import UniversalScanner, { ScannerHandle } from '@/components/UniversalScanner'
 import { logWithTimestamp } from '@/utils/logging'
 import PermissionsScreen from '@/components/PermissionsScreen'
 import PermissionModal from '@/components/PermissionModal'
+import * as Notifications from 'expo-notifications'
+import { useBackendPushNotifications } from '@/hooks/useBackendPushNotifications'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -209,12 +211,19 @@ function Browser() {
   /* ---------------------------------- tabs --------------------------------- */
   const activeTab = tabStore.activeTab // Should never be null due to TabStore guarantees
 
-  /* ----------------------------- permissions ----------------------------- */
+  /* ----------------------------- push notifications ------------------------- */
+  const { 
+    requestPermission,
+    permissions,
+    isSubscribed,
+    userKey,
+    isLoading,
+    backendHealthy,
+    getPermissionForOrigin,
+    sendTestNotification
+  } = useBackendPushNotifications()
 
-  /**
-   * Updates the list of denied permissions for the current domain
-   * This is called when navigating to a new URL or when permissions change
-   */
+  /* ----------------------------- permissions ----------------------------- */
 
   const updateDeniedPermissionsForDomain = useCallback(async (url: string) => {
     try {
@@ -244,11 +253,6 @@ function Browser() {
     }
   }, [])
 
-  /**
-   * Shows a permission prompt to the user and returns a promise that resolves
-   * when they make a decision
-   */
-  // Function to show the permission modal
   const showPermissionModal = useCallback(
     (domain: string, permission: PermissionType, callback: (granted: boolean) => void) => {
       console.log(`[showPermissionModal] Opening modal for ${domain} with permission ${permission}`)
@@ -1077,108 +1081,8 @@ function Browser() {
   // === 1. Injected JS ============================================
   const injectedJavaScript = useMemo(
     () => `
-  // Push Notification API polyfill
-  (function() {
-    // Check if Notification API already exists
-    if ('Notification' in window) {
-      return;
-    }
-
-    // Polyfill Notification constructor
-    window.Notification = function(title, options = {}) {
-      this.title = title;
-      this.body = options.body || '';
-      this.icon = options.icon || '';
-      this.tag = options.tag || '';
-      this.data = options.data || null;
-      
-      // Send notification to native
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'SHOW_NOTIFICATION',
-        title: this.title,
-        body: this.body,
-        icon: this.icon,
-        tag: this.tag,
-        data: this.data
-      }));
-      
-      return this;
-    };
-
-    // Static methods
-    window.Notification.requestPermission = function(callback) {
-      return new Promise((resolve) => {
-        window.ReactNativeWebView?.postMessage(JSON.stringify({
-          type: 'REQUEST_NOTIFICATION_PERMISSION',
-          callback: true
-        }));
-        
-        // Listen for response
-        const handler = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'NOTIFICATION_PERMISSION_RESPONSE') {
-              window.removeEventListener('message', handler);
-              const permission = data.permission;
-              if (callback) callback(permission);
-              resolve(permission);
-            }
-          } catch (e) {}
-        };
-        window.addEventListener('message', handler);
-      });
-    };
-
-    window.Notification.permission = 'default';
-
-    // ServiceWorker registration polyfill for push
-    if (!('serviceWorker' in navigator)) {
-      navigator.serviceWorker = {
-        register: function() {
-          return Promise.resolve({
-            pushManager: {
-              subscribe: function(options) {
-                return new Promise((resolve) => {
-                  window.ReactNativeWebView?.postMessage(JSON.stringify({
-                    type: 'PUSH_SUBSCRIBE',
-                    options: options
-                  }));
-                  
-                  const handler = (event) => {
-                    try {
-                      const data = JSON.parse(event.data);
-                      if (data.type === 'PUSH_SUBSCRIPTION_RESPONSE') {
-                        window.removeEventListener('message', handler);
-                        resolve(data.subscription);
-                      }
-                    } catch (e) {}
-                  };
-                  window.addEventListener('message', handler);
-                });
-              },
-              getSubscription: function() {
-                return new Promise((resolve) => {
-                  window.ReactNativeWebView?.postMessage(JSON.stringify({
-                    type: 'GET_PUSH_SUBSCRIPTION'
-                  }));
-                  
-                  const handler = (event) => {
-                    try {
-                      const data = JSON.parse(event.data);
-                      if (data.type === 'PUSH_SUBSCRIPTION_RESPONSE') {
-                        window.removeEventListener('message', handler);
-                        resolve(data.subscription);
-                      }
-                    } catch (e) {}
-                  };
-                  window.addEventListener('message', handler);
-                });
-              }
-            }
-          });
-        }
-      };
-    }
+  // Notification API polyfill is now in permissionScript.ts (runs before content loads)
+  // This section handles other runtime JavaScript functionality
 
     // Fullscreen API polyfill
     if (!document.documentElement.requestFullscreen) {
@@ -1679,6 +1583,383 @@ function Browser() {
               })
             }));
           `)
+        }
+        return
+      }
+
+      // Handle notification permission requests
+      if (msg.type === 'REQUEST_NOTIFICATION_PERMISSION') {
+        console.log('[WebView] 🔔 Notification permission request detected')
+        console.log('[WebView] 🌐 Current URL:', activeTab.url)
+        console.log('[WebView] 📋 Message data:', msg)
+
+        try {
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error('[WebView] ❌ Cannot get domain from URL for notification permission')
+            return
+          }
+
+          console.log('[WebView] 🌐 Extracted domain:', domain)
+
+          // Check the current permission state in permissions manager
+          // NOTIFICATIONS now only has Allow/Deny states (defaults to Deny)
+          const currentPermissionState = await getPermissionState(domain, 'NOTIFICATIONS')
+          console.log('[WebView] 🔍 Current permission state for domain:', domain, '=', currentPermissionState)
+
+          let permission: string
+
+          if (currentPermissionState === 'allow') {
+            // If explicitly allowed, return granted
+            console.log('[WebView] ✅ Permission explicitly allowed for domain:', domain)
+            permission = 'granted'
+          } else {
+            // Default is deny - if not explicitly allowed, it's denied
+            console.log('[WebView] ❌ Permission denied for domain (default or explicit):', domain)
+            permission = 'denied'
+          }
+
+          console.log('[WebView] ✅ Permission result:', permission)
+          console.log('[WebView] 📤 Sending permission response to webview')
+
+          // Send response back to webview and update permission property
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              console.log('[WebView Response] Received permission response: ${permission}');
+              
+              // CRITICAL: Update the actual Notification.permission property
+              if (window.Notification) {
+                Object.defineProperty(window.Notification, 'permission', {
+                  value: '${permission}',
+                  writable: false,
+                  configurable: true
+                });
+                console.log('[WebView Response] Updated Notification.permission to:', window.Notification.permission);
+              }
+              
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'NOTIFICATION_PERMISSION_RESPONSE',
+                  permission: '${permission}'
+                })
+              }));
+            `)
+            console.log('[WebView] ✅ Permission response sent successfully')
+          } else {
+            console.error('[WebView] ❌ Cannot send response: webviewRef is null')
+          }
+        } catch (error) {
+          console.error('[WebView] ❌ Error handling notification permission request:', error)
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              console.error('[WebView Response] Permission request failed:', '${error}');
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'NOTIFICATION_PERMISSION_RESPONSE',
+                  permission: 'denied'
+                })
+              }));
+            `)
+          }
+        }
+        return
+      }
+
+      // Handle general permission requests (for permissions UI)
+      if (msg.type === 'REQUEST_PERMISSION') {
+        console.log('[WebView] 🔐 General permission request detected')
+        console.log('[WebView] 📋 Permission type:', msg.permission)
+        console.log('[WebView] 🌐 Current URL:', activeTab.url)
+
+        try {
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error('[WebView] ❌ Cannot get domain from URL for permission request')
+            return
+          }
+
+          const permissionType = msg.permission as PermissionType
+          console.log('[WebView] 🔑 Requesting permission:', permissionType, 'for domain:', domain)
+
+          // Special handling for NOTIFICATIONS - integrate with push notification system
+          if (permissionType === 'NOTIFICATIONS') {
+            const result = await requestPermission(domain)
+            const permission = result.granted ? 'granted' : 'denied'
+
+            // Also update the general permissions system
+            const permissionState: PermissionState =
+              permission === 'granted' ? 'allow' : permission === 'denied' ? 'deny' : 'ask'
+            await setDomainPermission(domain, 'NOTIFICATIONS', permissionState)
+
+            console.log('[WebView] ✅ NOTIFICATIONS permission result:', permission, '-> state:', permissionState)
+
+            // Send response back to webview
+            if (activeTab.webviewRef?.current) {
+              activeTab.webviewRef.current.injectJavaScript(`
+                console.log('[WebView Response] Permission granted for NOTIFICATIONS: ${permission}');
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify({
+                    type: 'PERMISSION_RESPONSE',
+                    permission: '${permissionType}',
+                    result: '${permissionState}'
+                  })
+                }));
+              `)
+            }
+          } else {
+            // Handle other permissions through the standard system
+            console.log('[WebView] 🔄 Handling standard permission:', permissionType)
+
+            // For now, we'll prompt the user and set to 'allow' (this can be enhanced with actual UI prompts)
+            await setDomainPermission(domain, permissionType, 'allow')
+
+            // Send response back to webview
+            if (activeTab.webviewRef?.current) {
+              activeTab.webviewRef.current.injectJavaScript(`
+                console.log('[WebView Response] Permission granted for ${permissionType}');
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify({
+                    type: 'PERMISSION_RESPONSE',
+                    permission: '${permissionType}',
+                    result: 'allow'
+                  })
+                }));
+              `)
+            }
+          }
+        } catch (error) {
+          console.error('[WebView] ❌ Error handling general permission request:', error)
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              console.error('[WebView Response] Permission request failed:', '${error}');
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'PERMISSION_RESPONSE',
+                  permission: '${msg.permission}',
+                  result: 'deny'
+                })
+              }));
+            `)
+          }
+        }
+        return
+      }
+
+      // Handle show notification requests
+      if (msg.type === 'SHOW_NOTIFICATION') {
+        console.log('[WebView] 📢 Show notification request received')
+        console.log('[WebView] 📋 Notification data:', msg)
+        console.log('[WebView] 🌐 Current URL:', activeTab.url)
+
+        try {
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error('[WebView] ❌ Cannot get domain from URL for notification')
+            return
+          }
+
+          console.log('[WebView] 🌐 Extracted domain:', domain)
+
+          // First check the push notification permission system
+          const pushPermissions = permissions.find(p => p.origin === domain)
+          const hasPushPermission = pushPermissions && pushPermissions.permission === 'granted'
+
+          console.log('[WebView] 🔑 Push permissions for domain:', {
+            found: !!pushPermissions,
+            permission: pushPermissions?.permission,
+            hasPushPermission
+          })
+
+          // Check the general permission system (this takes precedence)
+          const permissionState = await getPermissionState(domain, 'NOTIFICATIONS')
+
+          console.log('[WebView] 🔑 General permissions for domain:', {
+            permissionState
+          })
+
+          // NOTIFICATIONS now only has Allow/Deny states (defaults to Deny)
+          // Only allow notifications if explicitly set to 'allow' AND push permission is granted
+          const canShowNotification = permissionState === 'allow' && hasPushPermission
+
+          if (permissionState !== 'allow') {
+            console.log('[WebView] ❌ Notifications not allowed - permission state:', permissionState)
+            return
+          }
+
+          if (!hasPushPermission) {
+            console.log('[WebView] ❌ Notifications not allowed - push permission not granted')
+            return
+          }
+
+          console.log('[WebView] 🔍 Final permission check:', {
+            domain,
+            pushPermission: pushPermissions?.permission,
+            generalPermission: permissionState,
+            hasPushPermission,
+            canShowNotification
+          })
+
+          if (!canShowNotification) {
+            console.log('[WebView] ❌ Notifications not allowed for domain:', domain)
+            console.log('[WebView] ❌ Push permission:', pushPermissions?.permission)
+            console.log('[WebView] ❌ General permission:', permissionState)
+            console.log('[WebView] ❌ Reason: Permission denied or not properly granted')
+            return
+          }
+
+          console.log('[WebView] ✅ Permission check passed, scheduling notification')
+
+          // Schedule the notification using Expo Notifications
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: msg.title || 'Notification',
+              body: msg.body || '',
+              data: {
+                url: activeTab.url,
+                domain: domain,
+                ...msg.data
+              }
+            },
+            trigger: null // Show immediately
+          })
+
+          console.log('Notification scheduled successfully')
+        } catch (error) {
+          console.error('Error showing notification:', error)
+        }
+        return
+      }
+
+      // Handle push subscription requests
+      if (msg.type === 'PUSH_SUBSCRIBE') {
+        console.log('[WebView] 🔔 Push subscribe request received')
+        console.log('[WebView] 📋 Subscribe options:', msg.options)
+        console.log('[WebView] 🔑 VAPID key:', msg.options?.applicationServerKey ? 'PROVIDED' : 'NONE')
+        console.log('[WebView] 👁️ User visible only:', msg.options?.userVisibleOnly)
+
+        try {
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error('[WebView] ❌ Cannot get domain from URL for push subscription')
+            return
+          }
+
+          console.log('[WebView] 🌐 Creating subscription for domain:', domain)
+
+          // Create push subscription for this domain using backend
+          const result = await requestPermission(domain)
+          const subscription = result.granted ? {
+            endpoint: `https://fcm.googleapis.com/fcm/send/${result.userKey}`,
+            keys: {
+              p256dh: 'backend-generated-key',
+              auth: 'backend-generated-auth'
+            },
+            // Add required PushSubscription methods
+            toJSON: () => ({
+              endpoint: `https://fcm.googleapis.com/fcm/send/${result.userKey}`,
+              keys: {
+                p256dh: 'backend-generated-key',
+                auth: 'backend-generated-auth'
+              }
+            }),
+            unsubscribe: async () => {
+              // This would call the backend unsubscribe in a real implementation
+              console.log('[WebView] 🚫 Unsubscribe called for userKey:', result.userKey)
+              return true
+            }
+          } : null
+
+          console.log('[WebView] 📦 Subscription created:', subscription ? 'SUCCESS' : 'FAILED')
+          if (subscription) {
+            console.log('[WebView] 🔗 Subscription endpoint:', subscription.endpoint?.substring(0, 50) + '...')
+            console.log('[WebView] 🔐 Subscription keys:', {
+              p256dh: subscription.keys?.p256dh?.substring(0, 10) + '...',
+              auth: subscription.keys?.auth?.substring(0, 10) + '...'
+            })
+            console.log('[WebView] 🛠️ Subscription methods:', {
+              toJSON: typeof subscription.toJSON,
+              unsubscribe: typeof subscription.unsubscribe
+            })
+          }
+
+          // Send response back to webview
+          if (activeTab.webviewRef?.current) {
+            const responseData = {
+              type: 'PUSH_SUBSCRIPTION_RESPONSE',
+              subscription: subscription
+            }
+            console.log('[WebView] 📤 Sending subscription response to webview')
+
+            activeTab.webviewRef.current.injectJavaScript(`
+              console.log('[WebView Response] Received subscription response:', ${JSON.stringify(subscription !== null)});
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify(${JSON.stringify(responseData)})
+              }));
+            `)
+          }
+        } catch (error) {
+          console.error('[WebView] ❌ Error creating push subscription:', error)
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              console.error('[WebView Response] Push subscription failed:', '${error}');
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                  subscription: null
+                })
+              }));
+            `)
+          }
+        }
+        return
+      }
+
+      // Handle get push subscription requests
+      if (msg.type === 'GET_PUSH_SUBSCRIPTION') {
+        console.log('[WebView] Get push subscription request')
+        /* ... */
+        try {
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error('Cannot get domain from URL for push subscription')
+            return
+          }
+
+          // Get existing subscription for this domain using backend API
+          const existingPermission = getPermissionForOrigin(domain)
+          const existingSubscription = existingPermission && isSubscribed ? {
+            endpoint: `https://fcm.googleapis.com/fcm/send/${userKey}`,
+            keys: {
+              p256dh: 'backend-generated-key',
+              auth: 'backend-generated-auth'
+            }
+          } : null
+
+          console.log('[WebView] Found existing subscription for domain:', domain, existingSubscription ? 'YES' : 'NO')
+
+          // Send response back to webview
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                  subscription: ${JSON.stringify(existingSubscription)}
+                })
+              }));
+            `)
+          }
+        } catch (error) {
+          console.error('Error getting push subscription:', error)
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                  subscription: null
+                })
+              }));
+            `)
+          }
         }
         return
       }
@@ -2315,28 +2596,69 @@ function Browser() {
     <GestureHandlerRootView style={styles.container}>
       {/* Permission modal */}
       {/* Test button for permission modal - only in dev mode */}
-      {__DEV__ && (
-        <TouchableOpacity
-          style={{
-            position: 'absolute',
-            top: 100,
-            right: 20,
-            backgroundColor: 'rgba(0,0,255,0.7)',
-            padding: 10,
-            zIndex: 9999
-          }}
-          onPress={() => {
-            console.log('TEST: Opening permission modal manually')
-            setPendingDomain(tabStore.activeTab?.url ? new URL(tabStore.activeTab.url).hostname : 'example.com')
-            setPendingPermission('CAMERA')
-            setPendingCallback(() => (granted: boolean) => {
-              console.log('TEST: Permission decision:', granted ? 'GRANTED' : 'DENIED')
-            })
-            setPermissionModalVisible(true)
-          }}
-        >
-          <Text style={{ color: 'white' }}>Test Permission</Text>
-        </TouchableOpacity>
+      {false && __DEV__ && (
+        <>
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              top: 100,
+              right: 10,
+              backgroundColor: 'blue',
+              padding: 10,
+              zIndex: 9999
+            }}
+            onPress={() => {
+              console.log('TEST: Opening permission modal manually')
+              setPendingDomain(tabStore.activeTab?.url ? new URL(tabStore.activeTab.url).hostname : 'example.com')
+              setPendingPermission('CAMERA')
+              setPendingCallback(() => (granted: boolean) => {
+                console.log('TEST: Permission decision:', granted ? 'GRANTED' : 'DENIED')
+              })
+              setPermissionModalVisible(true)
+            }}
+          >
+            <Text style={{ color: 'white' }}>Test Permission</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              top: 160,
+              right: 10,
+              backgroundColor: 'green',
+              padding: 10,
+              zIndex: 9999
+            }}
+            onPress={() => {
+              console.log('TEST: Testing Notification API')
+              if (activeTab?.webviewRef?.current) {
+                activeTab.webviewRef.current.injectJavaScript(`
+                  console.log('Testing Notification API...');
+                  console.log('Notification in window:', 'Notification' in window);
+                  console.log('Notification constructor:', typeof window.Notification);
+                  console.log('Notification.permission:', window.Notification?.permission);
+                  
+                  if (window.Notification) {
+                    window.Notification.requestPermission().then(permission => {
+                      console.log('Permission result:', permission);
+                      if (permission === 'granted') {
+                        new window.Notification('Test Notification', {
+                          body: 'This is a test notification from the website!',
+                          icon: '/favicon.ico'
+                        });
+                      }
+                    });
+                  } else {
+                    console.log('Notification API not available');
+                  }
+                  true;
+                `)
+              }
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 12 }}>Test Notification</Text>
+          </TouchableOpacity>
+        </>
       )}
 
       <PermissionModal

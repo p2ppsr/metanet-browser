@@ -14,6 +14,10 @@ interface PermissionCategory {
 // Define the most commonly used permissions grouped by category
 const PERMISSION_CATEGORIES: PermissionCategory[] = [
   {
+    title: 'Notifications',
+    data: ['NOTIFICATIONS']
+  },
+  {
     title: 'Media',
     data: ['CAMERA', 'RECORD_AUDIO', 'READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO']
   },
@@ -142,6 +146,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       .replace('Audio', 'Microphone')
       .replace('Record', 'Use')
       .replace('Camera', 'Camera')
+      .replace('Notifications', 'Notifications')
       .replace('Access Fine Location', 'Precise Location')
       .replace('Access Coarse Location', 'Approximate Location')
       .trim()
@@ -239,6 +244,32 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
               )
             }}
             renderItem={({ item: perm }) => {
+              // TODO!!!! SPECIAL NOTIFICATIONS MODAL
+              if (perm === 'NOTIFICATIONS') {
+                const state = permissions[perm] || 'deny'
+                const selectedIndex = state === 'allow' ? 0 : 1
+                return (
+                  <View style={[styles.permissionRow, { backgroundColor: colors.background }]}>
+                    <Text style={[styles.permissionLabel, { color: colors.textPrimary }]}>
+                      {formatPermissionName(perm)}
+                    </Text>
+                    <SegmentedControl
+                      values={[t('allow') || 'Allow', t('deny') || 'Deny']}
+                      selectedIndex={selectedIndex}
+                      onValueChange={value => {
+                        const newState = value === (t('allow') || 'Allow') ? 'allow' : 'deny'
+                        handleValueChange(perm, newState)
+                      }}
+                      tintColor={colors.buttonBackground}
+                      fontStyle={{ color: colors.buttonText }}
+                      activeFontStyle={{ color: colors.buttonText, fontWeight: '600' }}
+                      style={{ width: 120 }}
+                    />
+                  </View>
+                )
+              }
+
+              // Regular handling for other permissions - Allow/Ask/Deny
               const state = permissions[perm] || 'ask'
               const selectedIndex = Math.max(['allow', 'ask', 'deny'].indexOf(state), 0)
               return (

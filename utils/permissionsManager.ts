@@ -23,6 +23,7 @@ export type PermissionType =
   | 'CAMERA'
   | 'GET_ACCOUNTS'
   | 'NEARBY_WIFI_DEVICES'
+  | 'NOTIFICATIONS'
   | 'PROCESS_OUTGOING_CALLS'
   | 'READ_CALENDAR'
   | 'READ_CALL_LOG'
@@ -85,6 +86,7 @@ const platformPermissionMap: Partial<Record<PermissionType, any>> =
       BLUETOOTH_CONNECT: PERMISSIONS.ANDROID.BLUETOOTH_CONNECT,
       BLUETOOTH_ADVERTISE: PERMISSIONS.ANDROID.BLUETOOTH_ADVERTISE,
       // POST_NOTIFICATIONS is not available in the current version of react-native-permissions
+      // For NOTIFICATIONS, we'll handle it through Expo notifications instead of react-native-permissions
       NEARBY_WIFI_DEVICES: PERMISSIONS.ANDROID.NEARBY_WIFI_DEVICES,
       READ_MEDIA_IMAGES: PERMISSIONS.ANDROID.READ_MEDIA_IMAGES,
       READ_MEDIA_VIDEO: PERMISSIONS.ANDROID.READ_MEDIA_VIDEO,
@@ -215,7 +217,9 @@ export async function resetAllPermissions(): Promise<void> {
  */
 export async function getPermissionState(domain: string, permission: PermissionType): Promise<PermissionState> {
   const domainPerms = await getDomainPermissions(domain)
-  return domainPerms[permission] || 'ask'
+  // Default NOTIFICATIONS to 'deny' for better security, others default to 'ask'
+  const defaultState = permission === 'NOTIFICATIONS' ? 'deny' : 'ask'
+  return domainPerms[permission] || defaultState
 }
 
 export async function checkPermissionForDomain(domain: string, permission: PermissionType): Promise<boolean> {
@@ -226,6 +230,13 @@ export async function checkPermissionForDomain(domain: string, permission: Permi
     // We'll handle the UI prompt in the browser component
     // For now, just return false as we haven't shown the prompt yet
     return false
+  }
+
+  // Special handling for NOTIFICATIONS - use Expo notifications instead of react-native-permissions
+  if (permission === 'NOTIFICATIONS') {
+    // For notifications, we'll delegate to the push notifications hook
+    // This will be handled in the browser component
+    return domainState === 'allow'
   }
 
   const osPermission = platformPermissionMap[permission]
