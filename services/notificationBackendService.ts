@@ -21,6 +21,7 @@ export interface BackendPushSubscription {
     auth: string
   }
   userId: string
+  origin: string // Origin domain for the subscription
   deviceInfo?: {
     platform: 'ios' | 'android'
     appVersion?: string
@@ -153,6 +154,7 @@ export class NotificationBackendService {
         endpoint: fcmEndpoint,
         keys,
         userId,
+        origin, // Include the origin field that backend expects
         deviceInfo: {
           platform: Platform.OS as 'ios' | 'android',
           appVersion: '1.0.0', // App version for backend tracking
@@ -169,6 +171,10 @@ export class NotificationBackendService {
         method: 'POST',
         body: JSON.stringify(subscription)
       })
+
+      console.log('🔍 Backend response received:', response)
+      console.log('🔍 Response.success:', response.success)
+      console.log('🔍 Response.userKey:', response.userKey)
 
       if (response.success && response.userKey) {
         // Store user key for future requests

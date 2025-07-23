@@ -150,40 +150,59 @@ export const getPermissionScript = (
                   console.log('[RN WebView] 📤 Sending PUSH_SUBSCRIBE message');
                   
                   return new Promise((resolve, reject) => {
+                  // 🎯 CRITICAL FIX: Store the Promise resolver globally so our injection can access it
+                  console.log('[RN WebView] 🔗 Storing Promise resolver globally for injection access');
+                  window.pushSubscriptionPromiseResolve = resolve;
+                  window.pushSubscriptionPromiseReject = reject;
+                  
                   window.ReactNativeWebView?.postMessage(JSON.stringify({
                     type: 'PUSH_SUBSCRIBE',
                     options: options
                   }));
                   
+                  // Keep the message handler as a fallback for compatibility
                   const handler = (event) => {
                     try {
                       const data = JSON.parse(event.data);
                       if (data.type === 'PUSH_SUBSCRIPTION_RESPONSE') {
                         window.removeEventListener('message', handler);
-                        console.log('[RN WebView] Received subscription response:', data.subscription);
+                        console.log('[RN WebView] 📨 Fallback: Received subscription response via message event:', data.subscription);
                         
-                        if (data.subscription) {
-                          console.log('[RN WebView] Subscription endpoint:', data.subscription.endpoint);
-                          console.log('[RN WebView] Subscription keys:', data.subscription.keys);
-                          console.log('[RN WebView] Subscription toJSON:', typeof data.subscription.toJSON);
-                          
-                          // Test the subscription object
-                          try {
-                            const jsonTest = JSON.stringify(data.subscription);
-                            console.log('[RN WebView] Subscription JSON test passed:', jsonTest.length, 'chars');
-                          } catch (jsonError) {
-                            console.error('[RN WebView] Subscription JSON test failed:', jsonError);
+                        // Only resolve via fallback if the injection hasn't resolved it yet
+                        if (window.pushSubscriptionPromiseResolve) {
+                          console.log('[RN WebView] 🎯 Resolving via fallback message handler');
+                          if (data.subscription) {
+                            console.log('[RN WebView] Subscription endpoint:', data.subscription.endpoint);
+                            console.log('[RN WebView] Subscription keys:', data.subscription.keys);
+                            
+                            // Test the subscription object
+                            try {
+                              const jsonTest = JSON.stringify(data.subscription);
+                              console.log('[RN WebView] Subscription JSON test passed:', jsonTest.length, 'chars');
+                            } catch (jsonError) {
+                              console.error('[RN WebView] Subscription JSON test failed:', jsonError);
+                            }
+                            
+                            window.pushSubscriptionPromiseResolve(data.subscription);
+                            delete window.pushSubscriptionPromiseResolve;
+                            delete window.pushSubscriptionPromiseReject;
+                          } else {
+                            console.error('[RN WebView] No subscription in response');
+                            window.pushSubscriptionPromiseReject(new Error('Failed to create push subscription'));
+                            delete window.pushSubscriptionPromiseResolve;
+                            delete window.pushSubscriptionPromiseReject;
                           }
-                          
-                          resolve(data.subscription);
                         } else {
-                          console.error('[RN WebView] No subscription in response');
-                          reject(new Error('Failed to create push subscription'));
+                          console.log('[RN WebView] ✅ Promise already resolved by injection - ignoring fallback');
                         }
                       }
                     } catch (e) {
                       console.error('[RN WebView] Error parsing subscription response:', e);
-                      reject(e);
+                      if (window.pushSubscriptionPromiseReject) {
+                        window.pushSubscriptionPromiseReject(e);
+                        delete window.pushSubscriptionPromiseResolve;
+                        delete window.pushSubscriptionPromiseReject;
+                      }
                     }
                   };
                   window.addEventListener('message', handler);
@@ -191,8 +210,13 @@ export const getPermissionScript = (
                     // Add timeout to prevent hanging
                     setTimeout(() => {
                       window.removeEventListener('message', handler);
-                      console.error('[RN WebView] ⏰ Push subscription timeout after 10 seconds');
-                      reject(new Error('Push subscription timeout'));
+                      // Only reject if not already resolved
+                      if (window.pushSubscriptionPromiseReject) {
+                        console.error('[RN WebView] ⏰ Push subscription timeout after 10 seconds');
+                        window.pushSubscriptionPromiseReject(new Error('Push subscription timeout'));
+                        delete window.pushSubscriptionPromiseResolve;
+                        delete window.pushSubscriptionPromiseReject;
+                      }
                     }, 10000);
                   });
                 } catch (error) {

@@ -1918,8 +1918,8 @@ function Browser() {
             subscription = {
               endpoint: `https://fcm.googleapis.com/fcm/send/${result.userKey}`,
               keys: {
-                p256dh: `backend-key-${result.userKey.substring(0, 8)}`,
-                auth: `backend-auth-${result.userKey.substring(8, 16)}`
+                p256dh: btoa(`backend-p256dh-${result.userKey}`).substring(0, 87), // Proper base64 p256dh key length
+                auth: btoa(`backend-auth-${result.userKey}`).substring(0, 22)    // Proper base64 auth key length
               },
               // Add required PushSubscription methods
               toJSON: () => ({
@@ -1993,23 +1993,97 @@ function Browser() {
             setTimeout(() => {
               console.log('[WebView Debug] ⏰ Executing delayed push subscription response injection')
               
+              // 🔍 CRITICAL DEBUG: Check WebView ref availability
+              console.log('[WebView Debug] 🔍 Debugging WebView ref:');
+              console.log('[WebView Debug] 🔍 - activeTab exists:', !!activeTab);
+              console.log('[WebView Debug] 🔍 - activeTab.webviewRef exists:', !!activeTab?.webviewRef);
+              console.log('[WebView Debug] 🔍 - activeTab.webviewRef.current exists:', !!activeTab?.webviewRef?.current);
+              console.log('[WebView Debug] 🔍 - WebView ref type:', typeof activeTab?.webviewRef?.current);
+              
               if (activeTab?.webviewRef?.current) {
-                activeTab.webviewRef.current.injectJavaScript(`
+                console.log('[WebView Debug] ✅ WebView ref is available - attempting injection');
+                
+                try {
+                  const injectionResult = activeTab.webviewRef.current.injectJavaScript(`
                   console.log('[WebView Response] 🚀 Push subscription response injection (delayed)');
                   console.log('[WebView Response] 📦 Subscription data:', ${JSON.stringify(JSON.stringify(cleanSubscription))});
                   
-                  // Dispatch the subscription response using proven working pattern
-                  window.dispatchEvent(new MessageEvent('message', {
-                    data: JSON.stringify({
-                      type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                      subscription: ${JSON.stringify(cleanSubscription)}
-                    })
-                  }));
+                  // 🔍 CRITICAL DEBUG: Check what's available in window object
+                  console.log('[WebView Response] 🔍 Debugging window object:');
+                  console.log('[WebView Response] 🔍 - window.pushSubscriptionPromiseResolve:', typeof window.pushSubscriptionPromiseResolve);
+                  console.log('[WebView Response] 🔍 - window.pushSubscriptionPromiseReject:', typeof window.pushSubscriptionPromiseReject);
+                  console.log('[WebView Response] 🔍 - Available keys:', Object.keys(window).filter(k => k.includes('push')));
                   
-                  console.log('[WebView Response] ✅ PUSH_SUBSCRIPTION_RESPONSE dispatched successfully!');
-                `)
+                  // CRITICAL FIX: Resolve the original Promise that webpushtest.com is waiting for
+                  if (window.pushSubscriptionPromiseResolve) {
+                    console.log('[WebView Response] 🎯 FOUND Promise resolver - proceeding to resolve!');
+                    const subscription = ${JSON.stringify(cleanSubscription)};
+                    
+                    // Create a proper PushSubscription object with required methods
+                    const pushSubscription = {
+                      endpoint: subscription.endpoint,
+                      keys: subscription.keys,
+                      options: { userVisibleOnly: true },
+                      toJSON: function() {
+                        return {
+                          endpoint: this.endpoint,
+                          keys: this.keys
+                        };
+                      },
+                      unsubscribe: function() {
+                        return Promise.resolve(true);
+                      }
+                    };
+                    
+                    console.log('[WebView Response] 📦 About to resolve with pushSubscription:', pushSubscription);
+                    
+                    try {
+                      // Resolve the original Promise
+                      window.pushSubscriptionPromiseResolve(pushSubscription);
+                      delete window.pushSubscriptionPromiseResolve;
+                      delete window.pushSubscriptionPromiseReject;
+                      console.log('[WebView Response] ✅✅✅ SUCCESS: Original Promise resolved with PushSubscription object!');
+                    } catch (resolveError) {
+                      console.error('[WebView Response] ❌ Error resolving Promise:', resolveError);
+                    }
+                  } else {
+                    console.log('[WebView Response] ⚠️⚠️⚠️ No Promise resolver found - this is the problem!');
+                    console.log('[WebView Response] 🔍 Checking if we can find any resolvers in window object...');
+                    
+                    // Try to find any resolver functions
+                    const allKeys = Object.keys(window);
+                    const pushKeys = allKeys.filter(k => k.toLowerCase().includes('push'));
+                    const promiseKeys = allKeys.filter(k => k.toLowerCase().includes('promise'));
+                    const resolveKeys = allKeys.filter(k => k.toLowerCase().includes('resolve'));
+                    
+                    console.log('[WebView Response] 🔍 Push-related keys:', pushKeys);
+                    console.log('[WebView Response] 🔍 Promise-related keys:', promiseKeys);
+                    console.log('[WebView Response] 🔍 Resolve-related keys:', resolveKeys);
+                    
+                    // Fallback to message event for compatibility
+                    console.log('[WebView Response] 🔄 Falling back to message event...');
+                    window.dispatchEvent(new MessageEvent('message', {
+                      data: JSON.stringify({
+                        type: 'PUSH_SUBSCRIPTION_RESPONSE',
+                        subscription: ${JSON.stringify(cleanSubscription)}
+                      })
+                    }));
+                    console.log('[WebView Response] 📨 Message event dispatched as fallback');
+                  }
+                  
+                  console.log('[WebView Response] ✅ Push subscription response handling completed!');
+                  `);
+                  
+                  console.log('[WebView Debug] ✅ JavaScript injection completed successfully');
+                } catch (injectionError) {
+                  console.error('[WebView Debug] ❌ JavaScript injection failed:', injectionError);
+                  console.error('[WebView Debug] ❌ This is why no logs are showing from injected JavaScript!');
+                }
               } else {
-                console.error('[WebView Debug] ❌ WebView ref unavailable during delayed injection')
+                console.error('[WebView Debug] ❌ WebView ref unavailable during delayed injection');
+                console.error('[WebView Debug] ❌ activeTab:', !!activeTab);
+                console.error('[WebView Debug] ❌ webviewRef:', !!activeTab?.webviewRef);
+                console.error('[WebView Debug] ❌ current:', !!activeTab?.webviewRef?.current);
               }
             }, 100)
           }
