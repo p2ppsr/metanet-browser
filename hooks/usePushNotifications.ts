@@ -93,8 +93,10 @@ export const usePushNotifications = () => {
         return { granted: false }
       }
 
-      // Register subscription with backend
-      const result = await notificationBackend.registerPushSubscription(origin, 'metanet-user-' + Date.now())
+      console.log("🔍 Registering for origin:", origin)
+
+      // Register subscription with backend - userId should be the origin
+      const result = await notificationBackend.registerPushSubscription(origin, origin)
       
       if (result.success && result.userKey) {
         console.log('✅ Push permission granted, userKey:', result.userKey)

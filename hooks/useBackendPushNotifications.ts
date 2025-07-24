@@ -1,9 +1,5 @@
-// New push notifications hook that integrates with the metanet-mobile backend
-// Replaces the existing usePushNotifications.ts with backend integration
-
 import { useState, useEffect, useRef, useCallback } from 'react'
 import * as Notifications from 'expo-notifications'
-import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { notificationBackend, BackendResponse } from '@/services/notificationBackendService'
 

@@ -65,13 +65,46 @@ export const getPermissionScript = (
               window.removeEventListener('message', handler);
               const permission = data.permission;
               
-              // CRITICAL: Properly update the permission property so websites can read it
-              Object.defineProperty(window.Notification, 'permission', {
-                value: permission,
-                writable: false,
-                configurable: true,
-                enumerable: true
-              });
+              // Override Notification.permission to always return 'granted'
+              if (typeof window.Notification !== 'undefined') {
+                Object.defineProperty(window.Notification, 'permission', {
+                  value: 'granted',
+                  writable: false,
+                  configurable: false
+                })
+                
+                // Also ensure Notification.requestPermission resolves to 'granted'
+                const originalRequestPermission = window.Notification.requestPermission;
+                window.Notification.requestPermission = function() {
+                  console.log('[RN WebView] 🔔 Notification.requestPermission() called - returning granted');
+                  return Promise.resolve('granted');
+                };
+              } else {
+                // Create Notification if it doesn't exist
+                window.Notification = class Notification {
+                  constructor(title, options) {
+                    console.log('[RN WebView] 🔔 Notification constructor called:', title, options);
+                    this.title = title;
+                    this.body = options?.body || '';
+                    this.icon = options?.icon || '';
+                    this.badge = options?.badge || '';
+                    this.data = options?.data || {};
+                  }
+                  
+                  static get permission() {
+                    return 'granted';
+                  }
+                  
+                  static requestPermission() {
+                    console.log('[RN WebView] 🔔 Notification.requestPermission() called - returning granted');
+                    return Promise.resolve('granted');
+                  }
+                  
+                  close() {
+                    console.log('[RN WebView] 🔔 Notification.close() called');
+                  }
+                };
+              }
               
               console.log('[RN WebView] Permission updated to:', window.Notification.permission);
               console.log('[RN WebView] Permission check:', window.Notification.permission === 'granted');
@@ -152,8 +185,20 @@ export const getPermissionScript = (
                   return new Promise((resolve, reject) => {
                   // 🎯 CRITICAL FIX: Store the Promise resolver globally so our injection can access it
                   console.log('[RN WebView] 🔗 Storing Promise resolver globally for injection access');
+                  
+                  // Store resolver with multiple fallback strategies
                   window.pushSubscriptionPromiseResolve = resolve;
                   window.pushSubscriptionPromiseReject = reject;
+                  
+                  // Additional context-safe storage
+                  if (typeof window.pushResolvers === 'undefined') {
+                    window.pushResolvers = {};
+                  }
+                  const resolverKey = 'push_' + Date.now();
+                  window.pushResolvers[resolverKey] = { resolve, reject };
+                  window.currentPushResolverKey = resolverKey;
+                  
+                  console.log('[RN WebView] 🔍 Stored resolver with key:', resolverKey);
                   
                   window.ReactNativeWebView?.postMessage(JSON.stringify({
                     type: 'PUSH_SUBSCRIBE',

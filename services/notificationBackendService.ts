@@ -1,6 +1,4 @@
-// Backend API integration for metanet-mobile push notifications
-// Replaces local Firebase handling with backend server calls
-
+import { getFCMToken } from '@/utils/pushNotificationManager'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
@@ -21,7 +19,7 @@ export interface BackendPushSubscription {
     auth: string
   }
   userId: string
-  origin: string // Origin domain for the subscription
+  origin: string
   deviceInfo?: {
     platform: 'ios' | 'android'
     appVersion?: string
@@ -129,47 +127,57 @@ export class NotificationBackendService {
   }
 
   /**
-   * Register push subscription with backend
+   * Register push subscription with backend (Production Curl-Compatible)
    */
   async registerPushSubscription(
     userId: string, 
     origin: string = 'metanet-mobile'
   ): Promise<BackendResponse> {
     try {
-      // Get system notification permissions
       const { status } = await Notifications.requestPermissionsAsync()
       if (status !== 'granted') {
         throw new Error('Push notifications permission denied')
       }
 
-      // Generate FCM-compatible token and keys for web push compatibility
+      const fcmToken = await getFCMToken()
+      if (!fcmToken) {
+        throw new Error('FCM token not available')
+      }
+
       const keys = this.generateWebPushKeys()
       
-      // Create a pseudo-FCM token for web push compatibility
-      // In a real implementation, this would be a proper FCM token
-      const pseudoFCMToken = `metanet-mobile-${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(7)}`
-      const fcmEndpoint = `https://fcm.googleapis.com/fcm/send/${pseudoFCMToken}`
+      const deviceId = `metanet-mobile-${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(7)}`
+      
+      const fcmEndpoint = `https://fcm.googleapis.com/fcm/send/${deviceId}`
 
-      const subscription: BackendPushSubscription = {
+      const registrationPayload = {
         endpoint: fcmEndpoint,
-        keys,
-        userId,
-        origin, // Include the origin field that backend expects
+        keys: {
+          p256dh: keys.p256dh,
+          auth: keys.auth
+        },
+        fcmToken: fcmToken,
+        userId: userId,
         deviceInfo: {
-          platform: Platform.OS as 'ios' | 'android',
-          appVersion: '1.0.0', // App version for backend tracking
-          deviceId: pseudoFCMToken.substring(0, 50) // Use part of FCM token as device ID
+          platform: Platform.OS,
+          deviceId: deviceId,
+          appVersion: '1.0.0'
         }
       }
 
-      console.log('📱 Registering push subscription with backend...', {
+      console.log('📱 Registering push subscription with backend (Production Format)...', {
         userId,
-        endpoint: subscription.endpoint.substring(0, 50) + '...'
+        fcmToken: fcmToken.substring(0, 20) + '...',
+        endpoint: registrationPayload.endpoint.substring(0, 50) + '...'
       })
 
       const response = await this.makeRequest('/subscriptions/register', {
         method: 'POST',
-        body: JSON.stringify(subscription)
+        headers: {
+          'Origin': origin,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(registrationPayload)
       })
 
       console.log('🔍 Backend response received:', response)
@@ -184,7 +192,7 @@ export class NotificationBackendService {
         // Store subscription info
         await AsyncStorage.setItem(SUBSCRIPTIONS_STORAGE, JSON.stringify({
           userKey: this.userKey,
-          subscription,
+          subscription: registrationPayload,
           origin,
           registeredAt: Date.now()
         }))
@@ -205,43 +213,80 @@ export class NotificationBackendService {
   /**
    * Check permissions for current user
    */
-  async checkPermissions(): Promise<BackendResponse> {
+  async checkPermissions(origin: string = 'metanet-mobile'): Promise<BackendResponse> {
     if (!this.userKey) {
       return { success: false, error: 'No user key found' }
     }
 
-    return await this.makeRequest(`/subscriptions/${this.userKey}/permissions`)
+    console.log('🔍 Checking permissions for userKey:', this.userKey)
+
+    return await this.makeRequest(`/subscriptions/permissions/${this.userKey}`, {
+      method: 'GET',
+      headers: {
+        'Origin': origin
+      }
+    })
   }
 
   /**
-   * Send notification via backend (for testing)
+   * Send notification via backend (Production Curl-Compatible)
    */
-  async sendNotification(notification: Omit<BackendNotification, 'userKey'>): Promise<BackendResponse> {
+  async sendNotification(
+    notification: {
+      title: string
+      body: string
+      icon?: string
+      data?: Record<string, any>
+    },
+    origin: string = 'metanet-mobile'
+  ): Promise<BackendResponse> {
     if (!this.userKey) {
       return { success: false, error: 'No user key found' }
     }
 
-    const payload: BackendNotification = {
+    const payload = {
       userKey: this.userKey,
-      ...notification
+      notification: {
+        title: notification.title,
+        body: notification.body,
+        icon: notification.icon,
+        data: notification.data || {
+          custom: 'payload',
+          click_action: 'FLUTTER_NOTIFICATION_CLICK'
+        }
+      }
     }
+
+    console.log('📤 Sending notification via production endpoint...', {
+      userKey: this.userKey,
+      title: notification.title
+    })
 
     return await this.makeRequest('/notifications/send', {
       method: 'POST',
+      headers: {
+        'Origin': origin,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(payload)
     })
   }
 
   /**
-   * Unsubscribe from push notifications
+   * Unsubscribe from push notifications (Production Curl-Compatible)
    */
-  async unsubscribe(): Promise<BackendResponse> {
+  async unsubscribe(origin: string = 'metanet-mobile'): Promise<BackendResponse> {
     if (!this.userKey) {
       return { success: false, error: 'No user key found' }
     }
 
+    console.log('🗑️ Unsubscribing userKey from push notifications:', this.userKey)
+
     const response = await this.makeRequest(`/subscriptions/${this.userKey}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        'Origin': origin
+      }
     })
 
     if (response.success) {
@@ -249,7 +294,7 @@ export class NotificationBackendService {
       this.userKey = null
       await AsyncStorage.removeItem(USER_KEY_STORAGE)
       await AsyncStorage.removeItem(SUBSCRIPTIONS_STORAGE)
-      console.log('✅ Successfully unsubscribed from push notifications')
+      console.log('✅ Successfully unsubscribed and cleared local data')
     }
 
     return response
