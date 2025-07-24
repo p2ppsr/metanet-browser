@@ -82,7 +82,6 @@ import { logWithTimestamp } from '@/utils/logging'
 import PermissionsScreen from '@/components/PermissionsScreen'
 import PermissionModal from '@/components/PermissionModal'
 import * as Notifications from 'expo-notifications'
-import { useBackendPushNotifications } from '@/hooks/useBackendPushNotifications'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
