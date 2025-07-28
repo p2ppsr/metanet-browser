@@ -533,6 +533,25 @@ function Browser() {
         if (tabStore.activeTab?.webviewRef?.current) {
           const updateScript = `
           (function() {
+            // Override console.log to send logs to React Native terminal
+            const originalConsoleLog = console.log;
+            console.log = function(...args) {
+              const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+              ).join(' ');
+              
+              // Send to React Native
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'console_log',
+                  message: message
+                }));
+              }
+              
+              // Also call original console.log for any native browser dev tools
+              originalConsoleLog.apply(console, args);
+            };
+            
             console.log('[Metanet] Updating permission: ${permission} to ${state}');
             
             // Update the denied permissions list
@@ -1414,6 +1433,13 @@ function Browser() {
       let msg
       try {
         msg = JSON.parse(event.nativeEvent.data)
+        
+        // Handle console log messages from injected JavaScript
+        if (msg.type === 'console_log') {
+          console.log(`[WebView Console] ${msg.message}`)
+          return
+        }
+        
         console.log(`[WebView Message] Received message of type: ${msg?.type}`, JSON.stringify(msg))
       } catch (error) {
         console.error('Failed to parse WebView message:', error)

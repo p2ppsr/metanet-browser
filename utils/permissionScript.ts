@@ -18,6 +18,26 @@ export const getPermissionScript = (
   
   window.__metanetDeniedPermissions = denied;
   window.__metanetPendingPermissions = pending;
+  
+  // Override console.log to send logs to React Native terminal
+  const originalConsoleLog = console.log;
+  console.log = function(...args) {
+    const message = args.map(arg => 
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+    
+    // Send to React Native
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'console_log',
+        message: message
+      }));
+    }
+    
+    // Also call original console.log for any native browser dev tools
+    originalConsoleLog.apply(console, args);
+  };
+  
   console.log('[Metanet] Initializing permission hooks with denied:', denied, 'pending:', pending);
 
   // Push Notification API polyfill - MUST run before page content loads
