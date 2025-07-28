@@ -1912,6 +1912,8 @@ function Browser() {
           
           let subscription = null
           
+          console.log('[WebView] ✅ Push permission granted, userKey:', result.userKey, result.granted)
+
           if (result.granted && result.userKey) {
             // Create proper PushSubscription object using backend response
             subscription = {

@@ -4,8 +4,8 @@ import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 
 // Backend configuration - Using local IP for mobile device connectivity
-const BACKEND_BASE_URL = 'http://172.29.81.201:3000'
-const API_BASE_URL = 'http://172.29.81.201:3000/api/v1'
+const BACKEND_BASE_URL = 'http://192.168.1.178:3000'
+const API_BASE_URL = 'http://192.168.1.178:3000/api/v1'
 const API_KEY = 'AIzaSyCXrXRvZjrMfIiC7oTjQ7D6rksbFT8Neaw'
 
 // Storage keys
@@ -319,10 +319,13 @@ export class NotificationBackendService {
    */
   async healthCheck(): Promise<BackendResponse> {
     try {
+      console.log('🔍 Health checking backend connection...')
       const response = await fetch(`${BACKEND_BASE_URL}/health`)
       const data = await response.json()
+      console.log('🔍 Backend health check response:', data)
       return { success: response.ok, data }
     } catch (error) {
+      console.error('❌ Health check failed:', error)
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Health check failed' 
