@@ -4,8 +4,8 @@ import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 
 // Backend configuration - Using local IP for mobile device connectivity
-const BACKEND_BASE_URL = 'http://192.168.1.178:3000'
-const API_BASE_URL = 'http://192.168.1.178:3000/api/v1'
+const BACKEND_BASE_URL = 'http://172.29.81.201:3000'
+const API_BASE_URL = 'http://172.29.81.201:3000/api/v1'
 const API_KEY = 'AIzaSyCXrXRvZjrMfIiC7oTjQ7D6rksbFT8Neaw'
 
 // Storage keys
@@ -148,7 +148,7 @@ export class NotificationBackendService {
       
       const deviceId = `metanet-mobile-${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(7)}`
       
-      const fcmEndpoint = `https://fcm.googleapis.com/fcm/send/${deviceId}`
+      const fcmEndpoint = `https://fcm.googleapis.com/wp/${fcmToken}` // TODO maybe /fcm/send
 
       const registrationPayload = {
         endpoint: fcmEndpoint,

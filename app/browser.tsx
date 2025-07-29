@@ -251,7 +251,7 @@ function Browser() {
                 window.dispatchEvent(event);
               }
               
-              // Also trigger any custom push listeners
+              // Also trigger any custom  listeners
               window.dispatchEvent(new CustomEvent('metanet-push-notification', {
                 detail: ${JSON.stringify(notification)}
               }));
@@ -1943,17 +1943,17 @@ function Browser() {
           if (result.granted && result.userKey) {
             // Create proper PushSubscription object using backend response
             subscription = {
-              endpoint: `https://fcm.googleapis.com/fcm/send/${result.userKey}`,
+              endpoint: `https://fcm.googleapis.com/wp/${result.userKey}`, // may be fcm/send/
               keys: {
-                p256dh: btoa(`backend-p256dh-${result.userKey}`).substring(0, 87), // Proper base64 p256dh key length
-                auth: btoa(`backend-auth-${result.userKey}`).substring(0, 22)    // Proper base64 auth key length
+                p256dh: 'BDZJSiMXSJUhryPkjFh_H84ZeEjVNfq5STCXVDEW4bpXye1mybGCjufRFIVmMxJN1wHOGUunGyBra0qvSa0fGJ8',  // TODO
+                auth: 'upQsMoPu4_T6aT3a8Nwg8b7Cd3wNjQwfD5PgCYJjTmc'  // TODO
               },
               // Add required PushSubscription methods
               toJSON: () => ({
-                endpoint: `https://fcm.googleapis.com/fcm/send/${result.userKey!}`,
+                endpoint: `https://fcm.googleapis.com/wp/${result.userKey!}`,
                 keys: {
-                  p256dh: `backend-key-${result.userKey!.substring(0, 8)}`,
-                  auth: `backend-auth-${result.userKey!.substring(8, 16)}`
+                  p256dh: 'BDZJSiMXSJUhryPkjFh_H84ZeEjVNfq5STCXVDEW4bpXye1mybGCjufRFIVmMxJN1wHOGUunGyBra0qvSa0fGJ8',  // TODO
+                  auth: 'upQsMoPu4_T6aT3a8Nwg8b7Cd3wNjQwfD5PgCYJjTmc'  // TODO
                 }
               }),
               unsubscribe: async () => {
