@@ -3,6 +3,7 @@ const F = 'app/browser'
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { setWebViewMessageCallback, initializeFirebaseNotifications } from '@/utils/pushNotificationManager'
+import { getPushSubscription } from '@/services/notificationBackendService'
 import type { PendingNotification } from '@/hooks/usePushNotifications'
 import {
   Animated,
@@ -1941,25 +1942,18 @@ function Browser() {
           console.log('[WebView] ✅ Push permission granted, userKey:', result.userKey, result.granted)
 
           if (result.granted && result.userKey) {
-            // Create proper PushSubscription object using backend response
-            subscription = {
-              endpoint: `https://fcm.googleapis.com/wp/${result.userKey}`, // may be fcm/send/
-              keys: {
-                p256dh: 'BDZJSiMXSJUhryPkjFh_H84ZeEjVNfq5STCXVDEW4bpXye1mybGCjufRFIVmMxJN1wHOGUunGyBra0qvSa0fGJ8',  // TODO
-                auth: 'upQsMoPu4_T6aT3a8Nwg8b7Cd3wNjQwfD5PgCYJjTmc'  // TODO
-              },
-              // Add required PushSubscription methods
-              toJSON: () => ({
-                endpoint: `https://fcm.googleapis.com/wp/${result.userKey!}`,
-                keys: {
-                  p256dh: 'BDZJSiMXSJUhryPkjFh_H84ZeEjVNfq5STCXVDEW4bpXye1mybGCjufRFIVmMxJN1wHOGUunGyBra0qvSa0fGJ8',  // TODO
-                  auth: 'upQsMoPu4_T6aT3a8Nwg8b7Cd3wNjQwfD5PgCYJjTmc'  // TODO
-                }
-              }),
-              unsubscribe: async () => {
-                console.log('[WebView] 🚫 Unsubscribe called for userKey:', result.userKey)
-                return true
-              }
+            // Get the centralized PushSubscription object from notificationBackendService
+            subscription = getPushSubscription()
+            
+            if (subscription) {
+              console.log('[WebView] ✅ Using centralized PushSubscription with consistent keys')
+              console.log('[WebView] 🔑 Endpoint:', subscription.endpoint)
+              const p256dhKey = subscription.getKey ? subscription.getKey('p256dh') : 'N/A'
+              const authKey = subscription.getKey ? subscription.getKey('auth') : 'N/A'
+              console.log('[WebView] 🔑 p256dh key:', typeof p256dhKey === 'string' ? p256dhKey.substring(0, 20) + '...' : 'N/A')
+              console.log('[WebView] 🔑 auth key:', typeof authKey === 'string' ? authKey.substring(0, 20) + '...' : 'N/A')
+            } else {
+              console.log('[WebView] ❌ No PushSubscription available from backend service')
             }
             
             console.log('[WebView] ✅ Using backend userKey for subscription:', result.userKey)
@@ -1968,18 +1962,7 @@ function Browser() {
           }
 
           console.log('[WebView] 📦 Subscription created:', subscription ? 'SUCCESS' : 'FAILED')
-          if (subscription) {
-            console.log('[WebView] 🔗 Subscription endpoint:', subscription.endpoint?.substring(0, 50) + '...')
-            console.log('[WebView] 🔐 Subscription keys:', {
-              p256dh: subscription.keys?.p256dh?.substring(0, 10) + '...',
-              auth: subscription.keys?.auth?.substring(0, 10) + '...'
-            })
-            console.log('[WebView] 🛠️ Subscription methods:', {
-              toJSON: typeof subscription.toJSON,
-              unsubscribe: typeof subscription.unsubscribe
-            })
-          }
-
+          
           // Send response back to webview
           if (activeTab.webviewRef?.current) {
             const responseData = {
@@ -1997,7 +1980,10 @@ function Browser() {
             // Create a clean subscription object for the website
             const cleanSubscription = subscription ? {
               endpoint: subscription.endpoint,
-              keys: subscription.keys
+              keys: {
+                p256dh: subscription.getKey ? subscription.getKey('p256dh') : null,
+                auth: subscription.getKey ? subscription.getKey('auth') : null
+              }
             } : null
             
             const responseJson = JSON.stringify({

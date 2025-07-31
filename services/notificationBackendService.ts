@@ -11,6 +11,7 @@ const API_KEY = 'AIzaSyCXrXRvZjrMfIiC7oTjQ7D6rksbFT8Neaw'
 // Storage keys
 const USER_KEY_STORAGE = 'metanet_user_key'
 const SUBSCRIPTIONS_STORAGE = 'metanet_subscriptions'
+const DEVICE_ID_KEY = 'metanet_device_id'
 
 export interface BackendPushSubscription {
   endpoint: string
@@ -44,19 +45,31 @@ export interface BackendResponse<T = any> {
   userKey?: string
   message?: string
   error?: string
+  fcmEndpoint?: string
 }
+
+let currentPushSubscription: PushSubscription | null = null
 
 export class NotificationBackendService {
   private static instance: NotificationBackendService
   private userKey: string | null = null
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): NotificationBackendService {
     if (!NotificationBackendService.instance) {
       NotificationBackendService.instance = new NotificationBackendService()
     }
     return NotificationBackendService.instance
+  }
+
+  private async getDeviceId(): Promise<string> {
+    const storedId = await AsyncStorage.getItem(DEVICE_ID_KEY)
+    if (storedId) return storedId
+
+    const newId = `metanet-mobile-${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`
+    await AsyncStorage.setItem(DEVICE_ID_KEY, newId)
+    return newId
   }
 
   /**
@@ -75,12 +88,12 @@ export class NotificationBackendService {
    * Make authenticated API request to backend
    */
   private async makeRequest<T = any>(
-    endpoint: string, 
+    endpoint: string,
     options: RequestInit = {}
   ): Promise<BackendResponse<T>> {
     try {
       const url = `${API_BASE_URL}${endpoint}`
-      
+
       const response = await fetch(url, {
         ...options,
         headers: {
@@ -108,29 +121,52 @@ export class NotificationBackendService {
 
   /**
    * Generate proper cryptographic keys for web push
+   * React Native compatible version that generates valid P-256 ECDH keys
    */
-  private generateWebPushKeys(): { p256dh: string; auth: string } {
-    // Generate random bytes for keys (simplified for demo)
-    const p256dh = this.generateRandomBase64Url(65)
-    const auth = this.generateRandomBase64Url(16)
-    
-    return { p256dh, auth }
+  private async generateWebPushKeys(): Promise<{ p256dh: string; auth: string }> {
+    const deviceId = await this.getDeviceId()
+    const response = await fetch(`${API_BASE_URL}/keys/new`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        userId: this.userKey ?? 'guest',
+        deviceId
+      })
+    })
+
+    console.log('🔍 Backend response received:', response)
+    if (!response.ok) {
+      throw new Error('Failed to fetch push encryption keys from backend')
+    }
+
+    const data = await response.json()
+    return data.keys
   }
 
-  private generateRandomBase64Url(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
-    let result = ''
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
+  /**
+   * Convert ArrayBuffer to base64url encoding (RFC 4648 Section 5)
+   * This is the standard encoding used by web push protocols
+   */
+  private arrayBufferToBase64Url(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i])
     }
-    return result
+    return btoa(binary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
   }
 
   /**
    * Register push subscription with backend (Production Curl-Compatible)
    */
   async registerPushSubscription(
-    userId: string, 
+    userId: string,
     origin: string = 'metanet-mobile'
   ): Promise<BackendResponse> {
     try {
@@ -144,11 +180,9 @@ export class NotificationBackendService {
         throw new Error('FCM token not available')
       }
 
-      const keys = this.generateWebPushKeys()
-      
-      const deviceId = `metanet-mobile-${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(7)}`
-      
-      const fcmEndpoint = `https://fcm.googleapis.com/wp/${fcmToken}` // TODO maybe /fcm/send
+      const keys = await this.generateWebPushKeys()
+      const deviceId = await this.getDeviceId()
+      const fcmEndpoint = `https://fcm.googleapis.com/fcm/send/${fcmToken}`
 
       const registrationPayload = {
         endpoint: fcmEndpoint,
@@ -160,7 +194,7 @@ export class NotificationBackendService {
         userId: userId,
         deviceInfo: {
           platform: Platform.OS,
-          deviceId: deviceId,
+          deviceId,
           appVersion: '1.0.0'
         }
       }
@@ -188,16 +222,58 @@ export class NotificationBackendService {
         // Store user key for future requests
         this.userKey = response.userKey
         await AsyncStorage.setItem(USER_KEY_STORAGE, this.userKey)
-        
-        // Store subscription info
+
+        // Create and store the PushSubscription object for reuse in browser.tsx
+        currentPushSubscription = {
+          endpoint: fcmEndpoint,
+          expirationTime: null,
+          keys: {
+            p256dh: keys.p256dh,
+            auth: keys.auth
+          },
+          options: {
+            userVisibleOnly: true,
+            applicationServerKey: null
+          },
+          toJSON: () => ({
+            endpoint: fcmEndpoint,
+            expirationTime: null,
+            keys: {
+              p256dh: keys.p256dh,
+              auth: keys.auth
+            }
+          }),
+          unsubscribe: async () => {
+            console.log('🗑️ PushSubscription.unsubscribe() called')
+            // TODO: Implement actual unsubscribe logic
+            return true
+          },
+          getKey: (name: string) => {
+            console.log('🔑 PushSubscription.getKey() called with:', name)
+            if (name === 'p256dh') return keys.p256dh
+            if (name === 'auth') return keys.auth
+            return null
+          }
+        } as unknown as PushSubscription
+
+        // Store subscription info including the correct endpoint
         await AsyncStorage.setItem(SUBSCRIPTIONS_STORAGE, JSON.stringify({
           userKey: this.userKey,
           subscription: registrationPayload,
+          correctEndpoint: fcmEndpoint, // Store the correct FCM endpoint
           origin,
           registeredAt: Date.now()
         }))
 
         console.log('✅ Push subscription registered successfully:', response.userKey)
+        console.log('🔑 Generated keys - p256dh:', keys.p256dh.substring(0, 20) + '...')
+        console.log('🔑 Generated keys - auth:', keys.auth.substring(0, 20) + '...')
+        console.log('🔗 Endpoint:', fcmEndpoint)
+        console.log('💾 PushSubscription object stored and ready for browser.tsx import')
+      }
+
+      if (response.success) {
+        response.fcmEndpoint = fcmEndpoint
       }
 
       return response
@@ -326,12 +402,20 @@ export class NotificationBackendService {
       return { success: response.ok, data }
     } catch (error) {
       console.error('❌ Health check failed:', error)
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Health check failed' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Health check failed'
       }
     }
   }
+}
+
+/**
+ * Get the current PushSubscription object created during registration
+ * This ensures consistent keys between backend registration and browser usage
+ */
+export function getPushSubscription(): PushSubscription | null {
+  return currentPushSubscription
 }
 
 // Export singleton instance
