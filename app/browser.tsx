@@ -684,7 +684,11 @@ function Browser() {
     if ('Notification' in window) {
       return;
     }
-
+    (function() {
+    const style = document.createElement('style');
+    style.innerHTML = '* { -webkit-tap-highlight-color: transparent; }';
+    document.head.appendChild(style);
+  })();
     // Polyfill Notification constructor
     window.Notification = function(title, options = {}) {
       this.title = title;
@@ -1606,7 +1610,7 @@ function Browser() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={addressFocused ? (Platform.OS === 'ios' ? 'padding' : 'height') : undefined}
+        behavior={addressFocused ? ('padding') : undefined}
       >
         <SafeAreaView
           style={[
@@ -2060,16 +2064,14 @@ const TabsViewBase = ({
   const handleNewTabPress = useCallback(() => {
     // Prevent multiple rapid presses
     if (isCreatingTab) return
-
     setIsCreatingTab(true)
-    // Create new tab and dismiss view after animation
     tabStore.newTab()
-    // Reset address text to new tab URL
+    Keyboard.dismiss()
     setAddressText(kNEW_TAB_URL)
-    onDismiss()
-    setAddressFocused(false)
     // Reset cooldown after a short delay
     setTimeout(() => {
+      setAddressFocused(false)
+      onDismiss()
       setIsCreatingTab(false)
     }, 300)
   }, [newTabScale, onDismiss, setAddressText, isCreatingTab, setAddressFocused])
@@ -2383,7 +2385,7 @@ const BottomToolbar = ({
       canGoForward: activeTab.canGoForward,
       isNewTab: activeTab.url === kNEW_TAB_URL,
       kNEW_TAB_URL: kNEW_TAB_URL,
-      backButtonDisabled: !activeTab.canGoBack || activeTab.url === kNEW_TAB_URL
+      backButtonDisabled: !activeTab.canGoBack || activeTab.url === kNEW_TAB_URL,
     })
   })
 
