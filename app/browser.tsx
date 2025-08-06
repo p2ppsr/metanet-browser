@@ -60,13 +60,12 @@ import TrustScreen from './trust'
 /*                                   HELPERS                                   */
 /* -------------------------------------------------------------------------- */
 
-import NotificationPermissionModal from '@/components/NotificationPermissionModal'
-import NotificationSettingsModal from '@/components/NotificationSettingsModal'
-import { usePushNotifications } from '@/hooks/usePushNotifications'
-
+import { PendingNotification, usePushNotifications } from '@/hooks/usePushNotifications'
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
 import * as Notifications from 'expo-notifications'
+import { initializeFirebaseNotifications, setWebViewMessageCallback } from '@/utils/pushNotificationManager'
+import { getPermissionState, PermissionType, setDomainPermission } from '@/utils/permissionsManager'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -331,6 +330,130 @@ function Browser() {
   const [showBalance, setShowBalance] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  const [permissionsDeniedForCurrentDomain, setPermissionsDeniedForCurrentDomain] = useState<PermissionType[]>([])
+
+  const handlePermissionChangeFromScreen = useCallback(
+    async (permission: PermissionType, state: PermissionState) => {
+      console.log(`[Browser] Permission changed in PermissionsScreen: ${permission} -> ${state}`)
+
+      // Update the WebView with the new permission state
+      if (tabStore.activeTab?.webviewRef?.current && tabStore.activeTab.url) {
+        // Update the denied permissions list for the current domain
+        await updateDeniedPermissionsForDomain(tabStore.activeTab.url)
+        const domain = new URL(tabStore.activeTab.url).hostname
+        console.log(`[Browser] Updated denied permissions for ${domain}`)
+
+        // Inject JavaScript to update the WebView's permissions immediately
+        if (tabStore.activeTab?.webviewRef?.current) {
+          const updateScript = `
+          (function() {
+            // Override console.log to send logs to React Native terminal
+            const originalConsoleLog = console.log;
+            console.log = function(...args) {
+              const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+              ).join(' ');
+              
+              // Send to React Native
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'console_log',
+                  message: message
+                }));
+              }
+              
+              // Also call original console.log for any native browser dev tools
+              originalConsoleLog.apply(console, args);
+            };
+            
+            console.log('[Metanet] Updating permission: ${permission} to ${state}');
+            
+            // Update the denied permissions list
+            window.__metanetDeniedPermissions = ${JSON.stringify(permissionsDeniedForCurrentDomain)};
+            
+            // Check if we need to update specific API overrides
+            if ('${permission}' === 'CAMERA' || '${permission}' === 'RECORD_AUDIO') {
+              // Restore original getUserMedia if permissions are now allowed
+              if ('${state}' === 'allow' && navigator.mediaDevices.__originalGetUserMedia) {
+                console.log('[Metanet] Restoring original getUserMedia for ${permission}');
+                navigator.mediaDevices.getUserMedia = navigator.mediaDevices.__originalGetUserMedia;
+              } 
+              // Override getUserMedia if permissions are now denied
+              else if ('${state}' === 'deny') {
+                console.log('[Metanet] Overriding getUserMedia for ${permission}');
+                if (!navigator.mediaDevices.__originalGetUserMedia) {
+                  navigator.mediaDevices.__originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+                }
+                navigator.mediaDevices.getUserMedia = function(constraints) {
+                  if ('${permission}' === 'CAMERA' && constraints && constraints.video) {
+                    return Promise.reject(new DOMException('Camera access denied by site settings', 'NotAllowedError'));
+                  }
+                  if ('${permission}' === 'RECORD_AUDIO' && constraints && constraints.audio) {
+                    return Promise.reject(new DOMException('Microphone access denied by site settings', 'NotAllowedError'));
+                  }
+                  return navigator.mediaDevices.__originalGetUserMedia.call(navigator.mediaDevices, constraints);
+                };
+              }
+            }
+            
+            // Handle location permission changes
+            if ('${permission}' === 'ACCESS_FINE_LOCATION') {
+              if ('${state}' === 'allow') {
+                // Restore original geolocation methods if permissions are now allowed
+                console.log('[Metanet] Restoring original geolocation methods');
+                if (navigator.geolocation.__originalGetCurrentPosition) {
+                  navigator.geolocation.getCurrentPosition = navigator.geolocation.__originalGetCurrentPosition;
+                }
+                if (navigator.geolocation.__originalWatchPosition) {
+                  navigator.geolocation.watchPosition = navigator.geolocation.__originalWatchPosition;
+                }
+              } else if ('${state}' === 'deny') {
+                // Override geolocation methods if permissions are now denied
+                console.log('[Metanet] Overriding geolocation methods');
+                if (!navigator.geolocation.__originalGetCurrentPosition) {
+                  navigator.geolocation.__originalGetCurrentPosition = navigator.geolocation.getCurrentPosition;
+                }
+                if (!navigator.geolocation.__originalWatchPosition) {
+                  navigator.geolocation.__originalWatchPosition = navigator.geolocation.watchPosition;
+                }
+                
+                navigator.geolocation.getCurrentPosition = function(success, error) {
+                  if (error) {
+                    error(new Error('Location access denied by site settings'));
+                  }
+                  return undefined;
+                };
+                
+                navigator.geolocation.watchPosition = function(success, error) {
+                  if (error) {
+                    error(new Error('Location access denied by site settings'));
+                  }
+                  return 0; // Return a fake watch ID
+                };
+              }
+            }
+            
+            // Notify the page about the permission change
+            const event = new CustomEvent('permissionchange', { 
+              detail: { permission: '${permission}', state: '${state}' }
+            });
+            document.dispatchEvent(event);
+            console.log('[Metanet] Dispatched permissionchange event for ${permission}');
+          })();
+        `
+          tabStore.activeTab.webviewRef.current.injectJavaScript(updateScript)
+          console.log(`[Browser] Injected permission update script for ${permission}`)
+        }
+      }
+    },
+    [permissionsDeniedForCurrentDomain]
+  )
+
+  const [permissionModalVisible, setPermissionModalVisible] = useState(false)
+  const [pendingPermission, setPendingPermission] = useState<PermissionType | null>(null)
+  const [pendingDomain, setPendingDomain] = useState<string | null>(null)
+  const [pendingCallback, setPendingCallback] = useState<((granted: boolean) => void) | null>(null)
+
   // Safety check - if somehow activeTab is null, force create a new tab
   // This is done after all hooks to avoid violating Rules of Hooks
   useEffect(() => {
@@ -350,16 +473,121 @@ function Browser() {
     }
   }, [showInfoDrawer, infoDrawerRoute])
 
-  /* ------------------------- push notifications ----------------------------- */
-  const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } =
-    usePushNotifications()
+  const enterFullscreen = useCallback(async () => {
+    try {
+      setIsFullscreen(true)
+      console.log('Entering fullscreen mode')
+    } catch (error) {
+      console.warn('Failed to enter fullscreen:', error)
+    }
+  }, [])
 
-  const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false)
-  const [showNotificationSettingsModal, setShowNotificationSettingsModal] = useState(false)
-  const [notificationRequestOrigin, setNotificationRequestOrigin] = useState('')
-  const [notificationRequestResolver, setNotificationRequestResolver] = useState<((granted: boolean) => void) | null>(
-    null
+  const exitFullscreen = useCallback(async () => {
+    try {
+      setIsFullscreen(false)
+      console.log('Exiting fullscreen mode')
+    } catch (error) {
+      console.warn('Failed to exit fullscreen:', error)
+    }
+
+  }, [])
+  /* ------------------------- push notifications ----------------------------- */
+  const { requestPermission, showLocalNotification, pendingNotifications } = usePushNotifications()
+
+  // WebView ref for notification forwarding
+  const webViewRef = useRef<any>(null)
+
+  const forwardNotificationToWebView = useCallback(
+    (notification: PendingNotification) => {
+      if (webViewRef.current && activeTab && activeTab.url) {
+        const domain = domainForUrl(activeTab.url)
+
+        // Only forward if notification is for the current domain
+        if (domain && notification.origin === domain) {
+          console.log('🌉 Forwarding FCM notification to WebView:', notification)
+
+          // Inject JavaScript to trigger push event in WebView
+          const jsCode = `
+          (function() {
+            try {
+              if (window.navigator && window.navigator.serviceWorker) {
+                // Dispatch push event to service worker if available
+                const event = new Event('push');
+                event.data = {
+                  json: () => (${JSON.stringify({
+            title: notification.title,
+            body: notification.body,
+            data: notification.data
+          })})
+                };
+                window.dispatchEvent(event);
+              }
+              
+              // Also trigger any custom push listeners
+              window.dispatchEvent(new CustomEvent('metanet-push-notification', {
+                detail: ${JSON.stringify(notification)}
+              }));
+              
+              console.log('✅ Push notification forwarded to WebView');
+            } catch (error) {
+              console.error('❌ Error forwarding push notification:', error);
+            }
+          })()
+        `
+
+          webViewRef.current.injectJavaScript(jsCode)
+        }
+      }
+    },
+    [activeTab?.url]
   )
+
+  // Initialize notification system and set up bridge
+  useEffect(() => {
+    console.log('🚀 Initializing WebView-Native notification bridge')
+
+    // Initialize Firebase notifications
+    initializeFirebaseNotifications().catch(console.error)
+
+    // Set callback for FCM notifications to forward to WebView
+    setWebViewMessageCallback(forwardNotificationToWebView)
+
+    return () => {
+      // Clean up callback on unmount
+      setWebViewMessageCallback(() => { })
+    }
+  }, [forwardNotificationToWebView])
+
+  /* ----------------------------- permissions ----------------------------- */
+
+  const updateDeniedPermissionsForDomain = useCallback(async (url: string) => {
+    try {
+      const domain = domainForUrl(url)
+      const allPermissions: PermissionType[] = ['CAMERA', 'RECORD_AUDIO', 'ACCESS_FINE_LOCATION']
+      const deniedPermissions: PermissionType[] = []
+
+      // Check each permission
+      for (const permission of allPermissions) {
+        const state = await getPermissionState(domain, permission)
+        if (state === 'deny') {
+          deniedPermissions.push(permission)
+        }
+      }
+
+      // Log the denied permissions for debugging
+      console.log(`Permissions denied for ${domain}:`, deniedPermissions)
+
+      // Update the state variable that's used in the injected JavaScript
+      setPermissionsDeniedForCurrentDomain(deniedPermissions)
+
+      // If we have an active WebView and we're on this domain currently,
+      // we could trigger a reload to apply the new permission settings
+      // Alternatively, we let navigation events handle refreshing
+    } catch (error) {
+      console.error('Failed to update denied permissions:', error)
+    }
+  }, [])
+
 
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
@@ -614,33 +842,10 @@ function Browser() {
   const responderProps =
     addressFocused && keyboardVisible
       ? {
-          onStartShouldSetResponder: () => true,
-          onResponderRelease: dismissKeyboard
-        }
+        onStartShouldSetResponder: () => true,
+        onResponderRelease: dismissKeyboard
+      }
       : {}
-
-  /* -------------------------------------------------------------------------- */
-  /*                           NOTIFICATION HANDLERS                            */
-  /* -------------------------------------------------------------------------- */
-
-  const handleNotificationPermissionRequest = async (origin: string): Promise<'granted' | 'denied' | 'default'> => {
-    return new Promise(resolve => {
-      setNotificationRequestOrigin(origin)
-      setNotificationRequestResolver(() => (granted: boolean) => {
-        resolve(granted ? 'granted' : 'denied')
-      })
-      setShowNotificationPermissionModal(true)
-    })
-  }
-
-  const handleNotificationPermissionResponse = (granted: boolean) => {
-    if (notificationRequestResolver) {
-      notificationRequestResolver(granted)
-      setNotificationRequestResolver(null)
-    }
-    setShowNotificationPermissionModal(false)
-    setNotificationRequestOrigin('')
-  }
 
   /* -------------------------------------------------------------------------- */
   /*                           WEBVIEW MESSAGE HANDLER                          */
@@ -978,7 +1183,7 @@ function Browser() {
       // Handle fullscreen requests
       if (msg.type === 'REQUEST_FULLSCREEN') {
         console.log('Fullscreen requested by website')
-        setIsFullscreen(true)
+        await enterFullscreen()
 
         // Send success response back to webview
         if (activeTab.webviewRef?.current) {
@@ -1003,7 +1208,7 @@ function Browser() {
       // Handle exit fullscreen requests
       if (msg.type === 'EXIT_FULLSCREEN') {
         console.log('Exit fullscreen requested by website')
-        setIsFullscreen(false)
+        await exitFullscreen()
 
         // Send response back to webview
         if (activeTab.webviewRef?.current) {
@@ -1025,13 +1230,56 @@ function Browser() {
         return
       }
 
-      // Handle notification permission request
+      // Handle notification permission requests
       if (msg.type === 'REQUEST_NOTIFICATION_PERMISSION') {
-        const permission = await handleNotificationPermissionRequest(activeTab.url)
+        console.log('[WebView] 🔔 Notification permission request detected')
+        console.log('[WebView] 🌐 Current URL:', activeTab.url)
+        console.log('[WebView] 📋 Message data:', msg)
 
-        if (activeTab.webviewRef?.current) {
-          activeTab.webviewRef.current.injectJavaScript(`
-              window.Notification.permission = '${permission}';
+        try {
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error('[WebView] ❌ Cannot get domain from URL for notification permission')
+            return
+          }
+
+          console.log('[WebView] 🌐 Extracted domain:', domain)
+
+          // Check the current permission state in permissions manager
+          // NOTIFICATIONS now only has Allow/Deny states (defaults to Deny)
+          const currentPermissionState = await getPermissionState(domain, 'NOTIFICATIONS')
+          console.log('[WebView] 🔍 Current permission state for domain:', domain, '=', currentPermissionState)
+
+          let permission: string
+
+          if (currentPermissionState === 'allow') {
+            // If explicitly allowed, return granted
+            console.log('[WebView] ✅ Permission explicitly allowed for domain:', domain)
+            permission = 'granted'
+          } else {
+            // Default is deny - if not explicitly allowed, it's denied
+            console.log('[WebView] ❌ Permission denied for domain (default or explicit):', domain)
+            permission = 'denied'
+          }
+
+          console.log('[WebView] ✅ Permission result:', permission)
+          console.log('[WebView] 📤 Sending permission response to webview')
+
+          // Send response back to webview and update permission property
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              console.log('[WebView Response] Received permission response: ${permission}');
+              
+              // CRITICAL: Update the actual Notification.permission property
+              if (window.Notification) {
+                Object.defineProperty(window.Notification, 'permission', {
+                  value: '${permission}',
+                  writable: false,
+                  configurable: true
+                });
+                console.log('[WebView Response] Updated Notification.permission to:', window.Notification.permission);
+              }
+              
               window.dispatchEvent(new MessageEvent('message', {
                 data: JSON.stringify({
                   type: 'NOTIFICATION_PERMISSION_RESPONSE',
@@ -1039,82 +1287,186 @@ function Browser() {
                 })
               }));
             `)
-        }
-        return
-      }
-
-      // Handle push subscription for remote notifications
-      if (msg.type === 'PUSH_SUBSCRIBE') {
-        try {
-          const subscription = await createPushSubscription(activeTab.url, msg.options?.applicationServerKey)
-
-          if (activeTab.webviewRef?.current) {
-            activeTab.webviewRef.current.injectJavaScript(`
-                window.dispatchEvent(new MessageEvent('message', {
-                  data: JSON.stringify({
-                    type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                    subscription: ${JSON.stringify(subscription)}
-                  })
-                }));
-              `)
+            console.log('[WebView] ✅ Permission response sent successfully')
+          } else {
+            console.error('[WebView] ❌ Cannot send response: webviewRef is null')
           }
         } catch (error) {
-          console.error('Error creating push subscription:', error)
+          console.error('[WebView] ❌ Error handling notification permission request:', error)
           if (activeTab.webviewRef?.current) {
             activeTab.webviewRef.current.injectJavaScript(`
-                window.dispatchEvent(new MessageEvent('message', {
-                  data: JSON.stringify({
-                    type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                    subscription: null,
-                    error: '${error}'
-                  })
-                }));
-              `)
-          }
-        }
-        return
-      }
-
-      // Handle get existing push subscription
-      if (msg.type === 'GET_PUSH_SUBSCRIPTION') {
-        const subscription = getSubscription(activeTab.url)
-
-        if (activeTab.webviewRef?.current) {
-          activeTab.webviewRef.current.injectJavaScript(`
+              console.error('[WebView Response] Permission request failed:', '${error}');
               window.dispatchEvent(new MessageEvent('message', {
                 data: JSON.stringify({
-                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                  subscription: ${JSON.stringify(subscription)}
+                  type: 'NOTIFICATION_PERMISSION_RESPONSE',
+                  permission: 'denied'
                 })
               }));
             `)
+          }
         }
         return
       }
 
-      // Handle immediate local notifications
-      if (msg.type === 'SHOW_NOTIFICATION') {
+      // Handle general permission requests (for permissions UI)
+      if (msg.type === 'REQUEST_PERMISSION') {
+        console.log('[WebView] 🔐 General permission request detected')
+        console.log('[WebView] 📋 Permission type:', msg.permission)
+        console.log('[WebView] 🌐 Current URL:', activeTab.url)
+
         try {
-          const permission = getPermission(activeTab.url)
-          if (permission === 'granted') {
-            // Show notification immediately
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: msg.title || t('website_notification'),
-                body: msg.body || '',
-                data: {
-                  origin: activeTab.url,
-                  type: 'website',
-                  url: activeTab.url,
-                  icon: msg.icon,
-                  tag: msg.tag,
-                  ...msg.data
-                },
-                sound: true
-              },
-              trigger: null
-            })
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error('[WebView] ❌ Cannot get domain from URL for permission request')
+            return
           }
+
+          const permissionType = msg.permission as PermissionType
+          console.log('[WebView] 🔑 Requesting permission:', permissionType, 'for domain:', domain)
+
+          // Special handling for NOTIFICATIONS - integrate with push notification system
+          if (permissionType === 'NOTIFICATIONS') {
+            const result = await requestPermission(domain)
+            const permission = result.granted ? 'granted' : 'denied'
+
+            // Also update the general permissions system
+            const permissionState: PermissionState =
+              permission === 'granted' ? 'allow' : permission === 'denied' ? 'deny' : 'ask'
+            await setDomainPermission(domain, 'NOTIFICATIONS', permissionState)
+
+            console.log('[WebView] ✅ NOTIFICATIONS permission result:', permission, '-> state:', permissionState)
+
+            // Send response back to webview
+            if (activeTab.webviewRef?.current) {
+              activeTab.webviewRef.current.injectJavaScript(`
+                console.log('[WebView Response] Permission granted for NOTIFICATIONS: ${permission}');
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify({
+                    type: 'PERMISSION_RESPONSE',
+                    permission: '${permissionType}',
+                    result: '${permissionState}'
+                  })
+                }));
+              `)
+            }
+          } else {
+            // Handle other permissions through the standard system
+            console.log('[WebView] 🔄 Handling standard permission:', permissionType)
+
+            // For now, we'll prompt the user and set to 'allow' (this can be enhanced with actual UI prompts)
+            await setDomainPermission(domain, permissionType, 'allow')
+
+            // Send response back to webview
+            if (activeTab.webviewRef?.current) {
+              activeTab.webviewRef.current.injectJavaScript(`
+                console.log('[WebView Response] Permission granted for ${permissionType}');
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify({
+                    type: 'PERMISSION_RESPONSE',
+                    permission: '${permissionType}',
+                    result: 'allow'
+                  })
+                }));
+              `)
+            }
+          }
+        } catch (error) {
+          console.error('[WebView] ❌ Error handling general permission request:', error)
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              console.error('[WebView Response] Permission request failed:', '${error}');
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'PERMISSION_RESPONSE',
+                  permission: '${msg.permission}',
+                  result: 'deny'
+                })
+              }));
+            `)
+          }
+        }
+        return
+      }
+
+      // Handle show notification requests
+      if (msg.type === 'SHOW_NOTIFICATION') {
+        console.log('[WebView] 📢 Show notification request received')
+        console.log('[WebView] 📋 Notification data:', msg)
+        console.log('[WebView] 🌐 Current URL:', activeTab.url)
+
+        try {
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error('[WebView] ❌ Cannot get domain from URL for notification')
+            return
+          }
+
+          console.log('[WebView] 🌐 Extracted domain:', domain)
+
+          // First check the push notification permission system
+          // Note: Using simplified permission check for now
+          const hasPushPermission = true // Will be properly integrated with backend permission system
+
+          console.log('[WebView] 🔑 Push permissions for domain:', {
+            found: hasPushPermission,
+            permission: hasPushPermission ? 'granted' : 'denied',
+            hasPushPermission
+          })
+
+          // Check the general permission system (this takes precedence)
+          const permissionState = await getPermissionState(domain, 'NOTIFICATIONS')
+
+          console.log('[WebView] 🔑 General permissions for domain:', {
+            permissionState
+          })
+
+          // NOTIFICATIONS now only has Allow/Deny states (defaults to Deny)
+          // Only allow notifications if explicitly set to 'allow' AND push permission is granted
+          const canShowNotification = permissionState === 'allow' && hasPushPermission
+
+          if (permissionState !== 'allow') {
+            console.log('[WebView] ❌ Notifications not allowed - permission state:', permissionState)
+            return
+          }
+
+          if (!hasPushPermission) {
+            console.log('[WebView] ❌ Notifications not allowed - push permission not granted')
+            return
+          }
+
+          console.log('[WebView] 🔍 Final permission check:', {
+            domain,
+            pushPermission: hasPushPermission ? 'granted' : 'denied',
+            generalPermission: permissionState,
+            hasPushPermission,
+            canShowNotification
+          })
+
+          if (!canShowNotification) {
+            console.log('[WebView] ❌ Notifications not allowed for domain:', domain)
+            console.log('[WebView] ❌ Push permission:', hasPushPermission ? 'granted' : 'denied')
+            console.log('[WebView] ❌ General permission:', permissionState)
+            console.log('[WebView] ❌ Reason: Permission denied or not properly granted')
+            return
+          }
+
+          console.log('[WebView] ✅ Permission check passed, scheduling notification')
+
+          // Schedule the notification using Expo Notifications
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: msg.title || 'Notification',
+              body: msg.body || '',
+              data: {
+                url: activeTab.url,
+                domain: domain,
+                ...msg.data
+              }
+            },
+            trigger: null // Show immediately
+          })
+
+          console.log('Notification scheduled successfully')
         } catch (error) {
           console.error('Error showing notification:', error)
         }
@@ -1171,7 +1523,7 @@ function Browser() {
         console.error('Error processing wallet API call:', msg.call, error)
       }
     },
-    [activeTab, wallet, createPushSubscription, getSubscription, getPermission, handleNotificationPermissionRequest, t]
+    [activeTab, wallet, t]
   )
 
   /* -------------------------------------------------------------------------- */
@@ -1217,7 +1569,7 @@ function Browser() {
         title: navState.title || navState.url,
         url: navState.url,
         timestamp: Date.now()
-      }).catch(() => {})
+      }).catch(() => { })
     }
   }
 
@@ -1955,19 +2307,6 @@ function Browser() {
               </View>
             </Pressable>
           </RNModal>
-
-          {/* Add these notification modals */}
-          <NotificationPermissionModal
-            visible={showNotificationPermissionModal}
-            origin={notificationRequestOrigin}
-            onDismiss={() => setShowNotificationPermissionModal(false)}
-            onResponse={handleNotificationPermissionResponse}
-          />
-
-          <NotificationSettingsModal
-            visible={showNotificationSettingsModal}
-            onDismiss={() => setShowNotificationSettingsModal(false)}
-          />
         </SafeAreaView>
       </KeyboardAvoidingView>
     </GestureHandlerRootView>
