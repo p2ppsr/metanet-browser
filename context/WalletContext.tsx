@@ -764,7 +764,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({ children =
       logWithTimestamp(F, 'Managers reset')
 
       // Reset configuration state
-      setConfigStatus('configured')
+      setConfigStatus('initial')
       setSnapshotLoaded(false)
       setWalletBuilt(false)
       logWithTimestamp(F, 'Configuration and state reset')

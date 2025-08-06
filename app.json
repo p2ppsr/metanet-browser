@@ -2,12 +2,12 @@
   "expo": {
     "name": "Metanet",
     "slug": "metanet-mobile",
-    "version": "0.2.3",
-    "orientation": "default",
+    "version": "0.2.2",
+    "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -61,10 +61,7 @@
         "android.permission.VIBRATE",
         "android.permission.WAKE_LOCK",
         "android.permission.INTERNET",
-        "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ],
       "googleServicesFile": "google-services.json",
       "intentFilters": [
@@ -79,10 +76,7 @@
               "scheme": "http"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         },
         {
           "action": "VIEW",
@@ -91,82 +85,30 @@
               "scheme": "metanet"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
-      ],
-      "queries": [
-        {
-          "intent": {
-            "action": "android.intent.action.VIEW",
-            "category": "android.intent.category.BROWSABLE",
-            "data": {
-              "scheme": "https"
-            }
-          }
-        },
-        {
-          "intent": {
-            "action": "android.intent.action.VIEW",
-            "category": "android.intent.category.BROWSABLE",
-            "data": {
-              "scheme": "http"
-            }
-          },
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        },
-        {
-          "action": "VIEW",
-          "data": [
-            {
-              "scheme": "uhrp"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
-      ],
-      "jsEngine": "hermes"
+      ]
     },
     "ios": {
       "bundleIdentifier": "org.bsvblockchain.metanet",
       "googleServicesFile": "GoogleService-Info.plist",
       "infoPlist": {
-        "NSCameraUsageDescription": "This app needs camera access to scan QR codes and barcodes.",
+        "NSCameraUsageDescription": "This app needs camera access to scan QR codes.",
         "NSPhotoLibraryUsageDescription": "This app needs photo library access to let you select images.",
         "NSMicrophoneUsageDescription": "This app needs microphone access for video recording features.",
-        "NSLocationWhenInUseUsageDescription": "This app needs your location to provide location-based features on websites.",
         "NSFaceIDUsageDescription": "This app uses Face ID/Touch ID to securely authenticate you and protect your wallet.",
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "org.bsvblockchain.metanet.urlscheme",
-            "CFBundleURLSchemes": [
-              "metanet",
-              "http",
-              "https",
-              "uhrp"
-            ]
+            "CFBundleURLSchemes": ["metanet", "http", "https"]
           }
         ],
-        "LSApplicationQueriesSchemes": [
-          "https",
-          "http",
-          "uhrp"
-        ]
+        "LSApplicationQueriesSchemes": ["https", "http"]
       },
       "entitlements": {
         "aps-environment": "development",
-        "com.apple.developer.associated-domains": [
-          "applinks:*"
-        ]
+        "com.apple.developer.associated-domains": ["applinks:*"]
       }
     },
     "notification": {
@@ -175,10 +117,6 @@
       "iosDisplayInForeground": true,
       "androidMode": "default",
       "androidCollapsedTitle": "#{unread_notifications} new interactions"
-    },
-    "reactNativeConfig": {
-      "enableHermes": true,
-      "enableFabricRenderer": false
     },
     "owner": "bsvb"
   }

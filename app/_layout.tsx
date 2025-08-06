@@ -1,3 +1,6 @@
+import 'react-native-quick-crypto'
+import { Buffer } from 'buffer'
+global.Buffer = Buffer
 import React, { useEffect, useState } from 'react'
 import { Stack } from 'expo-router'
 import { UserContextProvider, NativeHandlers } from '../context/UserContext'
