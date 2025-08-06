@@ -375,9 +375,15 @@ function Browser() {
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardVisible(false)
       setKeyboardHeight(0)
-      if (addressInputRef.current) {
-      }
-      addressInputRef.current?.blur()
+
+      setTimeout(() => {
+        if (addressEditing.current || addressInputRef.current?.isFocused()) {
+          addressEditing.current = false
+          setAddressFocused(false)
+          setAddressSuggestions([])
+          addressInputRef.current?.blur()
+        }
+      }, 50)
     })
     return () => {
       showSub.remove()
@@ -506,7 +512,7 @@ function Browser() {
       entry = kNEW_TAB_URL
     } else if (!isProbablyUrl) {
       // Not a URL, treat as a search query
-      entry = kGOOGLE_PREFIX + encodeURIComponent(entry)
+      entry = kGOOGLE_PREFIX + encodeURI(entry)
     } else if (!hasProtocol) {
       // Add appropriate protocol based on whether it's an IP address or regular domain
       if (isIpAddress) {
@@ -636,9 +642,9 @@ function Browser() {
   const responderProps =
     addressFocused && keyboardVisible
       ? {
-        onStartShouldSetResponder: () => true,
-        onResponderRelease: dismissKeyboard
-      }
+          onStartShouldSetResponder: () => true,
+          onResponderRelease: dismissKeyboard
+        }
       : {}
 
   /* -------------------------------------------------------------------------- */
@@ -1239,7 +1245,7 @@ function Browser() {
         title: navState.title || navState.url,
         url: navState.url,
         timestamp: Date.now()
-      }).catch(() => { })
+      }).catch(() => {})
     }
   }
 
@@ -1668,11 +1674,19 @@ function Browser() {
                 }}
                 onHttpError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent
-                  // Ignore favicon errors for about:blank
                   if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
                     return
                   }
                   console.warn('WebView HTTP error:', nativeEvent)
+                }}
+                onLoadStart={({ nativeEvent }) => {
+                  console.log(`[WebView] start loading ${nativeEvent.url}`)
+                }}
+                onLoadProgress={({ nativeEvent }) => {
+                  console.log(`[WebView] ${Math.floor(nativeEvent.progress * 100)}%`)
+                }}
+                onLoadEnd={({ nativeEvent }) => {
+                  console.log(`[WebView] finished loading ${nativeEvent.url}`)
                 }}
                 javaScriptEnabled
                 domStorageEnabled
@@ -1808,7 +1822,12 @@ function Browser() {
           )}
 
           {!isFullscreen && showTabsView && (
-            <TabsView onDismiss={() => setShowTabsView(false)} setAddressText={setAddressText} colors={colors} />
+            <TabsView
+              onDismiss={() => setShowTabsView(false)}
+              setAddressText={setAddressText}
+              colors={colors}
+              setAddressFocused={setAddressFocused}
+            />
           )}
 
           {!isFullscreen && (showStarDrawer || isDrawerAnimating) && (
@@ -2007,11 +2026,13 @@ export default observer(Browser)
 const TabsViewBase = ({
   onDismiss,
   setAddressText,
-  colors
+  colors,
+  setAddressFocused
 }: {
   onDismiss: () => void
   setAddressText: (text: string) => void
   colors: any
+  setAddressFocused: (focused: boolean) => void
 }) => {
   const { t } = useTranslation()
   // Use the imported tabStore directly
@@ -2030,16 +2051,17 @@ const TabsViewBase = ({
     if (isCreatingTab) return
 
     setIsCreatingTab(true)
-      // Create new tab and dismiss view after animation
-      tabStore.newTab()
-      // Reset address text to new tab URL
-      setAddressText(kNEW_TAB_URL)
-      onDismiss()
-      // Reset cooldown after a short delay
-      setTimeout(() => {
-        setIsCreatingTab(false)
-      }, 300)
-  }, [newTabScale, onDismiss, setAddressText, isCreatingTab])
+    // Create new tab and dismiss view after animation
+    tabStore.newTab()
+    // Reset address text to new tab URL
+    setAddressText(kNEW_TAB_URL)
+    onDismiss()
+    setAddressFocused(false)
+    // Reset cooldown after a short delay
+    setTimeout(() => {
+      setIsCreatingTab(false)
+    }, 300)
+  }, [newTabScale, onDismiss, setAddressText, isCreatingTab, setAddressFocused])
 
   const renderItem = ({ item }: { item: Tab }) => {
     const renderRightActions = (
@@ -2374,6 +2396,7 @@ const BottomToolbar = ({
     >
       <TouchableOpacity
         style={styles.toolbarButton}
+        disabled={!activeTab.canGoBack || activeTab.url === kNEW_TAB_URL}
         onPress={() => {
           console.log('🔘 Back Button Pressed:', {
             canGoBack: activeTab.canGoBack,
@@ -2383,14 +2406,14 @@ const BottomToolbar = ({
           })
           navBack()
         }}
-        disabled={isBackDisabled}
         activeOpacity={0.6}
-        delayPressIn={0}
+        delayPressIn={0.1}
       >
         <Ionicons name="arrow-back" size={24} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.toolbarButton}
+        disabled={!activeTab.canGoForward || activeTab.url === kNEW_TAB_URL}
         onPress={() => {
           console.log('🔘 Forward Button Pressed:', {
             canGoForward: activeTab.canGoForward,
@@ -2400,9 +2423,8 @@ const BottomToolbar = ({
           })
           navFwd()
         }}
-        disabled={isForwardDisabled}
         activeOpacity={0.6}
-        delayPressIn={0}
+        delayPressIn={0.1}
       >
         <Ionicons name="arrow-forward" size={24} color={!isForwardDisabled ? colors.textPrimary : '#cccccc'} />
       </TouchableOpacity>
@@ -2501,7 +2523,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
 
-/* tabs view */
+  /* tabs view */
   tabsViewContainer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 100
