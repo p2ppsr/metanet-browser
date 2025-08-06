@@ -173,24 +173,40 @@ export class TabStore {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     const tabIndex = this.tabs.findIndex(t => t.id === id)
     if (tabIndex === -1) return
+    const tab = this.tabs[tabIndex]
+    if (tab.webviewRef?.current) {
+      // Add cleanup before removing tab
+      tab.webviewRef.current.stopLoading()
+      tab.webviewRef.current.clearCache?.(true)
+      tab.webviewRef.current.clearHistory?.()
+    }
 
-    this.tabs.splice(tabIndex, 1)
-
-    // Clear navigation history for closed tab
     delete this.tabNavigationHistories[id]
     delete this.tabHistoryIndexes[id]
+    this.tabs.splice(tabIndex, 1)
 
     if (this.tabs.length === 0) {
       this.newTab()
       return
     }
 
+    // If we're closing the active tab, switch to another tab
     if (this.activeTabId === id) {
-      this.activeTabId = this.tabs[Math.max(tabIndex - 1, 0)].id
+      const newActiveTab = this.tabs[Math.max(tabIndex - 1, 0)]
+      this.setActiveTab(newActiveTab.id)
     }
+
     this.saveTabs()
   }
-
+  
+  async clearAllTabs() {
+    console.log('clearAllTabs() called');
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    this.nextId = 1;
+    const tabIds = this.tabs.map(t => t.id);
+    tabIds.forEach(id => this.closeTab(id));
+    this.saveTabs();
+  }
   handleNavigationStateChange(tabId: number, navState: WebViewNavigation) {
     const tab = this.tabs.find(t => t.id === tabId)
 

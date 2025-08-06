@@ -18,7 +18,8 @@ import {
   LayoutAnimation,
   ScrollView,
   Modal as RNModal,
-  BackHandler
+  BackHandler,
+  InteractionManager
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -2029,31 +2030,15 @@ const TabsViewBase = ({
     if (isCreatingTab) return
 
     setIsCreatingTab(true)
-
-    // Scale animation
-    Animated.sequence([
-      Animated.timing(newTabScale, {
-        toValue: 0.85,
-        duration: 100,
-        useNativeDriver: true
-      }),
-      Animated.timing(newTabScale, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true
-      })
-    ]).start(() => {
       // Create new tab and dismiss view after animation
       tabStore.newTab()
       // Reset address text to new tab URL
       setAddressText(kNEW_TAB_URL)
       onDismiss()
-
       // Reset cooldown after a short delay
       setTimeout(() => {
         setIsCreatingTab(false)
       }, 300)
-    })
   }, [newTabScale, onDismiss, setAddressText, isCreatingTab])
 
   const renderItem = ({ item }: { item: Tab }) => {
@@ -2084,11 +2069,16 @@ const TabsViewBase = ({
       <Swipeable
         renderRightActions={renderRightActions}
         renderLeftActions={renderLeftActions}
-        onSwipeableRightOpen={() => tabStore.closeTab(item.id)}
-        onSwipeableLeftOpen={() => tabStore.closeTab(item.id)}
-        friction={2}
-        rightThreshold={40}
-        leftThreshold={40}
+        friction={1}
+        leftThreshold={10}
+        rightThreshold={10}
+        overshootLeft={false}
+        overshootRight={false}
+        onSwipeableWillOpen={() => {
+          InteractionManager.runAfterInteractions(() => {
+            tabStore.closeTab(item.id)
+          })
+        }}
       >
         <Pressable
           style={[
@@ -2134,7 +2124,12 @@ const TabsViewBase = ({
                 <Text style={{ fontSize: 16, color: colors.textSecondary }}>{t('new_tab')}</Text>
               </View>
             ) : (
-              <WebView source={{ uri: item.url }} style={{ flex: 1 }} scrollEnabled={false} pointerEvents="none" />
+              <WebView
+                source={{ uri: item.url || kNEW_TAB_URL }}
+                style={{ flex: 1 }}
+                scrollEnabled={false}
+                pointerEvents="none"
+              />
             )}
             <View style={[styles.tabTitleBar, { backgroundColor: colors.inputBackground + 'E6' }]}>
               <Text numberOfLines={1} style={{ flex: 1, color: colors.textPrimary, fontSize: 12 }}>
@@ -2156,16 +2151,27 @@ const TabsViewBase = ({
       <FlatList
         data={tabStore.tabs.slice()}
         renderItem={renderItem}
-        keyExtractor={t => String(t.id)}
+        keyExtractor={item => item.id.toString()}
         numColumns={2}
+        removeClippedSubviews={false}
+        maxToRenderPerBatch={6}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={6}
+        windowSize={10}
+        getItemLayout={(data, index) => ({
+          length: ITEM_H + screen.width * 0.08,
+          offset: (ITEM_H + screen.width * 0.08) * Math.floor(index / 2),
+          index
+        })}
+        onContentSizeChange={() => {}}
+        extraData={tabStore.activeTabId}
         contentContainerStyle={{
           padding: 12,
           paddingTop: 32,
-          paddingBottom: 20 // Reduced padding since we have a bar now
+          paddingBottom: 20
         }}
       />
 
-      {/* New styled footer bar */}
       <View
         style={[
           styles.tabsViewFooterBar,
@@ -2176,37 +2182,48 @@ const TabsViewBase = ({
           }
         ]}
       >
-        <Animated.View style={{ transform: [{ scale: newTabScale }] }}>
-          <TouchableOpacity
-            style={[
-              styles.newTabBtn,
-              {
-                backgroundColor: colors.primary,
-                // Add visual feedback when disabled
-                ...(isCreatingTab && { opacity: 0.6 })
-              }
-            ]}
-            onPress={handleNewTabPress}
-            activeOpacity={0.7}
-            disabled={isCreatingTab}
-          >
-            <Text style={[styles.newTabIcon, { color: colors.background }]}>＋</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        <View style={{ flex: 1 }} />
+        <TouchableOpacity
+          onPress={handleNewTabPress}
+          disabled={isCreatingTab}
+          style={[styles.newTabBtn, { opacity: isCreatingTab ? 0.5 : 1, backgroundColor: colors.primary }]}
+        >
+          <Text style={[styles.newTabIcon, { color: colors.background }]}>＋</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[
             styles.doneButtonStyled,
             {
               backgroundColor: colors.primary,
-              shadowColor: colors.textPrimary
+              borderWidth: 1,
+              borderColor: colors.inputBorder
+            }
+          ]}
+          onPress={() => {
+            if (Platform.OS === 'ios') {
+              try {
+                const { ImpactFeedbackGenerator } = require('expo-haptics')
+                ImpactFeedbackGenerator.impactAsync(ImpactFeedbackGenerator.ImpactFeedbackStyle.Medium)
+              } catch (e) {}
+            }
+            tabStore.clearAllTabs()
+            onDismiss()
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={{ color: colors.background }}>{t('clear_all')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.doneButtonStyled,
+            {
+              backgroundColor: colors.primary
             }
           ]}
           onPress={onDismiss}
         >
-          <Text style={[styles.doneButtonText, { color: colors.background }]}>{t('done')}</Text>
+          <Text style={[{ color: colors.background }]}>{t('done')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -2484,7 +2501,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
 
-  /* tabs view */
+/* tabs view */
   tabsViewContainer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 100
@@ -2523,6 +2540,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -2541,6 +2559,14 @@ const styles = StyleSheet.create({
     right: 20,
     bottom: 56
   },
+  deleteAllTabsButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   doneButtonStyled: {
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -2553,10 +2579,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3
-  },
-  doneButtonText: {
-    fontSize: 16,
-    fontWeight: '600'
   },
   newTabBtn: {
     width: 56,

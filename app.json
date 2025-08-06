@@ -3,7 +3,7 @@
     "name": "Metanet",
     "slug": "metanet-mobile",
     "version": "0.2.2",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
     "userInterfaceStyle": "automatic",
