@@ -74,7 +74,7 @@ export default function PasswordScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior='padding' style={{ flex: 1 }}>
         <View style={styles.contentContainer}>
           <Text style={styles.title}>{t('enter_password')}</Text>
           <Text style={styles.subtitle}>{t('enter_password_subtitle')}</Text>
