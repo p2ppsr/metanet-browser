@@ -19,7 +19,8 @@ import {
   ScrollView,
   Modal as RNModal,
   BackHandler,
-  InteractionManager
+  InteractionManager,
+  ActivityIndicator
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -1583,6 +1584,24 @@ function Browser() {
 
   const addressDisplay = addressFocused ? addressText : domainForUrl(addressText)
 
+    const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const handle = InteractionManager.runAfterInteractions(() => {
+      setReady(true)
+    })
+    return () => handle.cancel?.()
+  }, [])
+
+    if (!ready) {
+    // you can show a spinner or a blank container until the view is "ready"
+    return (
+      <View style={styles.loaderContainer} onLayout={() => { /* ensures layout has happened */ }}>
+        <ActivityIndicator size="large" />
+      </View>
+    )
+  }
+  
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView
@@ -2459,6 +2478,14 @@ const BottomToolbar = ({
 /* -------------------------------------------------------------------------- */
 
 const styles = StyleSheet.create({
+  loaderContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  },
+  webview: {
+    flex: 1,
+  },
   container: { flex: 1 },
   addressBar: {
     flexDirection: 'row',
