@@ -1698,15 +1698,7 @@ function Browser() {
                   }
                   console.warn('WebView HTTP error:', nativeEvent)
                 }}
-                onLoadStart={({ nativeEvent }) => {
-                  console.log(`[WebView] start loading ${nativeEvent.url}`)
-                }}
-                onLoadProgress={({ nativeEvent }) => {
-                  console.log(`[WebView] ${Math.floor(nativeEvent.progress * 100)}%`)
-                }}
-                onLoadEnd={({ nativeEvent }) => {
-                  console.log(`[WebView] finished loading ${nativeEvent.url}`)
-                }}
+                onLoadEnd={navState => tabStore.handleNavigationStateChange(activeTab.id, { ...navState, loading: false })}
                 javaScriptEnabled
                 domStorageEnabled
                 allowsBackForwardNavigationGestures
@@ -2117,6 +2109,8 @@ const TabsViewBase = ({
         overshootRight={false}
         onSwipeableWillOpen={() => {
           InteractionManager.runAfterInteractions(() => {
+            setAddressFocused(false)
+            Keyboard.dismiss()
             tabStore.closeTab(item.id)
           })
         }}
@@ -2247,6 +2241,8 @@ const TabsViewBase = ({
                 ImpactFeedbackGenerator.impactAsync(ImpactFeedbackGenerator.ImpactFeedbackStyle.Medium)
               } catch (e) {}
             }
+            setAddressFocused(false)
+            Keyboard.dismiss()
             tabStore.clearAllTabs()
             onDismiss()
           }}
@@ -2415,7 +2411,7 @@ const BottomToolbar = ({
     >
       <TouchableOpacity
         style={styles.toolbarButton}
-        disabled={!activeTab.canGoBack || activeTab.url === kNEW_TAB_URL}
+        disabled={isBackDisabled}
         onPress={() => {
           console.log('🔘 Back Button Pressed:', {
             canGoBack: activeTab.canGoBack,
@@ -2432,7 +2428,7 @@ const BottomToolbar = ({
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.toolbarButton}
-        disabled={!activeTab.canGoForward || activeTab.url === kNEW_TAB_URL}
+        disabled={isForwardDisabled}
         onPress={() => {
           console.log('🔘 Forward Button Pressed:', {
             canGoForward: activeTab.canGoForward,
