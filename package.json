@@ -20,7 +20,8 @@
     "eas-build-post-install": "USE_FIREBASE=true ./scripts/android-firebase-patch.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "fix": "npm run format && npm run lint:fix"
+    "fix": "npm run format && npm run lint:fix",
+    "clean": "rm -rf yarn.lock && rm -rf .expo && rm -rf .expo-shared && rm -rf .vscode && rm -rf .idea && rm -rf ios/Pods && rm -rf android/.gradle && rm -rf android/app/build"
   },
   "dependencies": {
     "@bsv/sdk": "^1.6.20",
