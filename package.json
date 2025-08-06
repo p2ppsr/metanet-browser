@@ -16,6 +16,8 @@
     "lint": "expo lint",
     "lint:fix": "expo lint --fix",
     "configure": "./configure.sh",
+    "prebuild": "./scripts/configure.sh && expo prebuild && USE_FIREBASE=$(jq -r .expo.extra.useFirebase app.json) ./scripts/android-firebase-patch.sh",
+    "eas-build-post-install": "USE_FIREBASE=true ./scripts/android-firebase-patch.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "fix": "npm run format && npm run lint:fix"
