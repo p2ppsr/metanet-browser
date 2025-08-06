@@ -60,9 +60,5 @@ export const ExchangeRateContextProvider: React.FC<{
     return () => clearInterval(timerID)
   }, []) // Empty dependency array means this useEffect runs once when the component mounts
 
-  return (
-    <ExchangeRateContext.Provider value={contextValue}>
-      {children}
-    </ExchangeRateContext.Provider>
-  )
+  return <ExchangeRateContext.Provider value={contextValue}>{children}</ExchangeRateContext.Provider>
 }

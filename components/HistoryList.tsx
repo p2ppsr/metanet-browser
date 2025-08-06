@@ -1,12 +1,5 @@
 import React from 'react'
-import {
-  FlatList,
-  Pressable,
-  Text,
-  TouchableOpacity,
-  View,
-  StyleSheet
-} from 'react-native'
+import { FlatList, Pressable, Text, TouchableOpacity, View, StyleSheet } from 'react-native'
 import { Swipeable } from 'react-native-gesture-handler'
 import { useTheme } from '@/context/theme/ThemeContext'
 
@@ -23,12 +16,7 @@ interface Props {
   onClear: () => void
 }
 
-export const HistoryList = ({
-  history,
-  onSelect,
-  onDelete,
-  onClear
-}: Props) => {
+export const HistoryList = ({ history, onSelect, onDelete, onClear }: Props) => {
   const { colors } = useTheme()
 
   const renderItem = ({ item }: { item: HistoryEntry }) => (
@@ -42,16 +30,10 @@ export const HistoryList = ({
       onSwipeableRightOpen={() => onDelete(item.url)}
     >
       <Pressable style={styles.historyItem} onPress={() => onSelect(item.url)}>
-        <Text
-          numberOfLines={1}
-          style={{ color: colors.textPrimary, fontSize: 15 }}
-        >
+        <Text numberOfLines={1} style={{ color: colors.textPrimary, fontSize: 15 }}>
           {item.title}
         </Text>
-        <Text
-          numberOfLines={1}
-          style={{ color: colors.textSecondary, fontSize: 12 }}
-        >
+        <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 12 }}>
           {item.url}
         </Text>
       </Pressable>

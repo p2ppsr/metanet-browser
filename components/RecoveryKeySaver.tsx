@@ -24,7 +24,7 @@ const RecoveryKeySaver = () => {
   // Theme hooks
   const { colors, isDark } = useTheme()
   const themeStyles = useThemeStyles()
-  
+
   // State management
   const [open, setOpen] = useState(false)
   const [wasOriginallyFocused, setWasOriginallyFocused] = useState<boolean>(false)
@@ -32,36 +32,40 @@ const RecoveryKeySaver = () => {
   const [resolve, setResolve] = useState<Function>(() => {})
   const [reject, setReject] = useState<Function>(() => {})
   const [copied, setCopied] = useState(false)
-  
+
   // Checkbox states
   const [affirmative1, setAffirmative1] = useState(false)
   const [affirmative2, setAffirmative2] = useState(false)
   const [affirmative3, setAffirmative3] = useState(false)
-  
+
   const { managers, setRecoveryKeySaver } = useWallet()
-  
+
   const isAllChecked = affirmative1 && affirmative2 && affirmative3
-  
+
   // Define a dummy function for initialization
   const dummyHandler = useCallback((key: number[]): Promise<true> => {
     console.warn('Recovery key handler called before initialization')
     return Promise.resolve(true)
   }, [])
-  
+
   useEffect(() => {
     setRecoveryKeySaver((): any => {
       return (key: number[]): Promise<true> => {
         return new Promise((resolve, reject) => {
           const keyAsStr = Utils.toBase64(key)
-          setResolve(() => { return resolve })
-          setReject(() => { return reject })
+          setResolve(() => {
+            return resolve
+          })
+          setReject(() => {
+            return reject
+          })
           setRecoveryKey(keyAsStr)
           setOpen(true)
         })
       }
     })
   }, [managers])
-  
+
   const handleClose = () => {
     setOpen(false)
     setAffirmative1(false)
@@ -69,12 +73,12 @@ const RecoveryKeySaver = () => {
     setAffirmative3(false)
     setCopied(false)
   }
-  
+
   const onAbandon = () => {
     reject(new Error('User abandoned recovery key'))
     handleClose()
   }
-  
+
   const onKeySaved = () => {
     resolve(true)
     handleClose()
@@ -90,14 +94,14 @@ const RecoveryKeySaver = () => {
       Alert.alert('Error', 'Failed to copy recovery key')
     }
   }
-  
+
   const handleShare = async () => {
     try {
       const result = await Share.share({
         message: `Metanet Recovery Key:\n\n${recoveryKey}\n\nSaved: ${new Date().toLocaleString()}`,
         title: 'Metanet Recovery Key'
       })
-      
+
       if (result.action === Share.sharedAction) {
         Alert.alert('Success', 'Recovery key shared successfully')
       }
@@ -106,64 +110,56 @@ const RecoveryKeySaver = () => {
       Alert.alert('Error', 'Failed to share recovery key')
     }
   }
-  
+
   // Custom checkbox component for consistent styling
-  const Checkbox = ({ checked, onPress, label }: { checked: boolean, onPress: () => void, label: string }) => (
-    <TouchableOpacity 
-      style={styles.checkboxContainer} 
-      onPress={onPress}
-      activeOpacity={0.6}
-    >
+  const Checkbox = ({ checked, onPress, label }: { checked: boolean; onPress: () => void; label: string }) => (
+    <TouchableOpacity style={styles.checkboxContainer} onPress={onPress} activeOpacity={0.6}>
       <View style={[styles.checkbox, { borderColor: colors.primary }]}>
-        {checked && (
-          <Ionicons name="checkmark" size={18} color={colors.primary} />
-        )}
+        {checked && <Ionicons name="checkmark" size={18} color={colors.primary} />}
       </View>
-      <Text style={[styles.checkboxLabel, { color: colors.textPrimary }]}>
-        {label}
-      </Text>
+      <Text style={[styles.checkboxLabel, { color: colors.textPrimary }]}>{label}</Text>
     </TouchableOpacity>
   )
-  
+
   return (
-    <Modal
-      visible={open}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onAbandon}
-    >
+    <Modal visible={open} transparent={true} animationType="fade" onRequestClose={onAbandon}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.keyboardAvoid}
-          >
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
             <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
               <Text style={[styles.title, { color: colors.textPrimary }]}>Secure Access Backup and Recovery</Text>
-              
+
               <ScrollView style={styles.scrollView}>
                 {!affirmative1 && (
                   <View>
-                    <Text style={[styles.subtitle, { color: colors.textPrimary }]}>
-                      Save Your Recovery Key Now:
-                    </Text>
-                    
-                    <View style={[styles.keyContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+                    <Text style={[styles.subtitle, { color: colors.textPrimary }]}>Save Your Recovery Key Now:</Text>
+
+                    <View
+                      style={[
+                        styles.keyContainer,
+                        { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }
+                      ]}
+                    >
                       <Text style={[styles.recoveryKey, { color: colors.textPrimary }]} selectable>
                         {recoveryKey}
                       </Text>
                     </View>
-                    
+
                     <View style={styles.buttonsRow}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={[styles.actionButton, { backgroundColor: colors.primary }]}
                         onPress={handleCopy}
                       >
-                        <Ionicons name={copied ? "checkmark" : "copy-outline"} size={18} color={colors.buttonText} style={styles.buttonIcon} />
+                        <Ionicons
+                          name={copied ? 'checkmark' : 'copy-outline'}
+                          size={18}
+                          color={colors.buttonText}
+                          style={styles.buttonIcon}
+                        />
                         <Text style={[styles.buttonText, { color: colors.buttonText }]}>Copy to Clipboard</Text>
                       </TouchableOpacity>
-                      
-                      <TouchableOpacity 
+
+                      <TouchableOpacity
                         style={[styles.actionButton, { backgroundColor: colors.primary }]}
                         onPress={handleShare}
                       >
@@ -171,13 +167,14 @@ const RecoveryKeySaver = () => {
                         <Text style={[styles.buttonText, { color: colors.buttonText }]}>Share</Text>
                       </TouchableOpacity>
                     </View>
-                    
+
                     <Text style={[styles.description, { color: colors.textSecondary }]}>
-                      Take a screenshot, email it to yourself, print it out and put it in a safe, or save it to secure cloud storage.
+                      Take a screenshot, email it to yourself, print it out and put it in a safe, or save it to secure
+                      cloud storage.
                     </Text>
                   </View>
                 )}
-                
+
                 <View style={styles.checkboxesContainer}>
                   <Checkbox
                     checked={affirmative1}
@@ -185,34 +182,36 @@ const RecoveryKeySaver = () => {
                     label="I have saved my recovery key in a secure location"
                   />
                 </View>
-                
+
                 {affirmative1 && (
                   <View>
                     <Text style={[styles.subtitle, { color: colors.textPrimary }]}>
                       Any 2 of 3 factors are required to access your data:
                     </Text>
-                    
+
                     <Text style={[styles.centeredText, { color: colors.textPrimary, fontWeight: 'bold' }]}>
                       Phone, Password, Recovery Key
                     </Text>
-                    
+
                     <Text style={[styles.description, { color: colors.textSecondary, marginTop: 16 }]}>
-                      When you lose your phone or forget your password, you must use the other factors to re-establish secure control. This is a perfectly normal and unavoidable fact of life. However -
+                      When you lose your phone or forget your password, you must use the other factors to re-establish
+                      secure control. This is a perfectly normal and unavoidable fact of life. However -
                     </Text>
-                    
+
                     <View style={[styles.warningBox, { borderColor: colors.error }]}>
                       <Text style={[styles.warningText, { color: colors.error }]}>
-                        Loss of more than one factor will result in TOTAL LOSS of access to all assets, encrypted data, and certificates.
+                        Loss of more than one factor will result in TOTAL LOSS of access to all assets, encrypted data,
+                        and certificates.
                       </Text>
                     </View>
-                    
+
                     <View style={styles.checkboxesContainer}>
                       <Checkbox
                         checked={affirmative3}
                         onPress={() => setAffirmative3(!affirmative3)}
                         label="I will immediately recover lost factors using the other two"
                       />
-                      
+
                       <Checkbox
                         checked={affirmative2}
                         onPress={() => setAffirmative2(!affirmative2)}
@@ -222,20 +221,20 @@ const RecoveryKeySaver = () => {
                   </View>
                 )}
               </ScrollView>
-              
+
               <View style={styles.buttonContainer}>
-                <TouchableOpacity 
-                  style={[styles.buttonSecondary]} 
-                  onPress={onAbandon}
-                >
+                <TouchableOpacity style={[styles.buttonSecondary]} onPress={onAbandon}>
                   <Text style={[styles.buttonSecondaryText, { color: colors.textPrimary }]}>Abandon</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.buttonPrimary, { 
-                    backgroundColor: isAllChecked ? '#006600' : colors.inputBorder,
-                    opacity: isAllChecked ? 1 : 0.5
-                  }]}
+
+                <TouchableOpacity
+                  style={[
+                    styles.buttonPrimary,
+                    {
+                      backgroundColor: isAllChecked ? '#006600' : colors.inputBorder,
+                      opacity: isAllChecked ? 1 : 0.5
+                    }
+                  ]}
                   onPress={onKeySaved}
                   disabled={!isAllChecked}
                 >

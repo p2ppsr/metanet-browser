@@ -1,21 +1,21 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Image } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/context/theme/ThemeContext';
-import { useThemeStyles } from '@/context/theme/useThemeStyles';
-import { Ionicons } from '@expo/vector-icons';
-import TrustDetail, { TrustedOrigin, Permission } from '@/components/Trust/TrustDetail';
-import TrustThresholdCard from '@/components/Trust/TrustThresholdCard';
-import CertifierCard, { Certifier } from '@/components/Trust/CertifierCard';
+import React, { useState, useMemo } from 'react'
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Image } from 'react-native'
+import { StatusBar } from 'expo-status-bar'
+import { useTranslation } from 'react-i18next'
+import { useTheme } from '@/context/theme/ThemeContext'
+import { useThemeStyles } from '@/context/theme/useThemeStyles'
+import { Ionicons } from '@expo/vector-icons'
+import TrustDetail, { TrustedOrigin, Permission } from '@/components/Trust/TrustDetail'
+import TrustThresholdCard from '@/components/Trust/TrustThresholdCard'
+import CertifierCard, { Certifier } from '@/components/Trust/CertifierCard'
 
 type TrustedItem = TrustedOrigin
 
 export default function TrustScreen() {
   // Get theme colors and translation
-  const { t } = useTranslation();
-  const { colors, isDark } = useTheme();
-  const themeStyles = useThemeStyles();
+  const { t } = useTranslation()
+  const { colors, isDark } = useTheme()
+  const themeStyles = useThemeStyles()
 
   // Dummy placeholder data until real data is wired in
   const [items, setItems] = useState<TrustedItem[]>([
@@ -28,12 +28,8 @@ export default function TrustScreen() {
       securityLevel: 'medium',
       lastUsed: '2025-06-19',
       note: 'Payment app',
-      permissions: [
-        { id: 'p1', type: 'protocol', description: 'Payment protocol v1', grantedAt: '2025-06-18' }
-      ],
-      events: [
-        { date: '2025-06-19', text: 'Signed payment tx' }
-      ],
+      permissions: [{ id: 'p1', type: 'protocol', description: 'Payment protocol v1', grantedAt: '2025-06-18' }],
+      events: [{ date: '2025-06-19', text: 'Signed payment tx' }],
       fullKey: '03daf81sfe3f83da0ad3b5bedc520aa488aef5cbc939a3c67a7fe604d6cbffe8'
     },
     {
@@ -43,9 +39,7 @@ export default function TrustScreen() {
       icon: 'https://metanetacademy.com/favicon.ico',
       added: '2025-06-17',
       securityLevel: 'low',
-      permissions: [
-        { id: 'p2', type: 'identity', description: 'Identity resolution', grantedAt: '2025-06-17' }
-      ],
+      permissions: [{ id: 'p2', type: 'identity', description: 'Identity resolution', grantedAt: '2025-06-17' }],
       events: [],
       fullKey: '02cfcd...6cfd4a17'
     }
@@ -54,40 +48,59 @@ export default function TrustScreen() {
   // Dummy certifiers list
   const [certifiers, setCertifiers] = useState<Certifier[]>([
     {
-      id: 'c1', name: 'Metanet Trust Services', domain: 'trust.metanet', description: 'Registry for protocols, baskets, and certificates types', verified: true, icon: undefined, trustLevel: 4, maxTrust: 10, fullKey: '03daf81sfe3f83da0ad3b5bedc520aa488aef5cbc939a3c67a7fe604d6cbffe8', permissions: []
+      id: 'c1',
+      name: 'Metanet Trust Services',
+      domain: 'trust.metanet',
+      description: 'Registry for protocols, baskets, and certificates types',
+      verified: true,
+      icon: undefined,
+      trustLevel: 4,
+      maxTrust: 10,
+      fullKey: '03daf81sfe3f83da0ad3b5bedc520aa488aef5cbc939a3c67a7fe604d6cbffe8',
+      permissions: []
     }
   ])
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState('')
 
   const filteredItems = useMemo(() => {
-    if (!query.trim()) return items;
-    const q = query.toLowerCase();
-    return items.filter(i => i.name.toLowerCase().includes(q) || i.domain.toLowerCase().includes(q));
-  }, [items, query]);
+    if (!query.trim()) return items
+    const q = query.toLowerCase()
+    return items.filter(i => i.name.toLowerCase().includes(q) || i.domain.toLowerCase().includes(q))
+  }, [items, query])
 
   const removeItem = (id: string) => {
-    setItems(prev => prev.filter(i => i.id !== id));
+    setItems(prev => prev.filter(i => i.id !== id))
   }
 
   // detail modal state
-  const [selected, setSelected] = useState<TrustedOrigin | null>(null);
+  const [selected, setSelected] = useState<TrustedOrigin | null>(null)
 
-  const closeModal = () => setSelected(null);
+  const closeModal = () => setSelected(null)
 
   const renderItem = ({ item }: { item: TrustedItem }) => (
-    <TouchableOpacity onPress={() => setSelected(item)} activeOpacity={0.7} style={[styles.card, { borderColor: colors.inputBorder }]}>      
+    <TouchableOpacity
+      onPress={() => setSelected(item)}
+      activeOpacity={0.7}
+      style={[styles.card, { borderColor: colors.inputBorder }]}
+    >
       {item.icon ? (
         <Image source={{ uri: item.icon }} style={styles.icon} />
       ) : (
-        <View style={[styles.placeholderIcon, { backgroundColor: colors.primary }]}>          
+        <View style={[styles.placeholderIcon, { backgroundColor: colors.primary }]}>
           <Text style={{ color: colors.background, fontWeight: '700' }}>{item.name[0]}</Text>
         </View>
       )}
       <View style={{ flex: 1 }}>
-        <Text style={[styles.itemName, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
-        <Text style={[styles.itemDomain, { color: colors.textSecondary }]} numberOfLines={1}>{item.domain}</Text>
-        <Text style={[styles.itemAdded, { color: colors.textSecondary }]}>{t('trusted')} {item.added}</Text>
+        <Text style={[styles.itemName, { color: colors.textPrimary }]} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={[styles.itemDomain, { color: colors.textSecondary }]} numberOfLines={1}>
+          {item.domain}
+        </Text>
+        <Text style={[styles.itemAdded, { color: colors.textSecondary }]}>
+          {t('trusted')} {item.added}
+        </Text>
       </View>
       <TouchableOpacity onPress={() => removeItem(item.id)}>
         <Ionicons name="trash-outline" size={20} color={colors.error} />
@@ -96,9 +109,9 @@ export default function TrustScreen() {
   )
 
   const changeTrust = (id: string, val: number) => {
-    setCertifiers(prev => prev.map(c => c.id === id ? { ...c, trustLevel: val } : c));
+    setCertifiers(prev => prev.map(c => (c.id === id ? { ...c, trustLevel: val } : c)))
   }
-  const removeCertifier = (id: string) => setCertifiers(prev => prev.filter(c => c.id !== id));
+  const removeCertifier = (id: string) => setCertifiers(prev => prev.filter(c => c.id !== id))
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -107,7 +120,10 @@ export default function TrustScreen() {
         <Text style={[styles.title, { color: colors.textPrimary }]}>{t('trusted_origins')}</Text>
         <Text style={[styles.desc, { color: colors.textSecondary }]}>{t('manage_trust_relationships')}</Text>
         <TextInput
-          style={[styles.searchInput, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder, color: colors.textPrimary }]}
+          style={[
+            styles.searchInput,
+            { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder, color: colors.textPrimary }
+          ]}
           placeholder={t('search_trusted_origins')}
           placeholderTextColor={colors.textSecondary}
           value={query}
@@ -132,32 +148,24 @@ export default function TrustScreen() {
       <FlatList
         data={certifiers}
         keyExtractor={c => c.id}
-        ListHeaderComponent={() => (
-          <TrustThresholdCard totalPoints={10} threshold={2} onChange={() => {}} />
-        )}
-        renderItem={({ item }) => (
-          <CertifierCard cert={item} onChangeTrust={changeTrust} onRemove={removeCertifier} />
-        )}
+        ListHeaderComponent={() => <TrustThresholdCard totalPoints={10} threshold={2} onChange={() => {}} />}
+        renderItem={({ item }) => <CertifierCard cert={item} onChangeTrust={changeTrust} onRemove={removeCertifier} />}
         contentContainerStyle={{ padding: 16 }}
       />
 
       {/* detail modal */}
       {selected && (
         <View style={styles.modalOverlay}>
-          <TrustDetail
-            origin={selected}
-            onClose={closeModal}
-            onRevoke={(id) => removeItem(id)}
-          />
+          <TrustDetail origin={selected} onClose={closeModal} onRevoke={id => removeItem(id)} />
         </View>
       )}
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1
   },
   header: { padding: 16 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 4 },
@@ -165,10 +173,26 @@ const styles = StyleSheet.create({
   searchInput: { height: 40, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, fontSize: 14 },
   card: { flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderRadius: 8 },
   icon: { width: 32, height: 32, borderRadius: 6, marginRight: 12 },
-  placeholderIcon: { width: 32, height: 32, borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  placeholderIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12
+  },
   itemName: { fontSize: 16, fontWeight: '600' },
   itemDomain: { fontSize: 12 },
   itemAdded: { fontSize: 10 },
   emptyBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-});
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  }
+})

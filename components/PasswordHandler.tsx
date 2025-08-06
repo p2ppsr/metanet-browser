@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { 
-  Modal, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
@@ -19,10 +19,10 @@ import { useThemeStyles } from '@/context/theme/useThemeStyles'
 
 // Type definition for any focus-related functions we need
 type FocusHandler = {
-  isFocused: () => Promise<boolean>;
-  onFocusRequested: () => void;
-  onFocusRelinquished: () => void;
-};
+  isFocused: () => Promise<boolean>
+  onFocusRequested: () => void
+  onFocusRelinquished: () => void
+}
 
 const PasswordHandler: React.FC = () => {
   // For now we'll use dummy focus handlers - you can replace with your real implementation
@@ -30,16 +30,18 @@ const PasswordHandler: React.FC = () => {
     isFocused: async () => true,
     onFocusRequested: () => {},
     onFocusRelinquished: () => {}
-  };
-  
+  }
+
   // Get theme colors
   const { colors, isDark } = useTheme()
   const themeStyles = useThemeStyles()
-  
+
   const [wasOriginallyFocused, setWasOriginallyFocused] = useState<boolean>(false)
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState('')
-  const [test, setTest] = useState<Function>(() => { return Promise.resolve(true) })
+  const [test, setTest] = useState<Function>(() => {
+    return Promise.resolve(true)
+  })
   const [resolve, setResolve] = useState<Function>(() => {})
   const [reject, setReject] = useState<Function>(() => {})
   const [password, setPassword] = useState('')
@@ -60,10 +62,10 @@ const PasswordHandler: React.FC = () => {
     console.warn('Password handler called before initialization')
     return Promise.resolve('')
   }, [])
-  
+
   // Create a ref to store the handler function
   const handlerRef = useRef(dummyPasswordHandler)
-  
+
   // Set up the actual handler function
   useEffect(() => {
     handlerRef.current = (reason: string, testFn: (passwordCandidate: string) => boolean): Promise<string> => {
@@ -77,7 +79,7 @@ const PasswordHandler: React.FC = () => {
       })
     }
   }, [manageFocus])
-  
+
   // Register the handler exactly once on mount
   useEffect(() => {
     // Provide a stable reference that delegates to our ref
@@ -86,7 +88,7 @@ const PasswordHandler: React.FC = () => {
         return handlerRef.current(reason, test)
       }
     }
-    
+
     setPasswordRetriever(stableHandler)
   }, [])
 
@@ -94,7 +96,7 @@ const PasswordHandler: React.FC = () => {
     setOpen(false)
     setPassword('')
     setShowPassword(false)
-    
+
     if (!wasOriginallyFocused) {
       focusHandler.onFocusRelinquished()
     }
@@ -124,30 +126,22 @@ const PasswordHandler: React.FC = () => {
   }
 
   return (
-    <Modal
-      visible={open}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={handleCancel}
-    >
+    <Modal visible={open} transparent={true} animationType="fade" onRequestClose={handleCancel}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.keyboardAvoid}
-          >
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
             <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
               <View style={styles.contentContainer}>
                 <Text style={[styles.title, { color: colors.textPrimary }]}>Enter Password</Text>
                 <Text style={[styles.description, { color: colors.textSecondary }]}>
                   {reason || 'Please enter your password to continue'}
                 </Text>
-                
+
                 <View style={styles.inputContainer}>
                   <TextInput
                     style={[
                       styles.input,
-                      { 
+                      {
                         backgroundColor: colors.inputBackground,
                         borderColor: colors.inputBorder,
                         color: colors.textPrimary
@@ -161,30 +155,20 @@ const PasswordHandler: React.FC = () => {
                     autoFocus
                     onSubmitEditing={handleSubmit}
                   />
-                  <TouchableOpacity 
-                    style={styles.eyeIcon} 
-                    onPress={toggleShowPassword}
-                  >
-                    <Ionicons 
-                      name={showPassword ? "eye-off" : "eye"} 
-                      size={24} 
-                      color={colors.textSecondary} 
-                    />
+                  <TouchableOpacity style={styles.eyeIcon} onPress={toggleShowPassword}>
+                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={24} color={colors.textSecondary} />
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               <View style={styles.buttonContainer}>
-                <TouchableOpacity 
-                  style={[styles.button, { backgroundColor: colors.inputBorder }]} 
+                <TouchableOpacity
+                  style={[styles.button, { backgroundColor: colors.inputBorder }]}
                   onPress={handleCancel}
                 >
                   <Text style={[styles.buttonText, { color: colors.textPrimary }]}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.button, { backgroundColor: colors.primary }]} 
-                  onPress={handleSubmit}
-                >
+                <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleSubmit}>
                   <Text style={[styles.buttonText, { color: colors.buttonText }]}>Submit</Text>
                 </TouchableOpacity>
               </View>

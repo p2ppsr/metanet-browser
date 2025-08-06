@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react'
 import {
   View,
   Text,
@@ -9,41 +9,43 @@ import {
   TextInput,
   Modal,
   Pressable,
-  ScrollView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Fuse from 'fuse.js';
-import { useTheme } from '@/context/theme/ThemeContext';
-import { useWallet } from '@/context/WalletContext';
-import { useBrowserMode } from '@/context/BrowserModeContext';
-import { useTranslation } from 'react-i18next';
+  ScrollView
+} from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import Fuse from 'fuse.js'
+import { useTheme } from '@/context/theme/ThemeContext'
+import { useWallet } from '@/context/WalletContext'
+import { useBrowserMode } from '@/context/BrowserModeContext'
+import { useTranslation } from 'react-i18next'
 
 interface App {
-  domain: string;
-  appName: string;
-  appIconImageUrl?: string;
+  domain: string
+  appName: string
+  appIconImageUrl?: string
 }
 
 interface RecommendedAppsProps {
-  setStartingUrl: (url: string) => void;
-  includeBookmarks?: { title: string; url: string }[];
-  hideHeader?: boolean;
-  showOnlyBookmarks?: boolean;
-  limitBookmarks?: number; // Limit number of bookmarks to show on homepage
-  onRemoveBookmark?: (url: string) => void;
-  onRemoveDefaultApp?: (url: string) => void;
-  removedDefaultApps?: string[];
+  setStartingUrl: (url: string) => void
+  includeBookmarks?: { title: string; url: string }[]
+  hideHeader?: boolean
+  showOnlyBookmarks?: boolean
+  limitBookmarks?: number // Limit number of bookmarks to show on homepage
+  onRemoveBookmark?: (url: string) => void
+  onRemoveDefaultApp?: (url: string) => void
+  removedDefaultApps?: string[]
   // Homepage customization props
   homepageSettings?: {
-    showBookmarks: boolean;
-    showRecentApps: boolean;
-    showRecommendedApps: boolean;
-  };
-  onUpdateHomepageSettings?: (settings: Partial<{
-    showBookmarks: boolean;
-    showRecentApps: boolean;
-    showRecommendedApps: boolean;
-  }>) => void;
+    showBookmarks: boolean
+    showRecentApps: boolean
+    showRecommendedApps: boolean
+  }
+  onUpdateHomepageSettings?: (
+    settings: Partial<{
+      showBookmarks: boolean
+      showRecentApps: boolean
+      showRecommendedApps: boolean
+    }>
+  ) => void
 }
 
 /* -------------------------------------------------------------------------- */
@@ -54,39 +56,39 @@ const defaultApps: App[] = [
   {
     domain: 'https://p2pmnee.atx.systems',
     appName: 'P2PMNEE',
-    appIconImageUrl: 'https://p2pmnee.atx.systems/p2m.png',
+    appIconImageUrl: 'https://p2pmnee.atx.systems/p2m.png'
   },
   {
     domain: 'https://metanetstatus.lovable.app',
     appName: 'Metanet Status',
-    appIconImageUrl: 'https://metanetstatus.lovable.app/favicon.ico',
+    appIconImageUrl: 'https://metanetstatus.lovable.app/favicon.ico'
   },
   {
     domain: 'https://todo.metanet.app',
     appName: 'My ToDo List',
-    appIconImageUrl: 'https://todo.metanet.app/favicon.ico',
+    appIconImageUrl: 'https://todo.metanet.app/favicon.ico'
   },
   {
     domain: 'https://peerpay.babbage.systems',
     appName: 'PeerPay',
-    appIconImageUrl: 'https://peerpay.babbage.systems/favicon.ico',
+    appIconImageUrl: 'https://peerpay.babbage.systems/favicon.ico'
   },
   {
     domain: 'https://mountaintops.net',
     appName: 'Mountaintops',
-    appIconImageUrl: 'https://mountaintops.net/favicon.ico',
+    appIconImageUrl: 'https://mountaintops.net/favicon.ico'
   },
   {
     domain: 'https://metanetacademy.com',
     appName: 'Metanet Academy',
-    appIconImageUrl: 'https://metanetacademy.com/favicon.ico',
+    appIconImageUrl: 'https://metanetacademy.com/favicon.ico'
   },
   {
     domain: 'https://coinflip.babbage.systems',
     appName: 'Coinflip Friend',
-    appIconImageUrl: 'https://coinflip.babbage.systems/favicon.ico',
-  },
-];
+    appIconImageUrl: 'https://coinflip.babbage.systems/favicon.ico'
+  }
+]
 
 /* -------------------------------------------------------------------------- */
 /*                         RECOMMENDED APPS COMPONENT                         */
@@ -102,114 +104,120 @@ export const RecommendedApps = ({
   onRemoveDefaultApp,
   removedDefaultApps = [],
   homepageSettings,
-  onUpdateHomepageSettings,
+  onUpdateHomepageSettings
 }: RecommendedAppsProps) => {
-  const { colors } = useTheme();
-  const { recentApps } = useWallet();
-  const { isWeb2Mode } = useBrowserMode();
-  const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
-  const [isDesktopView, setIsDesktopView] = useState(false);
-  
+  const { colors } = useTheme()
+  const { recentApps } = useWallet()
+  const { isWeb2Mode } = useBrowserMode()
+  const { t } = useTranslation()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false)
+  const [isDesktopView, setIsDesktopView] = useState(false)
+
   // Context menu state
-  const [contextMenuVisible, setContextMenuVisible] = useState(false);
-  const [selectedApp, setSelectedApp] = useState<App | null>(null);
+  const [contextMenuVisible, setContextMenuVisible] = useState(false)
+  const [selectedApp, setSelectedApp] = useState<App | null>(null)
 
   /* -------------------------- helper functions -------------------------- */
-  const isBookmark = useCallback((app: App) => {
-    // Check if it's in the actual bookmarks list
-    return includeBookmarks.some(bookmark => bookmark.url === app.domain);
-  }, [includeBookmarks]);
+  const isBookmark = useCallback(
+    (app: App) => {
+      // Check if it's in the actual bookmarks list
+      return includeBookmarks.some(bookmark => bookmark.url === app.domain)
+    },
+    [includeBookmarks]
+  )
 
   const isDefaultApp = useCallback((app: App) => {
     // Check if it's one of the default apps
-    return defaultApps.some(defaultApp => defaultApp.domain === app.domain);
-  }, []);
+    return defaultApps.some(defaultApp => defaultApp.domain === app.domain)
+  }, [])
 
-  const handleLongPress = useCallback((app: App) => {
-    // Allow removal of bookmarks OR default apps
-    if ((isBookmark(app) || isDefaultApp(app)) && (onRemoveBookmark || onRemoveDefaultApp)) {
-      setSelectedApp(app);
-      setContextMenuVisible(true);
-    }
-  }, [isBookmark, isDefaultApp, onRemoveBookmark, onRemoveDefaultApp]);
+  const handleLongPress = useCallback(
+    (app: App) => {
+      // Allow removal of bookmarks OR default apps
+      if ((isBookmark(app) || isDefaultApp(app)) && (onRemoveBookmark || onRemoveDefaultApp)) {
+        setSelectedApp(app)
+        setContextMenuVisible(true)
+      }
+    },
+    [isBookmark, isDefaultApp, onRemoveBookmark, onRemoveDefaultApp]
+  )
 
   const handleDeleteBookmark = useCallback(() => {
     if (selectedApp) {
       if (isBookmark(selectedApp) && onRemoveBookmark) {
-        onRemoveBookmark(selectedApp.domain);
+        onRemoveBookmark(selectedApp.domain)
       } else if (isDefaultApp(selectedApp) && onRemoveDefaultApp) {
-        onRemoveDefaultApp(selectedApp.domain);
+        onRemoveDefaultApp(selectedApp.domain)
       }
     }
-    setContextMenuVisible(false);
-    setSelectedApp(null);
-  }, [selectedApp, isBookmark, isDefaultApp, onRemoveBookmark, onRemoveDefaultApp]);
+    setContextMenuVisible(false)
+    setSelectedApp(null)
+  }, [selectedApp, isBookmark, isDefaultApp, onRemoveBookmark, onRemoveDefaultApp])
 
   const closeContextMenu = useCallback(() => {
-    setContextMenuVisible(false);
-    setSelectedApp(null);
-  }, []);
+    setContextMenuVisible(false)
+    setSelectedApp(null)
+  }, [])
 
   /* -------------------------- prepare separate data sources -------------------------- */
   const filteredDefaultApps = useMemo(() => {
-    if (showOnlyBookmarks) return [];
+    if (showOnlyBookmarks) return []
     // Use homepage settings to determine if recommended apps should be shown
-    if (homepageSettings && !homepageSettings.showRecommendedApps) return [];
+    if (homepageSettings && !homepageSettings.showRecommendedApps) return []
     // In web2 mode, don't show any default web3 apps
-    if (isWeb2Mode) return [];
-    return defaultApps.filter(app => !removedDefaultApps.includes(app.domain));
-  }, [removedDefaultApps, showOnlyBookmarks, homepageSettings, isWeb2Mode]);
+    if (isWeb2Mode) return []
+    return defaultApps.filter(app => !removedDefaultApps.includes(app.domain))
+  }, [removedDefaultApps, showOnlyBookmarks, homepageSettings, isWeb2Mode])
 
   const processedRecentApps = useMemo(() => {
-    if (showOnlyBookmarks) return [];
+    if (showOnlyBookmarks) return []
     // Use homepage settings to determine if recent apps should be shown
-    if (homepageSettings && !homepageSettings.showRecentApps) return [];
+    if (homepageSettings && !homepageSettings.showRecentApps) return []
     // In web2 mode, don't show recent web3 apps
-    if (isWeb2Mode) return [];
-    return recentApps.map(a => ({ ...a, appIconImageUrl: a.appIconImageUrl }));
-  }, [recentApps, showOnlyBookmarks, homepageSettings, isWeb2Mode]);
+    if (isWeb2Mode) return []
+    return recentApps.map(a => ({ ...a, appIconImageUrl: a.appIconImageUrl }))
+  }, [recentApps, showOnlyBookmarks, homepageSettings, isWeb2Mode])
 
   const processedBookmarks = useMemo(() => {
     const bookmarks = includeBookmarks.map(bm => ({
       domain: bm.url,
       appName: bm.title || bm.url,
-      appIconImageUrl: `${bm.url.replace(/\/$/, '')}/favicon.ico`,
-    }));
-    
+      appIconImageUrl: `${bm.url.replace(/\/$/, '')}/favicon.ico`
+    }))
+
     // If we're not showing only bookmarks and we have a limit, slice the array
     if (!showOnlyBookmarks && limitBookmarks) {
-      return bookmarks.slice(0, limitBookmarks);
+      return bookmarks.slice(0, limitBookmarks)
     }
-    
-    return bookmarks;
-  }, [includeBookmarks, showOnlyBookmarks, limitBookmarks]);
+
+    return bookmarks
+  }, [includeBookmarks, showOnlyBookmarks, limitBookmarks])
 
   // Combined for search functionality
   const allApps = useMemo(() => {
-    const sources = [...filteredDefaultApps, ...processedRecentApps, ...processedBookmarks];
+    const sources = [...filteredDefaultApps, ...processedRecentApps, ...processedBookmarks]
     return sources.reduce<App[]>((acc, cur) => {
-      if (!acc.find(a => a.domain === cur.domain)) acc.push(cur);
-      return acc;
-    }, []);
-  }, [filteredDefaultApps, processedRecentApps, processedBookmarks]);
+      if (!acc.find(a => a.domain === cur.domain)) acc.push(cur)
+      return acc
+    }, [])
+  }, [filteredDefaultApps, processedRecentApps, processedBookmarks])
 
   /* ---------------------------- fuzzy searching ---------------------------- */
   const fuse = useMemo(() => {
     return new Fuse(allApps, {
       keys: ['appName', 'domain'],
       threshold: 0.4,
-      includeScore: true,
-    });
-  }, [allApps]);
+      includeScore: true
+    })
+  }, [allApps])
 
   const visibleApps = useMemo(() => {
-    if (!searchQuery.trim()) return null; // Return null when not searching
-    return fuse.search(searchQuery).map(r => r.item);
-  }, [allApps, fuse, searchQuery]);
+    if (!searchQuery.trim()) return null // Return null when not searching
+    return fuse.search(searchQuery).map(r => r.item)
+  }, [allApps, fuse, searchQuery])
 
-  const searchResults = visibleApps;
+  const searchResults = visibleApps
 
   /* ------------------------------- render functions ---------------------------------- */
   const renderAppItem = ({ item }: { item: App }) => (
@@ -226,31 +234,20 @@ export const RecommendedApps = ({
           defaultSource={{ uri: item.domain + '/favicon.ico' }}
         />
       ) : (
-        <View
-          style={[
-            componentStyles.placeholderIcon,
-            { backgroundColor: colors.primary },
-          ]}
-        >
-          <Text style={{ color: colors.background, fontSize: 16 }}>
-            {item.appName.charAt(0)}
-          </Text>
+        <View style={[componentStyles.placeholderIcon, { backgroundColor: colors.primary }]}>
+          <Text style={{ color: colors.background, fontSize: 16 }}>{item.appName.charAt(0)}</Text>
         </View>
       )}
-      <Text style={[componentStyles.appTitle, { color: colors.textPrimary }]}>
-        {item.appName}
-      </Text>
+      <Text style={[componentStyles.appTitle, { color: colors.textPrimary }]}>{item.appName}</Text>
     </TouchableOpacity>
-  );
+  )
 
   const renderSection = (title: string, data: App[], key: string) => {
-    if (data.length === 0) return null;
-    
+    if (data.length === 0) return null
+
     return (
       <View key={key} style={componentStyles.section}>
-        <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>
-          {title}
-        </Text>
+        <Text style={[componentStyles.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
         <FlatList
           data={data}
           renderItem={renderAppItem}
@@ -260,8 +257,8 @@ export const RecommendedApps = ({
           scrollEnabled={false}
         />
       </View>
-    );
-  };
+    )
+  }
 
   return (
     <View style={[componentStyles.container, { backgroundColor: colors.paperBackground }]}>
@@ -273,8 +270,8 @@ export const RecommendedApps = ({
               {
                 color: colors.textPrimary,
                 backgroundColor: colors.inputBackground || colors.background,
-                borderColor: colors.inputBorder,
-              },
+                borderColor: colors.inputBorder
+              }
             ]}
             placeholder={t('search_bookmarks')}
             placeholderTextColor={colors.textSecondary}
@@ -318,14 +315,17 @@ export const RecommendedApps = ({
             ) : (
               // Show all sections based on homepage settings
               <>
-                {(homepageSettings?.showBookmarks !== false) && renderSection(
-                  limitBookmarks ? t('recent_bookmarks') : t('bookmarks'), 
-                  processedBookmarks, 
-                  'bookmarks'
-                )}
-                {(homepageSettings?.showRecentApps !== false) && renderSection(t('recent'), processedRecentApps, 'recent')}
-                {(homepageSettings?.showRecommendedApps !== false) && renderSection(t('recommended'), filteredDefaultApps, 'default')}
-                
+                {homepageSettings?.showBookmarks !== false &&
+                  renderSection(
+                    limitBookmarks ? t('recent_bookmarks') : t('bookmarks'),
+                    processedBookmarks,
+                    'bookmarks'
+                  )}
+                {homepageSettings?.showRecentApps !== false &&
+                  renderSection(t('recent'), processedRecentApps, 'recent')}
+                {homepageSettings?.showRecommendedApps !== false &&
+                  renderSection(t('recommended'), filteredDefaultApps, 'default')}
+
                 {/* Web2 mode message */}
                 {/* {isWeb2Mode && (
                   <View style={[componentStyles.section, { paddingVertical: 20 }]}>
@@ -348,9 +348,12 @@ export const RecommendedApps = ({
         {/* Customize Homepage Button at the bottom */}
         {!showOnlyBookmarks && onUpdateHomepageSettings && (
           <View style={componentStyles.customizeSection}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowCustomizeModal(true)}
-              style={[componentStyles.customizeButtonBottom, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}
+              style={[
+                componentStyles.customizeButtonBottom,
+                { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }
+              ]}
             >
               <Ionicons name="options-outline" size={20} color={colors.textSecondary} />
               <Text style={[componentStyles.customizeButtonText, { color: colors.textSecondary }]}>
@@ -369,10 +372,7 @@ export const RecommendedApps = ({
           onRequestClose={() => setShowCustomizeModal(false)}
           animationType="fade"
         >
-          <Pressable 
-            style={componentStyles.contextMenuBackdrop}
-            onPress={() => setShowCustomizeModal(false)}
-          >
+          <Pressable style={componentStyles.contextMenuBackdrop} onPress={() => setShowCustomizeModal(false)}>
             <View style={[componentStyles.customizeModal, { backgroundColor: colors.background }]}>
               <View style={[componentStyles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
                 <Text style={[componentStyles.contextMenuTitle, { color: colors.textPrimary }]}>
@@ -382,64 +382,66 @@ export const RecommendedApps = ({
                   {t('customize_homepage_description')}
                 </Text>
               </View>
-              
+
               <View style={componentStyles.customizeOptions}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={componentStyles.customizeOption}
                   onPress={() => onUpdateHomepageSettings({ showBookmarks: !homepageSettings.showBookmarks })}
                   activeOpacity={0.7}
                 >
-                  <Ionicons 
-                    name={homepageSettings.showBookmarks ? "checkbox" : "square-outline"} 
-                    size={22} 
-                    color={homepageSettings.showBookmarks ? colors.primary : colors.textSecondary} 
+                  <Ionicons
+                    name={homepageSettings.showBookmarks ? 'checkbox' : 'square-outline'}
+                    size={22}
+                    color={homepageSettings.showBookmarks ? colors.primary : colors.textSecondary}
                   />
                   <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
                     {t('recent_bookmarks')}
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={componentStyles.customizeOption}
                   onPress={() => onUpdateHomepageSettings({ showRecentApps: !homepageSettings.showRecentApps })}
                   activeOpacity={0.7}
                 >
-                  <Ionicons 
-                    name={homepageSettings.showRecentApps ? "checkbox" : "square-outline"} 
-                    size={22} 
-                    color={homepageSettings.showRecentApps ? colors.primary : colors.textSecondary} 
+                  <Ionicons
+                    name={homepageSettings.showRecentApps ? 'checkbox' : 'square-outline'}
+                    size={22}
+                    color={homepageSettings.showRecentApps ? colors.primary : colors.textSecondary}
                   />
                   <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
                     {t('recent')}
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={componentStyles.customizeOption}
-                  onPress={() => onUpdateHomepageSettings({ showRecommendedApps: !homepageSettings.showRecommendedApps })}
+                  onPress={() =>
+                    onUpdateHomepageSettings({ showRecommendedApps: !homepageSettings.showRecommendedApps })
+                  }
                   activeOpacity={0.7}
                 >
-                  <Ionicons 
-                    name={homepageSettings.showRecommendedApps ? "checkbox" : "square-outline"} 
-                    size={22} 
-                    color={homepageSettings.showRecommendedApps ? colors.primary : colors.textSecondary} 
+                  <Ionicons
+                    name={homepageSettings.showRecommendedApps ? 'checkbox' : 'square-outline'}
+                    size={22}
+                    color={homepageSettings.showRecommendedApps ? colors.primary : colors.textSecondary}
                   />
                   <Text style={[componentStyles.customizeOptionText, { color: colors.textPrimary }]}>
                     {t('recommended')}
                   </Text>
                 </TouchableOpacity>
               </View>
-              
+
               <View style={componentStyles.customizeActions}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[componentStyles.customizeActionButton, { backgroundColor: colors.inputBackground }]}
                   onPress={() => {
                     if (onUpdateHomepageSettings) {
                       onUpdateHomepageSettings({
                         showBookmarks: true,
                         showRecentApps: true,
-                        showRecommendedApps: true,
-                      });
+                        showRecommendedApps: true
+                      })
                     }
                   }}
                   activeOpacity={0.7}
@@ -450,15 +452,13 @@ export const RecommendedApps = ({
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[componentStyles.customizeActionButton, { backgroundColor: colors.primary }]}
                   onPress={() => setShowCustomizeModal(false)}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="checkmark-outline" size={18} color={colors.background} />
-                  <Text style={[componentStyles.customizeActionText, { color: colors.background }]}>
-                    {t('done')}
-                  </Text>
+                  <Text style={[componentStyles.customizeActionText, { color: colors.background }]}>{t('done')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -468,16 +468,8 @@ export const RecommendedApps = ({
 
       {/* Context Menu Modal */}
       {selectedApp && (
-        <Modal
-          transparent
-          visible={contextMenuVisible}
-          onRequestClose={closeContextMenu}
-          animationType="fade"
-        >
-          <Pressable 
-            style={componentStyles.contextMenuBackdrop}
-            onPress={closeContextMenu}
-          >
+        <Modal transparent visible={contextMenuVisible} onRequestClose={closeContextMenu} animationType="fade">
+          <Pressable style={componentStyles.contextMenuBackdrop} onPress={closeContextMenu}>
             <View style={[componentStyles.contextMenu, { backgroundColor: colors.background }]}>
               <View style={[componentStyles.contextMenuHeader, { borderBottomColor: colors.inputBorder }]}>
                 <Text style={[componentStyles.contextMenuTitle, { color: colors.textPrimary }]}>
@@ -487,8 +479,8 @@ export const RecommendedApps = ({
                   {selectedApp.domain}
                 </Text>
               </View>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={[componentStyles.contextMenuItem, { borderBottomColor: colors.inputBorder }]}
                 onPress={handleDeleteBookmark}
                 activeOpacity={0.7}
@@ -498,24 +490,27 @@ export const RecommendedApps = ({
                   {selectedApp && isBookmark(selectedApp) ? t('delete_bookmark') : t('hide_app')}
                 </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={[componentStyles.contextMenuItem, { borderBottomWidth: 0 }]}
                 onPress={closeContextMenu}
                 activeOpacity={0.7}
               >
-                <Ionicons name="close-outline" size={22} color={colors.textSecondary} style={componentStyles.contextMenuIcon} />
-                <Text style={[componentStyles.contextMenuText, { color: colors.textSecondary }]}>
-                  {t('cancel')}
-                </Text>
+                <Ionicons
+                  name="close-outline"
+                  size={22}
+                  color={colors.textSecondary}
+                  style={componentStyles.contextMenuIcon}
+                />
+                <Text style={[componentStyles.contextMenuText, { color: colors.textSecondary }]}>{t('cancel')}</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
         </Modal>
       )}
     </View>
-  );
-};
+  )
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                    CSS                                     */
@@ -525,23 +520,23 @@ const componentStyles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 8,
-    borderRadius: 12,
+    borderRadius: 12
   },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 16
   },
   mainTitle: {
     fontSize: 20,
     fontWeight: '700',
-    flex: 1,
+    flex: 1
   },
   customizeButton: {
     padding: 8,
     borderRadius: 8,
-    marginLeft: 8,
+    marginLeft: 8
   },
   searchContainer: { marginBottom: 16 },
   searchInput: {
@@ -549,28 +544,28 @@ const componentStyles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    fontSize: 14,
+    fontSize: 14
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 24
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 12
   },
   appItem: {
     alignItems: 'center',
     marginBottom: 16,
     width: '30%',
-    marginHorizontal: '1.5%',
+    marginHorizontal: '1.5%'
   },
   appIcon: {
     width: 50,
     height: 50,
     borderRadius: 10,
     marginBottom: 8,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   placeholderIcon: {
     width: 50,
@@ -578,20 +573,20 @@ const componentStyles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 8
   },
   appTitle: {
     fontSize: 12,
     textAlign: 'center',
     flexWrap: 'wrap',
-    lineHeight: 16,
+    lineHeight: 16
   },
   // Context Menu Styles
   contextMenuBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   contextMenu: {
     borderRadius: 12,
@@ -600,37 +595,37 @@ const componentStyles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 4
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 8
   },
   contextMenuHeader: {
     padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth
   },
   contextMenuTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 4
   },
   contextMenuUrl: {
     fontSize: 12,
-    opacity: 0.7,
+    opacity: 0.7
   },
   contextMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth
   },
   contextMenuIcon: {
-    marginRight: 12,
+    marginRight: 12
   },
   contextMenuText: {
     fontSize: 16,
-    flex: 1,
+    flex: 1
   },
   // Customize Modal Styles
   customizeModal: {
@@ -640,32 +635,32 @@ const componentStyles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 4
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 8
   },
   customizeOptions: {
-    paddingVertical: 8,
+    paddingVertical: 8
   },
   customizeOption: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: 'rgba(0,0,0,0.1)'
   },
   customizeOptionText: {
     fontSize: 16,
     marginLeft: 12,
-    flex: 1,
+    flex: 1
   },
   customizeActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 16,
-    gap: 12,
+    gap: 12
   },
   customizeActionButton: {
     flex: 1,
@@ -674,15 +669,15 @@ const componentStyles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
     borderRadius: 8,
-    gap: 6,
+    gap: 6
   },
   customizeActionText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '600'
   },
   customizeSection: {
     marginTop: 32,
-    marginBottom: 16,
+    marginBottom: 16
   },
   customizeButtonBottom: {
     flexDirection: 'row',
@@ -691,15 +686,15 @@ const componentStyles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    gap: 8,
+    gap: 8
   },
   customizeButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600'
   },
   bookmarkLimitControls: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 8
   },
   limitButton: {
     width: 32,
@@ -707,6 +702,6 @@ const componentStyles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'rgba(0,0,0,0.05)',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+    alignItems: 'center'
+  }
+})
