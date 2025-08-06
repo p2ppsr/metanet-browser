@@ -491,32 +491,11 @@ function Browser() {
 
   const onAddressSubmit = useCallback(() => {
     let entry = addressText.trim()
+    const isProbablyUrl = /^([a-z]+:\/\/|www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(entry)
 
-    // Check if entry already has a protocol prefix
-    const hasProtocol = /^[a-z]+:\/\//i.test(entry)
-
-    // Check for IP address format - basic IPv4 pattern
-    const isIpAddress = /^\d{1,3}(\.\d{1,3}){3}(:\d+)?(\/.*)?$/i.test(entry)
-
-    // Check if it's likely a URL (protocol, www, domain, or IP address)
-    const isProbablyUrl = hasProtocol || /^(www\.|([A-Za-z0-9\-]+\.)+[A-Za-z]{2,})(\/|$)/i.test(entry) || isIpAddress
-
-    if (entry === '') {
-      entry = kNEW_TAB_URL
-    } else if (!isProbablyUrl) {
-      // Not a URL, treat as a search query
-      entry = kGOOGLE_PREFIX + encodeURIComponent(entry)
-    } else if (!hasProtocol) {
-      // Add appropriate protocol based on whether it's an IP address or regular domain
-      if (isIpAddress) {
-        // For IP addresses, default to HTTP which is more common for local network devices
-        entry = 'http://' + entry
-      } else {
-        // For regular domains, use HTTPS for security
-        entry = 'https://' + entry
-      }
-    }
-    // URLs with protocol (like https://) pass through unchanged
+    if (entry === '') entry = kNEW_TAB_URL
+    else if (!isProbablyUrl) entry = kGOOGLE_PREFIX + encodeURIComponent(entry)
+    else if (!/^[a-z]+:\/\//i.test(entry)) entry = 'https://' + entry
 
     if (!isValidUrl(entry)) {
       entry = kNEW_TAB_URL
@@ -635,9 +614,9 @@ function Browser() {
   const responderProps =
     addressFocused && keyboardVisible
       ? {
-        onStartShouldSetResponder: () => true,
-        onResponderRelease: dismissKeyboard
-      }
+          onStartShouldSetResponder: () => true,
+          onResponderRelease: dismissKeyboard
+        }
       : {}
 
   /* -------------------------------------------------------------------------- */
@@ -1238,7 +1217,7 @@ function Browser() {
         title: navState.title || navState.url,
         url: navState.url,
         timestamp: Date.now()
-      }).catch(() => { })
+      }).catch(() => {})
     }
   }
 
@@ -1744,9 +1723,7 @@ function Browser() {
                     flex: 1,
                     backgroundColor: colors.background,
                     color: colors.textPrimary,
-                    textAlign: addressFocused ? 'left' : 'center',
-                    height: 40, // Add explicit height for iOS
-                    paddingVertical: 8 // Add padding for better appearance
+                    textAlign: addressFocused ? 'left' : 'center'
                   }
                 ]}
                 placeholder={t('search_placeholder')}
