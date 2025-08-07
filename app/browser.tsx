@@ -465,14 +465,6 @@ function Browser() {
     }
   }, [activeTab])
 
-  // Language change useEffect - reload WebView when language changes
-  useEffect(() => {
-    if (activeTab && activeTab.webviewRef?.current && activeTab.url !== kNEW_TAB_URL) {
-      // Force reload WebView with new language headers
-      activeTab.webviewRef.current.reload()
-    }
-  }, [i18n.language, activeTab])
-
   /* -------------------------------------------------------------------------- */
   /*                                 UTILITIES                                  */
   /* -------------------------------------------------------------------------- */
@@ -985,7 +977,6 @@ function Browser() {
         return
       }
 
-      // Handle console logs from WebView
       if (msg.type === 'CONSOLE') {
         const logPrefix = '[WebView]'
         switch (msg.method) {
@@ -1379,8 +1370,6 @@ function Browser() {
     [starDrawerAnim]
   )
 
-  // State for clear confirm modal (move this above scene components)
-
   const handleSetStartingUrl = useCallback(
     (url: string) => {
       updateActiveTab({ url })
@@ -1597,9 +1586,8 @@ function Browser() {
     return () => handle.cancel?.()
   }, [])
 
-    const uri = activeTab?.url ?? 'about:blank';
+    const uri = typeof activeTab?.url === 'string' && activeTab.url.length > 0 ? activeTab.url : 'about:blank';
     if (!ready) {
-    // you can show a spinner or a blank container until the view is "ready"
     return (
       <View style={styles.loaderContainer} onLayout={() => { /* ensures layout has happened */ }}>
         <ActivityIndicator size="large" />
@@ -1611,15 +1599,12 @@ function Browser() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={addressFocused ? ('padding') : undefined}
       >
         <SafeAreaView
           style={[
             styles.container,
             {
               backgroundColor: colors.inputBackground,
-              paddingBottom:
-                addressFocused && keyboardVisible ? 0 : isFullscreen ? 0 : Platform.OS === 'ios' ? 0 : insets.bottom
             }
           ]}
         >
