@@ -962,7 +962,6 @@ function Browser() {
     if (window.__fullscreenPolyfillInjected) {
       console.log('[WebView] 📺 Fullscreen polyfill already injected, skipping');
     } else {
-      console.log('[WebView] 📺 Injecting fullscreen polyfill');
       window.__fullscreenPolyfillInjected = true;
       
       // Fullscreen API polyfill - Standard method
@@ -972,7 +971,6 @@ function Browser() {
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'REQUEST_FULLSCREEN'
           }));
-          console.log('[WebView] 📺 Posted REQUEST_FULLSCREEN message');
           
           const handler = (event) => {
             try {
@@ -1183,63 +1181,6 @@ function Browser() {
       return originalXHRSend.call(this, data);
     };
   })();
-
-  // Console forwarding - intercept console methods and forward to React Native
-  (function() {
-    const originalLog = console.log;
-    const originalWarn = console.warn;
-    const originalError = console.error;
-    const originalInfo = console.info;
-    const originalDebug = console.debug;
-
-    console.log = function(...args) {
-      originalLog.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'log',
-        args: args
-      }));
-    };
-
-    console.warn = function(...args) {
-      originalWarn.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'warn',
-        args: args
-      }));
-    };
-
-    console.error = function(...args) {
-      originalError.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'error',
-        args: args
-      }));
-    };
-
-    console.info = function(...args) {
-      originalInfo.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'info',
-        args: args
-      }));
-    };
-
-    console.debug = function(...args) {
-      originalDebug.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'debug',
-        args: args
-      }));
-    };
-    
-    // Test console forwarding immediately
-    console.log('[WebView] 🚀 Console forwarding initialized');
-  })();
   
   true;
 `,
@@ -1277,9 +1218,7 @@ function Browser() {
         console.error('Failed to parse WebView message:', error)
         return
       }
-
-      console.log('[Browser] 📺 Received message:', msg)
-
+      
       // Handle console logs from WebView
       if (msg.type === 'CONSOLE') {
         const logPrefix = '[WebView]'
@@ -1302,8 +1241,6 @@ function Browser() {
         }
         return
       }
-
-      console.log('[Browser] 📺 Received message REEEEEEEEEEEE:', msg)
 
       // Handle fullscreen requests
       if (msg.type === 'REQUEST_FULLSCREEN') {
