@@ -67,6 +67,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
 import * as Notifications from 'expo-notifications'
+import { initializeFirebaseNotifications } from '@/utils/pushNotificationManager'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -187,7 +188,7 @@ function Browser() {
   }, [i18n.language])
 
   /* ----------------------------- wallet context ----------------------------- */
-  const { managers } = useWallet()
+  const { managers, adminOriginator } = useWallet()
   const [wallet, setWallet] = useState<WalletInterface | undefined>()
   useEffect(() => {
     // Only initialize wallet if not in web2 mode
@@ -284,6 +285,26 @@ function Browser() {
     [homepageSettings, setItem]
   )
 
+  // Initialize notification system and set up bridge
+  useEffect(() => {
+    console.log('🚀 Initializing WebView-Native notification bridge')
+
+    // Initialize Firebase notifications
+    if (!managers.walletManager) {
+      console.error('No wallet manager found')
+      return
+    }
+    initializeFirebaseNotifications(managers.permissionsManager, adminOriginator).catch(console.error)
+
+    // // Set callback for FCM notifications to forward to WebView
+    // setWebViewMessageCallback(forwardNotificationToWebView)
+
+    // return () => {
+    //   // Clean up callback on unmount
+    //   setWebViewMessageCallback(() => { })
+    // }
+  }, [managers.permissionsManager])
+
   const addBookmark = useCallback((title: string, url: string) => {
     // Only add bookmarks for valid URLs that aren't the new tab page
     if (url && url !== kNEW_TAB_URL && isValidUrl(url) && !url.includes('about:blank')) {
@@ -351,8 +372,7 @@ function Browser() {
   }, [showInfoDrawer, infoDrawerRoute])
 
   /* ------------------------- push notifications ----------------------------- */
-  const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } =
-    usePushNotifications()
+  const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } = usePushNotifications()
 
   const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false)
   const [showNotificationSettingsModal, setShowNotificationSettingsModal] = useState(false)

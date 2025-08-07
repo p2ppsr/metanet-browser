@@ -3,6 +3,8 @@ import messagingModular from '@react-native-firebase/messaging'
 import { FirebaseMessaging } from '@/utils/firebase'
 import * as Notifications from 'expo-notifications'
 import type { PendingNotification } from '@/hooks/usePushNotifications'
+import { IdentityClient, WalletInterface } from '@bsv/sdk'
+import { MessageBoxClient } from '@bsv/message-box-client'
 
 /**
  * Requests permission to show notifications on iOS (and Android 13+).
@@ -72,7 +74,8 @@ const showLocalNotification = async (notification: PendingNotification) => {
 /**
  * Initialize FCM notifications with backend integration and WebView bridge
  */
-export const initializeFirebaseNotifications = async (): Promise<void> => {
+export const initializeFirebaseNotifications = async (wallet?: WalletInterface, originator?: string): Promise<void> => {
+
   console.log('🚀 Initializing Firebase notifications with backend integration')
 
   const hasPermission = await requestUserPermission()
@@ -93,25 +96,97 @@ export const initializeFirebaseNotifications = async (): Promise<void> => {
   messagingModular().onMessage(async remoteMessage => {
     console.log('📱 FCM foreground notification received:', remoteMessage)
 
-    const fcmData =
-      typeof remoteMessage.data === 'object' && remoteMessage.data !== null
-        ? (remoteMessage.data as Record<string, any>)
-        : {}
+    try {
+      // Extract messageId from FCM notification body
+      const messageId = remoteMessage.notification?.body
 
-    const notification: PendingNotification = {
-      title: remoteMessage.notification?.title || 'Notification',
-      body: remoteMessage.notification?.body || '',
-      data: fcmData,
-      origin: fcmData.origin || 'unknown',
-      timestamp: Date.now()
-    }
+      if (!messageId) {
+        console.warn('⚠️ No messageId in FCM notification body, showing generic notification')
+        const notification: PendingNotification = {
+          title: 'New Message',
+          body: 'You have received a new message',
+          origin: 'unknown',
+          timestamp: Date.now()
+        }
+        await showLocalNotification(notification)
+        return
+      }
 
-    // Show local notification
-    await showLocalNotification(notification)
+      console.log('📬 Processing notification for messageId:', messageId)
+      // Create MessageBoxClient and retrieve messages
+      const messageBoxClient = new MessageBoxClient({
+        walletClient: wallet,
+        host: 'http://localhost:8080',
+        enableLogging: true,
+        originator
+      })
 
-    // Forward to WebView if callback is set
-    if (webViewMessageCallback) {
-      webViewMessageCallback(notification)
+      console.log('🔍 Fetching messages from notification messageBox...')
+      const messages = await messageBoxClient.listMessages({
+        messageBox: 'notifications',
+        originator
+      })
+      console.log('Found messages:', messages)
+
+      // Find the specific message that triggered the notification
+      const targetMessage = messages.find(message => message.messageId === messageId)
+
+      if (!targetMessage) {
+        console.warn(`⚠️ Message with ID ${messageId} not found in messageBox`)
+        return
+      }
+
+      console.log('📬 Found target message:', targetMessage)
+
+      // Acknowledge the specific message
+      await messageBoxClient.acknowledgeMessage({
+        messageIds: [messageId],
+        originator
+      })
+      console.log('✅ Message acknowledged:', messageId)
+
+      // TODO: resolve identity of sender
+      // const identityClient = new IdentityClient(wallet, )
+
+      // Create notification with the actual message content
+      const notification: PendingNotification = {
+        title: remoteMessage.notification?.title || 'New Message',
+        body: typeof targetMessage.body === 'string'
+          ? targetMessage.body
+          : JSON.stringify(targetMessage.body),
+        origin: targetMessage.sender || 'unknown',
+        timestamp: Date.now(),
+        data: {
+          messageId: targetMessage.messageId,
+          sender: targetMessage.sender,
+          fcmMessageId: remoteMessage.messageId,
+          from: remoteMessage.from
+        }
+      }
+
+      // Show local notification
+      await showLocalNotification(notification)
+
+      // Forward to WebView if callback is set
+      if (webViewMessageCallback) {
+        webViewMessageCallback(notification)
+      }
+    } catch (error) {
+      console.error('❌ Error processing FCM notification:', error)
+
+      // Fallback: show generic notification even if message processing fails
+      // const fallbackNotification: PendingNotification = {
+      //   title: remoteMessage.notification?.title || 'New Message',
+      //   body: remoteMessage.notification?.body || 'You have received a new message',
+      //   origin: 'unknown',
+      //   timestamp: Date.now()
+      // }
+
+      // try {
+      //   await showLocalNotification(fallbackNotification)
+      // } catch (fallbackError) {
+      //   console.error('❌ Failed to show fallback notification:', fallbackError)
+      // }
     }
   })
 
