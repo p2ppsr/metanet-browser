@@ -1597,6 +1597,7 @@ function Browser() {
     return () => handle.cancel?.()
   }, [])
 
+    const uri = activeTab?.url ?? 'about:blank';
     if (!ready) {
     // you can show a spinner or a blank container until the view is "ready"
     return (
@@ -1677,7 +1678,7 @@ function Browser() {
               <WebView
                 ref={activeTab?.webviewRef}
                 source={{
-                  uri: activeTab?.url,
+                  uri: uri,
                   headers: {
                     'Accept-Language': getAcceptLanguageHeader()
                   }
