@@ -1577,7 +1577,7 @@ function Browser() {
 
   const addressDisplay = addressFocused ? addressText : domainForUrl(addressText)
 
-    const [ready, setReady] = useState(false)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const handle = InteractionManager.runAfterInteractions(() => {
@@ -1586,25 +1586,28 @@ function Browser() {
     return () => handle.cancel?.()
   }, [])
 
-    const uri = typeof activeTab?.url === 'string' && activeTab.url.length > 0 ? activeTab.url : 'about:blank';
-    if (!ready) {
+  const uri = typeof activeTab?.url === 'string' && activeTab.url.length > 0 ? activeTab.url : 'about:blank'
+  if (!ready) {
     return (
-      <View style={styles.loaderContainer} onLayout={() => { /* ensures layout has happened */ }}>
+      <View
+        style={styles.loaderContainer}
+        onLayout={() => {
+          /* ensures layout has happened */
+        }}
+      >
         <ActivityIndicator size="large" />
       </View>
     )
   }
-  
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }}>
         <SafeAreaView
           style={[
             styles.container,
             {
-              backgroundColor: colors.inputBackground,
+              backgroundColor: colors.inputBackground
             }
           ]}
         >
@@ -1688,7 +1691,9 @@ function Browser() {
                   }
                   console.warn('WebView HTTP error:', nativeEvent)
                 }}
-                onLoadEnd={navState => tabStore.handleNavigationStateChange(activeTab.id, { ...navState, loading: false })}
+                onLoadEnd={navState =>
+                  tabStore.handleNavigationStateChange(activeTab.id, { ...navState, loading: false })
+                }
                 javaScriptEnabled
                 domStorageEnabled
                 allowsBackForwardNavigationGestures
@@ -2371,7 +2376,7 @@ const BottomToolbar = ({
       canGoForward: activeTab.canGoForward,
       isNewTab: activeTab.url === kNEW_TAB_URL,
       kNEW_TAB_URL: kNEW_TAB_URL,
-      backButtonDisabled: !activeTab.canGoBack || activeTab.url === kNEW_TAB_URL,
+      backButtonDisabled: !activeTab.canGoBack || activeTab.url === kNEW_TAB_URL
     })
   })
 
@@ -2463,12 +2468,12 @@ const BottomToolbar = ({
 
 const styles = StyleSheet.create({
   loaderContainer: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   webview: {
-    flex: 1,
+    flex: 1
   },
   container: { flex: 1 },
   addressBar: {

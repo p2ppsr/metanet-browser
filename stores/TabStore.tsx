@@ -331,7 +331,7 @@ export class TabStore {
     })
   }
 
- async clearAllTabs() {
+  async clearAllTabs() {
     console.log('clearAllTabs() called')
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     this.nextId = 1
