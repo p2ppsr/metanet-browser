@@ -66,6 +66,7 @@ import { useWebAppManifest } from '@/hooks/useWebAppManifest'
 import * as Notifications from 'expo-notifications'
 import { initializeFirebaseNotifications, setWebViewMessageCallback } from '@/utils/pushNotificationManager'
 import { getPermissionState, PermissionType, setDomainPermission } from '@/utils/permissionsManager'
+import BrowserWebView from '@/components/BrowserWebView'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -957,13 +958,21 @@ function Browser() {
       };
     }
 
-    // Fullscreen API polyfill
-    if (!document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen = function() {
+    // Prevent duplicate polyfill injection
+    if (window.__fullscreenPolyfillInjected) {
+      console.log('[WebView] 📺 Fullscreen polyfill already injected, skipping');
+    } else {
+      console.log('[WebView] 📺 Injecting fullscreen polyfill');
+      window.__fullscreenPolyfillInjected = true;
+      
+      // Fullscreen API polyfill - Standard method
+      const fullscreenRequestFunction = function() {
+        console.log('[WebView] 📺 requestFullscreen() CALLED by website');
         return new Promise((resolve, reject) => {
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'REQUEST_FULLSCREEN'
           }));
+          console.log('[WebView] 📺 Posted REQUEST_FULLSCREEN message');
           
           const handler = (event) => {
             try {
@@ -981,14 +990,29 @@ function Browser() {
           window.addEventListener('message', handler);
         });
       };
-    }
+      
+      // Polyfill all fullscreen request methods
+      if (!document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen = fullscreenRequestFunction;
+      }
+      if (!document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen = fullscreenRequestFunction;
+      }
+      if (!document.documentElement.mozRequestFullScreen) {
+        document.documentElement.mozRequestFullScreen = fullscreenRequestFunction;
+      }
+      if (!document.documentElement.msRequestFullscreen) {
+        document.documentElement.msRequestFullscreen = fullscreenRequestFunction;
+      }
 
-    if (!document.exitFullscreen) {
-      document.exitFullscreen = function() {
+      // Exit fullscreen function
+      const exitFullscreenFunction = function() {
+        console.log('[WebView] 📺 exitFullscreen() CALLED by website');
         return new Promise((resolve) => {
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'EXIT_FULLSCREEN'
           }));
+          console.log('[WebView] 📺 Posted EXIT_FULLSCREEN message');
           
           const handler = (event) => {
             try {
@@ -1002,20 +1026,59 @@ function Browser() {
           window.addEventListener('message', handler);
         });
       };
-    }
-
-    // Define fullscreen properties
-    Object.defineProperty(document, 'fullscreenElement', {
-      get: function() {
-        return window.__fullscreenElement || null;
+      
+      // Polyfill all exit fullscreen methods
+      if (!document.exitFullscreen) {
+        document.exitFullscreen = exitFullscreenFunction;
       }
-    });
-
-    Object.defineProperty(document, 'fullscreen', {
-      get: function() {
-        return !!window.__fullscreenElement;
+      if (!document.webkitExitFullscreen) {
+        document.webkitExitFullscreen = exitFullscreenFunction;
       }
-    });
+      if (!document.mozCancelFullScreen) {
+        document.mozCancelFullScreen = exitFullscreenFunction;
+      }
+      if (!document.msExitFullscreen) {
+        document.msExitFullscreen = exitFullscreenFunction;
+      }
+
+      // Define fullscreen properties
+      Object.defineProperty(document, 'fullscreenElement', {
+        get: function() {
+          return window.__fullscreenElement || null;
+        }
+      });
+
+      Object.defineProperty(document, 'fullscreen', {
+        get: function() {
+          return !!window.__fullscreenElement;
+        }
+      });
+
+      Object.defineProperty(document, 'fullscreenEnabled', {
+        get: function() {
+          return true;
+        }
+      });
+      
+      // Also define vendor-prefixed enabled properties
+      Object.defineProperty(document, 'webkitFullscreenEnabled', {
+        get: function() {
+          return true;
+        }
+      });
+      
+      Object.defineProperty(document, 'mozFullScreenEnabled', {
+        get: function() {
+          return true;
+        }
+      });
+      
+      Object.defineProperty(document, 'msFullscreenEnabled', {
+        get: function() {
+          return true;
+        }
+      });
+    } // Close the polyfill injection guard
 
     // Listen for fullscreen changes from native
     window.addEventListener('message', function(event) {
@@ -1120,6 +1183,64 @@ function Browser() {
       return originalXHRSend.call(this, data);
     };
   })();
+
+  // Console forwarding - intercept console methods and forward to React Native
+  (function() {
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    const originalInfo = console.info;
+    const originalDebug = console.debug;
+
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'log',
+        args: args
+      }));
+    };
+
+    console.warn = function(...args) {
+      originalWarn.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'warn',
+        args: args
+      }));
+    };
+
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'error',
+        args: args
+      }));
+    };
+
+    console.info = function(...args) {
+      originalInfo.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'info',
+        args: args
+      }));
+    };
+
+    console.debug = function(...args) {
+      originalDebug.apply(console, args);
+      window.ReactNativeWebView?.postMessage(JSON.stringify({
+        type: 'CONSOLE',
+        method: 'debug',
+        args: args
+      }));
+    };
+    
+    // Test console forwarding immediately
+    console.log('[WebView] 🚀 Console forwarding initialized');
+  })();
+  
   true;
 `,
     [getAcceptLanguageHeader]
@@ -1157,6 +1278,8 @@ function Browser() {
         return
       }
 
+      console.log('[Browser] 📺 Received message:', msg)
+
       // Handle console logs from WebView
       if (msg.type === 'CONSOLE') {
         const logPrefix = '[WebView]'
@@ -1180,9 +1303,12 @@ function Browser() {
         return
       }
 
+      console.log('[Browser] 📺 Received message REEEEEEEEEEEE:', msg)
+
       // Handle fullscreen requests
       if (msg.type === 'REQUEST_FULLSCREEN') {
-        console.log('Fullscreen requested by website')
+        console.log('[Browser] 📺 REQUEST_FULLSCREEN message received')
+        console.log('[Browser] 📺 Entering fullscreen mode...')
         await enterFullscreen()
 
         // Send success response back to webview
@@ -1207,7 +1333,8 @@ function Browser() {
 
       // Handle exit fullscreen requests
       if (msg.type === 'EXIT_FULLSCREEN') {
-        console.log('Exit fullscreen requested by website')
+        console.log('[Browser] 📺 EXIT_FULLSCREEN message received')
+        console.log('[Browser] 📺 Exiting fullscreen mode...')
         await exitFullscreen()
 
         // Send response back to webview
@@ -1975,7 +2102,7 @@ function Browser() {
                   <Ionicons name="contract-outline" size={20} color="white" />
                 </TouchableOpacity>
               )}
-              <WebView
+              <BrowserWebView
                 ref={activeTab?.webviewRef}
                 source={{
                   uri: activeTab?.url,
