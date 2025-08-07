@@ -103,8 +103,8 @@ export const initializeFirebaseNotifications = async (wallet?: WalletInterface, 
       if (!messageId) {
         console.warn('⚠️ No messageId in FCM notification body, showing generic notification')
         const notification: PendingNotification = {
-          title: 'New Message',
-          body: 'You have received a new message',
+          title: remoteMessage.notification?.title || 'New Message',
+          body: remoteMessage.notification?.body || 'You have received a new message',
           origin: 'unknown',
           timestamp: Date.now()
         }
@@ -145,7 +145,6 @@ export const initializeFirebaseNotifications = async (wallet?: WalletInterface, 
       })
       console.log('✅ Message acknowledged:', messageId)
 
-      // TODO: resolve identity of sender
       // const identityClient = new IdentityClient(wallet, )
 
       // Create notification with the actual message content

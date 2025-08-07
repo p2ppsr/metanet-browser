@@ -290,7 +290,7 @@ function Browser() {
     console.log('🚀 Initializing WebView-Native notification bridge')
 
     // Initialize Firebase notifications
-    if (!managers.walletManager) {
+    if (!managers.permissionsManager) {
       console.error('No wallet manager found')
       return
     }
@@ -303,7 +303,7 @@ function Browser() {
     //   // Clean up callback on unmount
     //   setWebViewMessageCallback(() => { })
     // }
-  }, [managers.permissionsManager])
+  }, [managers.permissionsManager, adminOriginator])
 
   const addBookmark = useCallback((title: string, url: string) => {
     // Only add bookmarks for valid URLs that aren't the new tab page
