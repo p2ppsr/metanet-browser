@@ -2,7 +2,7 @@
   "expo": {
     "name": "Metanet",
     "slug": "metanet-mobile",
-    "version": "0.2.4",
+    "version": "0.2.2",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
@@ -34,6 +34,7 @@
         }
       ],
       "@react-native-firebase/app",
+      "./plugins/with-fcm-headless.js",
       [
         "expo-build-properties",
         {

@@ -25,14 +25,14 @@ const PASSWORD_KEY = 'password'
 
 export const LocalStorageContext = createContext<LocalStorageContextType>({
   /* non-secure */
-  setSnap: async () => {},
+  setSnap: async () => { },
   getSnap: async () => null,
-  deleteSnap: async () => {},
+  deleteSnap: async () => { },
 
   /* secure */
-  setPassword: async () => {},
+  setPassword: async () => { },
   getPassword: async () => null,
-  deletePassword: async () => {},
+  deletePassword: async () => { },
 
   getItem: AsyncStorage.getItem,
   setItem: AsyncStorage.setItem,

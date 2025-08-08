@@ -2,7 +2,7 @@
   "name": "metanet-mobile",
   "description": "Enabling identity, micropayments, and use of Metanet websites on mobile devices",
   "author": "BSV Association",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "version": "0.2.2",
   "license": "Open BSV",
   "scripts": {

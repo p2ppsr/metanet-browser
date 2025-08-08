@@ -69,7 +69,6 @@ import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
 import * as Notifications from 'expo-notifications'
-import { initializeFirebaseNotifications } from '@/utils/pushNotificationManager'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -296,15 +295,6 @@ function Browser() {
       console.error('No wallet manager found')
       return
     }
-    initializeFirebaseNotifications(managers.permissionsManager, adminOriginator).catch(console.error)
-
-    // // Set callback for FCM notifications to forward to WebView
-    // setWebViewMessageCallback(forwardNotificationToWebView)
-
-    // return () => {
-    //   // Clean up callback on unmount
-    //   setWebViewMessageCallback(() => { })
-    // }
   }, [managers.permissionsManager, adminOriginator])
 
   const addBookmark = useCallback((title: string, url: string) => {
@@ -655,9 +645,9 @@ function Browser() {
   const responderProps =
     addressFocused && keyboardVisible
       ? {
-          onStartShouldSetResponder: () => true,
-          onResponderRelease: dismissKeyboard
-        }
+        onStartShouldSetResponder: () => true,
+        onResponderRelease: dismissKeyboard
+      }
       : {}
 
   /* -------------------------------------------------------------------------- */
@@ -1261,7 +1251,7 @@ function Browser() {
         title: navState.title || navState.url,
         url: navState.url,
         timestamp: Date.now()
-      }).catch(() => {})
+      }).catch(() => { })
     }
   }
 
@@ -2211,7 +2201,7 @@ const TabsViewBase = ({
           offset: (ITEM_H + screen.width * 0.08) * Math.floor(index / 2),
           index
         })}
-        onContentSizeChange={() => {}}
+        onContentSizeChange={() => { }}
         extraData={tabStore.activeTabId}
         contentContainerStyle={{
           padding: 12,
@@ -2252,7 +2242,7 @@ const TabsViewBase = ({
               try {
                 const { ImpactFeedbackGenerator } = require('expo-haptics')
                 ImpactFeedbackGenerator.impactAsync(ImpactFeedbackGenerator.ImpactFeedbackStyle.Medium)
-              } catch (e) {}
+              } catch (e) { }
             }
             setAddressFocused(false)
             Keyboard.dismiss()

@@ -1,9 +1,9 @@
 {
   "expo": {
     "name": "Metanet",
-    "slug": "metanet",
-    "version": "0.2.3",
-    "orientation": "portrait",
+    "slug": "metanet-mobile",
+    "version": "0.2.2",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
     "userInterfaceStyle": "automatic",
@@ -33,6 +33,8 @@
           "defaultChannel": "default"
         }
       ],
+      "@react-native-firebase/app",
+      "./plugins/with-fcm-headless.js",
       [
         "expo-build-properties",
         {
@@ -47,7 +49,11 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "f18a56d2-60e6-4170-95ca-839868f329fa"
+      },
+      "useFirebase": false
     },
     "android": {
       "package": "org.bsvblockchain.metanet",
@@ -58,6 +64,7 @@
         "android.permission.INTERNET",
         "android.permission.SYSTEM_ALERT_WINDOW"
       ],
+      "googleServicesFile": "google-services.json",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -91,6 +98,7 @@
     },
     "ios": {
       "bundleIdentifier": "org.bsvblockchain.metanet",
+      "googleServicesFile": "GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs camera access to scan QR codes.",
         "NSPhotoLibraryUsageDescription": "This app needs photo library access to let you select images.",
@@ -125,6 +133,7 @@
       "iosDisplayInForeground": true,
       "androidMode": "default",
       "androidCollapsedTitle": "#{unread_notifications} new interactions"
-    }
+    },
+    "owner": "bsvb"
   }
 }

@@ -1,7 +1,5 @@
 import { Platform } from 'react-native'
 import config from './config'
-import { initializeFirebaseNotifications } from './pushNotificationManager'
-import { WalletInterface } from '@bsv/sdk'
 
 let analytics: () => any
 let remoteConfig: () => any
