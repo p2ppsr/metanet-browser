@@ -125,7 +125,7 @@ export default function LoginScreen() {
 
   // Initial app load
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       try {
         const snap = await getSnap()
         if (snap) {

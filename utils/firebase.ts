@@ -1,6 +1,5 @@
 import { Platform } from 'react-native'
 import config from './config'
-import { initializeFirebaseNotifications } from './pushNotificationManager'
 
 let analytics: () => any
 let remoteConfig: () => any
@@ -107,7 +106,7 @@ export const initializeFirebase = async () => {
     const fetched = await remoteConfig().fetchAndActivate()
     console.log(`Remote Config: ${fetched ? 'Fetched & activated' : 'No new configs'}`)
 
-    await initializeFirebaseNotifications()
+    // await initializeFirebaseNotifications(wallet)
   } catch (error) {
     console.error('Firebase initialization error:', error)
   }
