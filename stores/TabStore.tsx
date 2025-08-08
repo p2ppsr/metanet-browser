@@ -8,6 +8,7 @@ import { kNEW_TAB_URL } from '@/shared/constants'
 import { isValidUrl } from '@/utils/generalHelpers'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { WebViewNavigation } from 'react-native-webview'
+const STORAGE_KEYS = { TABS: 'tabs', ACTIVE: 'activeTabId' }
 
 export class TabStore {
   tabs: Tab[] = [] // Always initialize as an array
@@ -17,7 +18,6 @@ export class TabStore {
   private nextId = 1
   private tabNavigationHistories: { [tabId: number]: string[] } = {} // Track navigation history per tab
   private tabHistoryIndexes: { [tabId: number]: number } = {} // Track current position in history per tab
-
   constructor() {
     console.log('TabStore constructor called')
     makeAutoObservable(this)
@@ -103,13 +103,17 @@ export class TabStore {
     if (targetTab && targetTab.id !== this.activeTabId) {
       console.log(`setActiveTab(): Setting activeTabId=${id}`)
       this.activeTabId = id
+      this.saveActive().catch(e => console.error('saveActive failed', e))
     } else if (!targetTab) {
       console.warn(`setActiveTab(): Target tab ${id} not found`)
     } else {
       console.log(`setActiveTab(): Tab ${id} is already active, no change needed`)
     }
-  }
 
+  }
+  async saveActive() {
+    await AsyncStorage.setItem(STORAGE_KEYS.ACTIVE, String(this.activeTabId))
+  }
   setShowTabsView(show: boolean) {
     this.showTabsView = show
   }
@@ -370,49 +374,41 @@ export class TabStore {
   }
 
   async saveTabs() {
-    if (!this.tabs) this.tabs = [] // Prevent undefined
-    const serializableTabs = this.tabs.map(({ webviewRef, ...rest }) => rest)
-
-    await AsyncStorage.setItem('tabs', JSON.stringify(serializableTabs)).catch(() => {
-      // Silent catch for now
-    })
+    const serializable = this.tabs.map(({ webviewRef, ...rest }) => rest)
+    await AsyncStorage.multiSet([
+      [STORAGE_KEYS.TABS, JSON.stringify(serializable)],
+      [STORAGE_KEYS.ACTIVE, String(this.activeTabId)]
+    ])
   }
+  
+async loadTabs() {
+  try {
+    const [[, tabsJson], [, activeIdStr]] = await AsyncStorage.multiGet([
+      STORAGE_KEYS.TABS,
+      STORAGE_KEYS.ACTIVE
+    ])
 
-  async loadTabs() {
-    try {
-      const savedTabsJson = await AsyncStorage.getItem('tabs')
-      if (savedTabsJson) {
-        const parsedTabs = JSON.parse(savedTabsJson).map((tab: any) => ({
-          ...tab,
-          url: tab.url || kNEW_TAB_URL, // Ensure URL is never null when loading
-          webviewRef: createRef<WebView>()
-        }))
+      const parsed = tabsJson ? JSON.parse(tabsJson) : []
+      const withRefs = parsed.map((t: any) => ({
+        ...t,
+        webviewRef: createRef<WebView>(),
+      }))
 
-        runInAction(() => {
-          this.tabs = parsedTabs
-          // Update nextId to be higher than any existing tab id
-          const maxId = Math.max(...parsedTabs.map((t: Tab) => t.id), 0)
-          this.nextId = maxId + 1
+      runInAction(() => {
+        this.tabs = withRefs
+        const maxId = Math.max(0, ...withRefs.map((t: any) => t.id))
+        this.nextId = maxId + 1
 
-          // Ensure activeTabId points to a valid tab
-          if (parsedTabs.length > 0) {
-            const activeTabExists = parsedTabs.some((t: Tab) => t.id === this.activeTabId)
-            if (!activeTabExists) {
-              this.activeTabId = parsedTabs[0].id
-            }
-          }
-        })
-      } else {
-        // No saved tabs, initialize as empty. `initializeTabs` will create the first one.
-        runInAction(() => {
-          this.tabs = []
-        })
-      }
-    } catch (error) {
-      console.error('Failed to load tabs, starting fresh.', error)
-      // In case of parsing error, start with a clean slate.
+        const restored = Number(activeIdStr)
+        this.activeTabId = withRefs.some((t: any) => t.id === restored)
+          ? restored
+          : withRefs[0]?.id ?? 1
+      })
+    } catch (e) {
+      console.error('loadTabs failed', e)
       runInAction(() => {
         this.tabs = []
+        this.activeTabId = 1
       })
     }
   }

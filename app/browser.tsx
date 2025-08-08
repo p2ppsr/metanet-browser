@@ -168,6 +168,11 @@ function Browser() {
   const insets = useSafeAreaInsets()
   const { t, i18n } = useTranslation()
   const { isWeb2Mode } = useBrowserMode()
+  useEffect(() => {
+  // hydrate from AsyncStorage once
+    tabStore.initializeTabs()
+  }, [])
+
 
   /* ----------------------------- language headers ----------------------------- */
   // Map i18n language codes to proper HTTP Accept-Language header values
@@ -357,11 +362,12 @@ function Browser() {
   // Safety check - if somehow activeTab is null, force create a new tab
   // This is done after all hooks to avoid violating Rules of Hooks
   useEffect(() => {
-    if (!activeTab) {
-      console.warn('activeTab is null, creating new tab')
-      tabStore.newTab()
-    }
-  }, [activeTab])
+  if (tabStore.isInitialized && !activeTab) {
+    tabStore.newTab()
+    Keyboard.dismiss()
+    setAddressFocused(false)
+  }
+}, [tabStore.isInitialized, activeTab])
 
   // Balance handling - only delay on first open
   useEffect(() => {
@@ -649,10 +655,12 @@ function Browser() {
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
 
   useEffect(() => {
-    if (tabStore.tabs.length === 0) {
+    if (tabStore.tabs.length === 0 && tabStore.isInitialized) {
       tabStore.newTab()
+      setAddressFocused(false)
+      Keyboard.dismiss()
     }
-  }, [])
+  }, [tabStore.isInitialized])
   useEffect(() => {
     if (activeTab && !addressEditing.current) {
       setAddressText(activeTab.url)
@@ -1617,7 +1625,14 @@ function Browser() {
     })
     return () => handle.cancel?.()
   }, [])
-
+  if (!tabStore.isInitialized) {
+    // don’t render the browser UI until tabs are loaded or created
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    )
+  }
   const uri = typeof activeTab?.url === 'string' && activeTab.url.length > 0 ? activeTab.url : 'about:blank'
   if (!ready) {
     return (
@@ -2275,6 +2290,7 @@ const TabsViewBase = ({
             setAddressFocused(false)
             Keyboard.dismiss()
             tabStore.clearAllTabs()
+            Keyboard.dismiss()
           }}
           activeOpacity={0.7}
         >
