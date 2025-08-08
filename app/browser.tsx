@@ -1652,7 +1652,7 @@ function Browser() {
       <KeyboardAvoidingView  style={{ flex: 1 }}
         enabled={Platform.OS === 'ios'}
         behavior="padding"
-        keyboardVerticalOffset={insets.top + addressBarHeight}
+        keyboardVerticalOffset={insets.top}
         >
         <SafeAreaView
           style={[
