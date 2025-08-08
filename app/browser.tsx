@@ -1764,7 +1764,7 @@ function Browser() {
                   borderColor: colors.inputBorder,
                   paddingTop: addressFocused && keyboardVisible ? 8 : 12,
                   paddingBottom: addressFocused && keyboardVisible ? 0 : 12,
-                  marginBottom: keyboardVisible ? 0 : insets.bottom,
+                  marginBottom: 0,
                   zIndex: 10,
                   elevation: 10
                 }
