@@ -75,7 +75,6 @@ const showLocalNotification = async (notification: PendingNotification) => {
  * Initialize FCM notifications with backend integration and WebView bridge
  */
 export const initializeFirebaseNotifications = async (wallet?: WalletInterface, originator?: string): Promise<void> => {
-
   console.log('🚀 Initializing Firebase notifications with backend integration')
 
   const hasPermission = await requestUserPermission()
@@ -150,9 +149,7 @@ export const initializeFirebaseNotifications = async (wallet?: WalletInterface, 
       // Create notification with the actual message content
       const notification: PendingNotification = {
         title: remoteMessage.notification?.title || 'New Message',
-        body: typeof targetMessage.body === 'string'
-          ? targetMessage.body
-          : JSON.stringify(targetMessage.body),
+        body: typeof targetMessage.body === 'string' ? targetMessage.body : JSON.stringify(targetMessage.body),
         origin: targetMessage.sender || 'unknown',
         timestamp: Date.now(),
         data: {

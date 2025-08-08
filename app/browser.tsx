@@ -170,10 +170,9 @@ function Browser() {
   const { t, i18n } = useTranslation()
   const { isWeb2Mode } = useBrowserMode()
   useEffect(() => {
-  // hydrate from AsyncStorage once
+    // hydrate from AsyncStorage once
     tabStore.initializeTabs()
   }, [])
-
 
   /* ----------------------------- language headers ----------------------------- */
   // Map i18n language codes to proper HTTP Accept-Language header values
@@ -364,12 +363,12 @@ function Browser() {
   // Safety check - if somehow activeTab is null, force create a new tab
   // This is done after all hooks to avoid violating Rules of Hooks
   useEffect(() => {
-  if (tabStore.isInitialized && !activeTab) {
-    tabStore.newTab()
-    Keyboard.dismiss()
-    setAddressFocused(false)
-  }
-}, [tabStore.isInitialized, activeTab])
+    if (tabStore.isInitialized && !activeTab) {
+      tabStore.newTab()
+      Keyboard.dismiss()
+      setAddressFocused(false)
+    }
+  }, [tabStore.isInitialized, activeTab])
 
   // Balance handling - only delay on first open
   useEffect(() => {
@@ -382,7 +381,8 @@ function Browser() {
   }, [showInfoDrawer, infoDrawerRoute])
 
   /* ------------------------- push notifications ----------------------------- */
-  const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } = usePushNotifications()
+  const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } =
+    usePushNotifications()
 
   const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false)
   const [showNotificationSettingsModal, setShowNotificationSettingsModal] = useState(false)
@@ -447,10 +447,8 @@ function Browser() {
         if (shortcutId.startsWith('metanet_')) {
           const encodedUrl = shortcutId.replace('metanet_', '')
           console.log('📱 [Shortcut] Encoded URL from ID:', encodedUrl)
-          let base64Url = encodedUrl
-            .replace(/-/g, '+')
-            .replace(/_/g, '/')
-          
+          let base64Url = encodedUrl.replace(/-/g, '+').replace(/_/g, '/')
+
           while (base64Url.length % 4) {
             base64Url += '='
           }
@@ -572,25 +570,27 @@ function Browser() {
   /*                              ADDRESS HANDLING                              */
   /* -------------------------------------------------------------------------- */
 
-  const updateActiveTab = useCallback((patch: Partial<Tab>) => {
-  const raw = patch.url?.trim()
-  if (raw) {
-    if (!isValidUrl(raw)) {
-      // Try only adding https:// (no other fixes)
-      const candidate = raw.startsWith('http://') || raw.startsWith('https://')
-        ? raw
-        : `https://${raw.replace(/^\/+/, '')}`
+  const updateActiveTab = useCallback(
+    (patch: Partial<Tab>) => {
+      const raw = patch.url?.trim()
+      if (raw) {
+        if (!isValidUrl(raw)) {
+          // Try only adding https:// (no other fixes)
+          const candidate =
+            raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw.replace(/^\/+/, '')}`
 
-      if (candidate !== raw && isValidUrl(candidate)) {
-        patch.url = candidate
-      } else if (raw !== kNEW_TAB_URL) {
-        patch.url = kNEW_TAB_URL
+          if (candidate !== raw && isValidUrl(candidate)) {
+            patch.url = candidate
+          } else if (raw !== kNEW_TAB_URL) {
+            patch.url = kNEW_TAB_URL
+          }
+        }
       }
-    }
-  }
 
-  tabStore.updateTab(tabStore.activeTabId, patch)
-}, [tabStore /*, isValidUrl, kNEW_TAB_URL if not from module scope */])
+      tabStore.updateTab(tabStore.activeTabId, patch)
+    },
+    [tabStore /*, isValidUrl, kNEW_TAB_URL if not from module scope */]
+  )
 
   const onAddressSubmit = useCallback(() => {
     let entry = addressText.trim()
@@ -1363,7 +1363,7 @@ function Browser() {
       console.warn('Share cancelled/failed', err)
     }
   }, [])
- const addToHomeScreen = useCallback(async () => {
+  const addToHomeScreen = useCallback(async () => {
     if (activeTab && activeTab.url && activeTab.url !== kNEW_TAB_URL && isValidUrl(activeTab.url)) {
       setShowShortcutModal(true)
     }
@@ -1709,13 +1709,14 @@ function Browser() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardAvoidingView  style={{ flex: 1 }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         enabled={Platform.OS === 'ios'}
         behavior="padding"
         keyboardVerticalOffset={0}
-        >
+      >
         <SafeAreaView
-         edges={['top','left','right']}
+          edges={['top', 'left', 'right']}
           style={[
             styles.container,
             {

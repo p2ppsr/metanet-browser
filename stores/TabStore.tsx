@@ -109,7 +109,6 @@ export class TabStore {
     } else {
       console.log(`setActiveTab(): Tab ${id} is already active, no change needed`)
     }
-
   }
   async saveActive() {
     await AsyncStorage.setItem(STORAGE_KEYS.ACTIVE, String(this.activeTabId))
@@ -380,18 +379,15 @@ export class TabStore {
       [STORAGE_KEYS.ACTIVE, String(this.activeTabId)]
     ])
   }
-  
-async loadTabs() {
-  try {
-    const [[, tabsJson], [, activeIdStr]] = await AsyncStorage.multiGet([
-      STORAGE_KEYS.TABS,
-      STORAGE_KEYS.ACTIVE
-    ])
+
+  async loadTabs() {
+    try {
+      const [[, tabsJson], [, activeIdStr]] = await AsyncStorage.multiGet([STORAGE_KEYS.TABS, STORAGE_KEYS.ACTIVE])
 
       const parsed = tabsJson ? JSON.parse(tabsJson) : []
       const withRefs = parsed.map((t: any) => ({
         ...t,
-        webviewRef: createRef<WebView>(),
+        webviewRef: createRef<WebView>()
       }))
 
       runInAction(() => {
@@ -400,9 +396,7 @@ async loadTabs() {
         this.nextId = maxId + 1
 
         const restored = Number(activeIdStr)
-        this.activeTabId = withRefs.some((t: any) => t.id === restored)
-          ? restored
-          : withRefs[0]?.id ?? 1
+        this.activeTabId = withRefs.some((t: any) => t.id === restored) ? restored : (withRefs[0]?.id ?? 1)
       })
     } catch (e) {
       console.error('loadTabs failed', e)

@@ -102,7 +102,7 @@ export const usePushNotifications = () => {
 
       if (result.success && result.userKey) {
         console.log('✅ Push permission granted, userKey:', result.userKey)
-        
+
         // Update permissions state
         const newPermission: NotificationPermission = {
           origin,
@@ -112,11 +112,11 @@ export const usePushNotifications = () => {
         setPermissions(prev => {
           const existing = prev.find(p => p.origin === origin)
           if (existing) {
-            return prev.map(p => p.origin === origin ? newPermission : p)
+            return prev.map(p => (p.origin === origin ? newPermission : p))
           }
           return [...prev, newPermission]
         })
-        
+
         // Update subscriptions state
         setSubscriptions(prev => {
           const existing = prev.find(s => s.origin === origin)
@@ -125,11 +125,11 @@ export const usePushNotifications = () => {
           }
           return prev
         })
-        
+
         return 'granted'
       } else {
         console.log('❌ Push permission denied or failed:', result.message)
-        
+
         // Update permissions state to denied
         const deniedPermission: NotificationPermission = {
           origin,
@@ -139,11 +139,11 @@ export const usePushNotifications = () => {
         setPermissions(prev => {
           const existing = prev.find(p => p.origin === origin)
           if (existing) {
-            return prev.map(p => p.origin === origin ? deniedPermission : p)
+            return prev.map(p => (p.origin === origin ? deniedPermission : p))
           }
           return [...prev, deniedPermission]
         })
-        
+
         return 'denied'
       }
     } catch (error) {
@@ -202,20 +202,18 @@ export const usePushNotifications = () => {
   const unsubscribe = async (origin: string): Promise<boolean> => {
     try {
       console.log('🔕 Unsubscribing from origin:', origin)
-      
+
       // Remove from backend if we have a subscription
       const subscription = subscriptions.find(s => s.origin === origin)
       if (subscription) {
         // Here you would call backend to unsubscribe, but for now just remove locally
         console.log('🔍 Removing subscription for userKey:', subscription.userKey)
       }
-      
+
       // Update local state
-      setPermissions(prev => 
-        prev.map(p => p.origin === origin ? { ...p, permission: 'denied' as const } : p)
-      )
+      setPermissions(prev => prev.map(p => (p.origin === origin ? { ...p, permission: 'denied' as const } : p)))
       setSubscriptions(prev => prev.filter(s => s.origin !== origin))
-      
+
       return true
     } catch (error) {
       console.error('❌ Error unsubscribing:', error)
@@ -229,16 +227,15 @@ export const usePushNotifications = () => {
   const clearAllPermissions = async (): Promise<void> => {
     try {
       console.log('🗑️ Clearing all notification permissions')
-      
+
       // Clear backend subscriptions if needed
       for (const subscription of subscriptions) {
         console.log('🔍 Would remove subscription for:', subscription.origin)
       }
-      
+
       // Clear local state
       setPermissions([])
       setSubscriptions([])
-      
     } catch (error) {
       console.error('❌ Error clearing permissions:', error)
     }
