@@ -1736,6 +1736,7 @@ function Browser() {
                   elevation: 10
                 }
               ]}
+              pointerEvents={showTabsView ? 'none' : 'auto'}
             >
               {!addressFocused && (
                 <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
@@ -2254,10 +2255,10 @@ const TabsViewBase = ({
                 ImpactFeedbackGenerator.impactAsync(ImpactFeedbackGenerator.ImpactFeedbackStyle.Medium)
               } catch (e) {}
             }
+            onDismiss()
             setAddressFocused(false)
             Keyboard.dismiss()
             tabStore.clearAllTabs()
-            onDismiss()
           }}
           activeOpacity={0.7}
         >
