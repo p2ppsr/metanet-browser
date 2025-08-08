@@ -1652,9 +1652,10 @@ function Browser() {
       <KeyboardAvoidingView  style={{ flex: 1 }}
         enabled={Platform.OS === 'ios'}
         behavior="padding"
-        keyboardVerticalOffset={insets.top}
+        keyboardVerticalOffset={0}
         >
         <SafeAreaView
+         edges={['top','left','right']}
           style={[
             styles.container,
             {
@@ -1763,6 +1764,7 @@ function Browser() {
                   borderColor: colors.inputBorder,
                   paddingTop: addressFocused && keyboardVisible ? 8 : 12,
                   paddingBottom: addressFocused && keyboardVisible ? 0 : 12,
+                  marginBottom: keyboardVisible ? 0 : insets.bottom,
                   zIndex: 10,
                   elevation: 10
                 }
