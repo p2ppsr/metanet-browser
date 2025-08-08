@@ -502,12 +502,24 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
 
   const updateActiveTab = useCallback((patch: Partial<Tab>) => {
-    const newUrl = patch.url
-    if (newUrl && !isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
-      patch.url = kNEW_TAB_URL
+  const raw = patch.url?.trim()
+  if (raw) {
+    if (!isValidUrl(raw)) {
+      // Try only adding https:// (no other fixes)
+      const candidate = raw.startsWith('http://') || raw.startsWith('https://')
+        ? raw
+        : `https://${raw.replace(/^\/+/, '')}`
+
+      if (candidate !== raw && isValidUrl(candidate)) {
+        patch.url = candidate
+      } else if (raw !== kNEW_TAB_URL) {
+        patch.url = kNEW_TAB_URL
+      }
     }
-    tabStore.updateTab(tabStore.activeTabId, patch)
-  }, [])
+  }
+
+  tabStore.updateTab(tabStore.activeTabId, patch)
+}, [tabStore /*, isValidUrl, kNEW_TAB_URL if not from module scope */])
 
   const onAddressSubmit = useCallback(() => {
     let entry = addressText.trim()
@@ -1622,7 +1634,11 @@ function Browser() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardAvoidingView style={{ flex: 1 }}>
+      <KeyboardAvoidingView  style={{ flex: 1 }}
+        enabled={Platform.OS === 'ios'}
+        behavior="padding"
+        keyboardVerticalOffset={insets.top + addressBarHeight}
+        >
         <SafeAreaView
           style={[
             styles.container,
