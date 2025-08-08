@@ -57,7 +57,8 @@ import { useBrowserMode } from '@/context/BrowserModeContext'
 import { useLanguage } from '@/utils/translations'
 import SecurityScreen from './security'
 import TrustScreen from './trust'
-
+import HomescreenShortcut from '@/components/HomescreenShortcut'
+import Shortcuts from '@rn-bridge/react-native-shortcuts'
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
 /* -------------------------------------------------------------------------- */
@@ -341,6 +342,7 @@ function Browser() {
   const [keyboardHeight, setKeyboardHeight] = useState(0)
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
+  const [showShortcutModal, setShowShortcutModal] = useState(false)
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<
     'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'
   >('root')
@@ -438,7 +440,70 @@ function Browser() {
     const timer = setTimeout(checkPendingUrl, 500)
     return () => clearTimeout(timer)
   }, [])
+  // Shortcut launch handling
+  useEffect(() => {
+    const decodeUrlFromShortcutId = (shortcutId: string): string | null => {
+      try {
+        if (shortcutId.startsWith('metanet_')) {
+          const encodedUrl = shortcutId.replace('metanet_', '')
+          console.log('📱 [Shortcut] Encoded URL from ID:', encodedUrl)
+          let base64Url = encodedUrl
+            .replace(/-/g, '+')
+            .replace(/_/g, '/')
+          
+          while (base64Url.length % 4) {
+            base64Url += '='
+          }
+          const decodedUrl = Buffer.from(base64Url, 'base64').toString('utf-8')
+          return isValidUrl(decodedUrl) ? decodedUrl : null
+        }
+      } catch (error) {
+        console.error('Error decoding URL from shortcut ID:', error)
+      }
+      return null
+    }
 
+    const navigateToShortcutUrl = (url: string) => {
+      console.log('📱 [Shortcut] Navigating to URL:', url)
+      updateActiveTab({ url })
+      setAddressText(url)
+    }
+
+    const handleShortcutLaunch = async () => {
+      try {
+        // Check if app was launched from a shortcut
+        const initialShortcutId = await Shortcuts.getInitialShortcutId()
+        if (initialShortcutId) {
+          console.log('📱 [Shortcut] App launched from shortcut ID:', initialShortcutId)
+          const url = decodeUrlFromShortcutId(initialShortcutId)
+          if (url) {
+            navigateToShortcutUrl(url)
+          }
+        }
+      } catch (error) {
+        console.error('Error handling initial shortcut:', error)
+      }
+    }
+
+    const handleShortcutUsed = (shortcutId: string) => {
+      console.log('📱 [Shortcut] Shortcut used:', shortcutId)
+      const url = decodeUrlFromShortcutId(shortcutId)
+      console.log('📱 [Shortcut] Decoded URL:', url)
+      if (url) {
+        navigateToShortcutUrl(url)
+      }
+    }
+
+    // Handle app launch from shortcut
+    handleShortcutLaunch()
+
+    // Listen for shortcut usage while app is running
+    const subscription = Shortcuts.addOnShortcutUsedListener(handleShortcutUsed)
+
+    return () => {
+      subscription?.remove?.()
+    }
+  }, [])
   // Manifest checking useEffect
   useEffect(() => {
     if (!activeTab) return
@@ -1298,16 +1363,11 @@ function Browser() {
       console.warn('Share cancelled/failed', err)
     }
   }, [])
-  const addToHomeScreen = useCallback(async () => {
-    try {
-      if (Platform.OS === 'android') {
-      } else {
-        await Linking.openURL('prefs:root=Safari')
-      }
-    } catch (e) {
-      console.warn('Add to homescreen failed', e)
+ const addToHomeScreen = useCallback(async () => {
+    if (activeTab && activeTab.url && activeTab.url !== kNEW_TAB_URL && isValidUrl(activeTab.url)) {
+      setShowShortcutModal(true)
     }
-  }, [])
+  }, [activeTab])
 
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
@@ -1715,6 +1775,12 @@ function Browser() {
                   <Ionicons name="contract-outline" size={20} color="white" />
                 </TouchableOpacity>
               )}
+              <HomescreenShortcut
+                visible={showShortcutModal}
+                onClose={() => setShowShortcutModal(false)}
+                currentUrl={activeTab?.url || ''}
+                currentTitle={activeTab?.title}
+              />
               <WebView
                 ref={activeTab?.webviewRef}
                 source={{
