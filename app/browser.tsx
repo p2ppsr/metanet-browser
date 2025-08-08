@@ -21,6 +21,7 @@ import {
   BackHandler
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import { getPermissionScript } from '@/utils/permissionScript'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview'
 import Modal from 'react-native-modal'
@@ -36,7 +37,6 @@ import * as Linking from 'expo-linking'
 import { Ionicons } from '@expo/vector-icons'
 import { observer } from 'mobx-react-lite'
 import { router } from 'expo-router'
-
 import { useTheme } from '@/context/theme/ThemeContext'
 import { useWallet } from '@/context/WalletContext'
 import { WalletInterface } from '@bsv/sdk'
@@ -65,8 +65,10 @@ import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
 import * as Notifications from 'expo-notifications'
 import { initializeFirebaseNotifications, setWebViewMessageCallback } from '@/utils/pushNotificationManager'
-import { getPermissionState, PermissionType, setDomainPermission } from '@/utils/permissionsManager'
+import { getPermissionState, PermissionType, setDomainPermission, PermissionState, checkPermissionForDomain } from '@/utils/permissionsManager'
 import BrowserWebView from '@/components/BrowserWebView'
+import PermissionsScreen from '@/components/PermissionsScreen'
+import PermissionModal from '@/components/PermissionModal'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -314,7 +316,7 @@ function Browser() {
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<
-    'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'
+    'root' | 'identity' | 'settings' | 'security' | 'trust' | 'permissions'
   >('root')
   const drawerAnim = useRef(new Animated.Value(0)).current
 
@@ -508,7 +510,8 @@ function Browser() {
           console.log('🌉 Forwarding FCM notification to WebView:', notification)
 
           // Inject JavaScript to trigger push event in WebView
-          const jsCode = `
+          if (activeTab?.webviewRef?.current) {
+            const jsCode = `
           (function() {
             try {
               if (window.navigator && window.navigator.serviceWorker) {
@@ -535,8 +538,8 @@ function Browser() {
             }
           })()
         `
-
-          webViewRef.current.injectJavaScript(jsCode)
+            webViewRef.current.injectJavaScript(jsCode)
+          }
         }
       }
     },
@@ -589,6 +592,80 @@ function Browser() {
     }
   }, [])
 
+  const onDecision = useCallback(async (granted: boolean) => {
+    // 1) Close the modal right away
+    setPermissionModalVisible(false)
+
+    // Log the user's decision and start timing this flow
+    const domain = pendingDomain ?? ''
+    const permission = pendingPermission ?? 'CAMERA'
+    const decisionStart = Date.now()
+    console.log('[Metanet] PermissionModal decision', { domain, permission, granted })
+
+    try {
+      if (pendingDomain && pendingPermission) {
+        // Persist domain-level choice
+        console.log('[Metanet] Persisting domain permission', {
+          domain: pendingDomain,
+          permission: pendingPermission,
+          state: granted ? 'allow' : 'deny',
+        })
+        await setDomainPermission(pendingDomain, pendingPermission, granted ? 'allow' : 'deny')
+
+        // Update denied list cache used by injection
+        console.log('[Metanet] Updating denied-permissions cache for current tab', {
+          url: activeTab?.url || '',
+        })
+        await updateDeniedPermissionsForDomain(activeTab?.url || '')
+
+        // Live-update the page (remove from pending + fire change event)
+        if (activeTab?.url && domainForUrl(activeTab.url) === pendingDomain && activeTab.webviewRef?.current) {
+          const updatedDenied = granted
+            ? permissionsDeniedForCurrentDomain.filter(p => p !== pendingPermission)
+            : [...new Set([...permissionsDeniedForCurrentDomain, pendingPermission])]
+
+          console.log('[Metanet] Injecting permissionchange into page', {
+            permission: pendingPermission,
+            state: granted ? 'granted' : 'denied',
+          })
+          const js = `
+            (function () {
+              try {
+                if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+                if (!Array.isArray(window.__metanetPendingPermissions)) window.__metanetPendingPermissions = [];
+
+                window.__metanetDeniedPermissions = ${JSON.stringify(updatedDenied)};
+                window.__metanetPendingPermissions = window.__metanetPendingPermissions.filter(p => p !== '${pendingPermission}');
+
+                const evt = new CustomEvent('permissionchange', {
+                  detail: { permission: '${pendingPermission}', state: '${granted ? 'granted' : 'denied'}' }
+                });
+                document.dispatchEvent(evt);
+              } catch (e) { console.error('[Metanet] permissionchange injection error', e); }
+            })();
+          `
+          activeTab.webviewRef.current.injectJavaScript(js)
+          console.log('[Metanet] permissionchange injected')
+        }
+      }
+    } finally {
+      // 2) Resolve the page-side awaiter no matter what
+      console.log('[Metanet] Resolving pendingCallback for permission decision', { granted })
+      pendingCallback?.(granted)
+
+      // 3) Clear pending state
+      setPendingDomain(null)
+      setPendingPermission(null)
+      setPendingCallback(null)
+
+      console.log('[Metanet] Permission flow complete', {
+        domain,
+        permission,
+        granted,
+        elapsedMs: Date.now() - decisionStart,
+      })
+    }
+  }, [pendingDomain, pendingPermission, activeTab, permissionsDeniedForCurrentDomain, pendingCallback])
 
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
@@ -706,6 +783,7 @@ function Browser() {
       return u
     }
   }, [])
+
   /* -------------------------------------------------------------------------- */
   /*                              ADDRESS HANDLING                              */
   /* -------------------------------------------------------------------------- */
@@ -829,6 +907,7 @@ function Browser() {
       tabStore.newTab()
     }
   }, [])
+
   useEffect(() => {
     if (activeTab && !addressEditing.current) {
       setAddressText(activeTab.url)
@@ -1191,260 +1270,202 @@ function Browser() {
 
   const handleMessage = useCallback(
     async (event: WebViewMessageEvent) => {
-      // Safety check - if activeTab is undefined, we cannot process messages
       if (!activeTab) {
         console.warn('Cannot process WebView message: activeTab is undefined')
         return
       }
 
+      // --- tiny helper to send back a simple CWI response when needed
       const sendResponseToWebView = (id: string, result: any) => {
-        if (!activeTab || !activeTab.webviewRef?.current) return
-
-        const message = {
-          type: 'CWI',
-          id,
-          isInvocation: false,
-          result,
-          status: 'ok'
-        }
-
+        if (!activeTab?.webviewRef?.current) return
+        const message = { type: 'CWI', id, isInvocation: false, result, status: 'ok' }
         activeTab.webviewRef.current.injectJavaScript(getInjectableJSMessage(message))
       }
 
-      let msg
+      let msg: any
       try {
         msg = JSON.parse(event.nativeEvent.data)
-      } catch (error) {
-        console.error('Failed to parse WebView message:', error)
+      } catch (e) {
+        console.error('Failed to parse WebView message:', e)
         return
       }
-      
-      // Handle console logs from WebView
+
+      // --- Console from injected script: support both old/new shapes
+      if (msg.type === 'console_log') {
+        console.log('[WebView]', msg.message)
+        return
+      }
       if (msg.type === 'CONSOLE') {
         const logPrefix = '[WebView]'
-        switch (msg.method) {
-          case 'log':
-            console.log(logPrefix, ...msg.args)
-            break
-          case 'warn':
-            console.warn(logPrefix, ...msg.args)
-            break
-          case 'error':
-            console.error(logPrefix, ...msg.args)
-            break
-          case 'info':
-            console.info(logPrefix, ...msg.args)
-            break
-          case 'debug':
-            console.debug(logPrefix, ...msg.args)
-            break
-        }
+        const m = msg.method
+        if (m === 'log') console.log(logPrefix, ...(msg.args ?? []))
+        else if (m === 'warn') console.warn(logPrefix, ...(msg.args ?? []))
+        else if (m === 'error') console.error(logPrefix, ...(msg.args ?? []))
+        else console.log(logPrefix, ...(msg.args ?? []))
         return
       }
 
-      // Handle fullscreen requests
-      if (msg.type === 'REQUEST_FULLSCREEN') {
-        console.log('[Browser] 📺 REQUEST_FULLSCREEN message received')
-        console.log('[Browser] 📺 Entering fullscreen mode...')
-        await enterFullscreen()
-
-        // Send success response back to webview
-        if (activeTab.webviewRef?.current) {
-          activeTab.webviewRef.current.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'FULLSCREEN_RESPONSE',
-                success: true
-              })
-            }));
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'FULLSCREEN_CHANGE',
-                isFullscreen: true
-              })
-            }));
-          `)
-        }
-        return
-      }
-
-      // Handle exit fullscreen requests
+      // --- Fullscreen exit passthrough kept intact
       if (msg.type === 'EXIT_FULLSCREEN') {
-        console.log('[Browser] 📺 EXIT_FULLSCREEN message received')
-        console.log('[Browser] 📺 Exiting fullscreen mode...')
         await exitFullscreen()
-
-        // Send response back to webview
         if (activeTab.webviewRef?.current) {
           activeTab.webviewRef.current.injectJavaScript(`
             window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'FULLSCREEN_RESPONSE',
-                success: true
-              })
+              data: JSON.stringify({ type: 'FULLSCREEN_RESPONSE', success: true })
             }));
             window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'FULLSCREEN_CHANGE',
-                isFullscreen: false
-              })
+              data: JSON.stringify({ type: 'FULLSCREEN_CHANGE', isFullscreen: false })
             }));
           `)
         }
         return
       }
 
-      // Handle notification permission requests
+      // --- helper: send a permission result back to page listeners
+      const sendPermissionResultToWebView = (permissionKey: string, granted: boolean) => {
+        if (!activeTab?.webviewRef?.current) return
+        activeTab.webviewRef.current.injectJavaScript(`
+          window.dispatchEvent(new MessageEvent('message', {
+            data: JSON.stringify({ type: '${permissionKey}_PERMISSION_RESULT', granted: ${granted} })
+          }));
+        `)
+      }
+
+      // --- generic permission flow (camera / mic / location)
+      const handlePermissionRequest = async (
+        messageType: string,
+        permissionType: PermissionType,
+        resultKey: string
+      ) => {
+        try {
+          const domain = domainForUrl(activeTab.url)
+          if (!domain) {
+            console.error(`[PERMISSION] No domain for URL: ${activeTab?.url}`)
+            sendPermissionResultToWebView(resultKey, false)
+            return
+          }
+
+          const state = await getPermissionState(domain, permissionType)
+          if (state === 'deny') {
+            // Let the page’s pending loop resolve properly
+            if (activeTab.webviewRef?.current) {
+              const permKey = permissionType; // 'CAMERA' | 'RECORD_AUDIO' | 'ACCESS_FINE_LOCATION'
+              const js = `
+                (function () {
+                  try {
+                    if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+                    if (!Array.isArray(window.__metanetPendingPermissions)) window.__metanetPendingPermissions = [];
+                    if (window.__metanetDeniedPermissions.indexOf('${permissionType}') === -1) {
+                      window.__metanetDeniedPermissions.push('${permissionType}');
+                    }
+                    window.__metanetPendingPermissions = window.__metanetPendingPermissions.filter(p => p !== '${permissionType}');
+                    // Nudge any listeners
+                    document.dispatchEvent(new CustomEvent('permissionchange', {
+                      detail: { permission: '${permissionType}', state: 'denied' }
+                    }));
+                  } catch(e) {}
+                })();
+              `
+              activeTab.webviewRef.current.injectJavaScript(js)
+            }
+
+            // Also respond to the page bridge
+            sendPermissionResultToWebView(resultKey, false)
+            return
+          }
+          if (state === 'allow') {
+            // Make sure OS-level is actually granted, request if needed
+            const granted = await checkPermissionForDomain(domain, permissionType)
+            sendPermissionResultToWebView(resultKey, granted)
+            return
+          }
+
+          // ask (pending): open modal and resolve after user action
+          return await new Promise<void>((resolve) => {
+            setPendingDomain(domain)
+            setPendingPermission(permissionType)
+            setPendingCallback(async (granted: boolean) => {
+              // reflect result back to page
+              sendPermissionResultToWebView(resultKey, granted)
+              resolve()
+            })
+            setTimeout(() => setPermissionModalVisible(true), 0)
+          })
+        } catch (err) {
+          console.error('[PERMISSION] Error in handlePermissionRequest:', err)
+          sendPermissionResultToWebView(resultKey, false)
+        }
+      }
+
+      // --- Notifications: special case using push hook
       if (msg.type === 'REQUEST_NOTIFICATION_PERMISSION') {
-        console.log('[WebView] 🔔 Notification permission request detected')
-        console.log('[WebView] 🌐 Current URL:', activeTab.url)
-        console.log('[WebView] 📋 Message data:', msg)
-
         try {
           const domain = domainForUrl(activeTab.url)
           if (!domain) {
-            console.error('[WebView] ❌ Cannot get domain from URL for notification permission')
+            console.error('[Notifications] No domain for URL')
             return
           }
 
-          console.log('[WebView] 🌐 Extracted domain:', domain)
+          // Domain policy first
+          const current = await getPermissionState(domain, 'NOTIFICATIONS')
+          let permissionStr: 'granted' | 'denied' | undefined
 
-          // Check the current permission state in permissions manager
-          // NOTIFICATIONS now only has Allow/Deny states (defaults to Deny)
-          const currentPermissionState = await getPermissionState(domain, 'NOTIFICATIONS')
-          console.log('[WebView] 🔍 Current permission state for domain:', domain, '=', currentPermissionState)
-
-          let permission: string
-
-          if (currentPermissionState === 'allow') {
-            // If explicitly allowed, return granted
-            console.log('[WebView] ✅ Permission explicitly allowed for domain:', domain)
-            permission = 'granted'
-          } else {
-            // Default is deny - if not explicitly allowed, it's denied
-            console.log('[WebView] ❌ Permission denied for domain (default or explicit):', domain)
-            permission = 'denied'
-          }
-
-          console.log('[WebView] ✅ Permission result:', permission)
-          console.log('[WebView] 📤 Sending permission response to webview')
-
-          // Send response back to webview and update permission property
-          if (activeTab.webviewRef?.current) {
-            activeTab.webviewRef.current.injectJavaScript(`
-              console.log('[WebView Response] Received permission response: ${permission}');
-              
-              // CRITICAL: Update the actual Notification.permission property
-              if (window.Notification) {
-                Object.defineProperty(window.Notification, 'permission', {
-                  value: '${permission}',
-                  writable: false,
-                  configurable: true
-                });
-                console.log('[WebView Response] Updated Notification.permission to:', window.Notification.permission);
-              }
-              
-              window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'NOTIFICATION_PERMISSION_RESPONSE',
-                  permission: '${permission}'
-                })
-              }));
-            `)
-            console.log('[WebView] ✅ Permission response sent successfully')
-          } else {
-            console.error('[WebView] ❌ Cannot send response: webviewRef is null')
-          }
-        } catch (error) {
-          console.error('[WebView] ❌ Error handling notification permission request:', error)
-          if (activeTab.webviewRef?.current) {
-            activeTab.webviewRef.current.injectJavaScript(`
-              console.error('[WebView Response] Permission request failed:', '${error}');
-              window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'NOTIFICATION_PERMISSION_RESPONSE',
-                  permission: 'denied'
-                })
-              }));
-            `)
-          }
-        }
-        return
-      }
-
-      // Handle general permission requests (for permissions UI)
-      if (msg.type === 'REQUEST_PERMISSION') {
-        console.log('[WebView] 🔐 General permission request detected')
-        console.log('[WebView] 📋 Permission type:', msg.permission)
-        console.log('[WebView] 🌐 Current URL:', activeTab.url)
-
-        try {
-          const domain = domainForUrl(activeTab.url)
-          if (!domain) {
-            console.error('[WebView] ❌ Cannot get domain from URL for permission request')
-            return
-          }
-
-          const permissionType = msg.permission as PermissionType
-          console.log('[WebView] 🔑 Requesting permission:', permissionType, 'for domain:', domain)
-
-          // Special handling for NOTIFICATIONS - integrate with push notification system
-          if (permissionType === 'NOTIFICATIONS') {
+          if (current === 'allow') {
+            // Domain says allowed; ensure OS/app permission via notifications hook
             const result = await requestPermission(domain)
-            const permission = result.granted ? 'granted' : 'denied'
-
-            // Also update the general permissions system
-            const permissionState: PermissionState =
-              permission === 'granted' ? 'allow' : permission === 'denied' ? 'deny' : 'ask'
-            await setDomainPermission(domain, 'NOTIFICATIONS', permissionState)
-
-            console.log('[WebView] ✅ NOTIFICATIONS permission result:', permission, '-> state:', permissionState)
-
-            // Send response back to webview
-            if (activeTab.webviewRef?.current) {
-              activeTab.webviewRef.current.injectJavaScript(`
-                console.log('[WebView Response] Permission granted for NOTIFICATIONS: ${permission}');
-                window.dispatchEvent(new MessageEvent('message', {
-                  data: JSON.stringify({
-                    type: 'PERMISSION_RESPONSE',
-                    permission: '${permissionType}',
-                    result: '${permissionState}'
-                  })
-                }));
-              `)
-            }
+            permissionStr = result?.granted ? 'granted' : 'denied'
+          } else if (current === 'deny') {
+            permissionStr = 'denied'
           } else {
-            // Handle other permissions through the standard system
-            console.log('[WebView] 🔄 Handling standard permission:', permissionType)
-
-            // For now, we'll prompt the user and set to 'allow' (this can be enhanced with actual UI prompts)
-            await setDomainPermission(domain, permissionType, 'allow')
-
-            // Send response back to webview
-            if (activeTab.webviewRef?.current) {
-              activeTab.webviewRef.current.injectJavaScript(`
-                console.log('[WebView Response] Permission granted for ${permissionType}');
-                window.dispatchEvent(new MessageEvent('message', {
-                  data: JSON.stringify({
-                    type: 'PERMISSION_RESPONSE',
-                    permission: '${permissionType}',
-                    result: 'allow'
-                  })
-                }));
-              `)
-            }
+            // ask → prompt the same modal UX you use for other permissions,
+            // but still rely on requestPermission to obtain OS/app grant + token.
+            await new Promise<void>((resolve) => {
+              setPendingDomain(domain)
+              setPendingPermission('NOTIFICATIONS')
+              setPendingCallback(async (granted: boolean) => {
+                if (granted) {
+                  const r = await requestPermission(domain)
+                  permissionStr = r?.granted ? 'granted' : 'denied'
+                  await setDomainPermission(domain, 'NOTIFICATIONS', r?.granted ? 'allow' as PermissionState : 'deny')
+                } else {
+                  permissionStr = 'denied'
+                  await setDomainPermission(domain, 'NOTIFICATIONS', 'deny')
+                }
+                resolve()
+              })
+              setTimeout(() => setPermissionModalVisible(true), 0)
+            })
           }
-        } catch (error) {
-          console.error('[WebView] ❌ Error handling general permission request:', error)
+
+          // If we still don’t have a decision (no ask path taken), normalize now
+          if (!permissionStr) {
+            const r = await requestPermission(domain)
+            permissionStr = r?.granted ? 'granted' : 'denied'
+            await setDomainPermission(domain, 'NOTIFICATIONS', r?.granted ? 'allow' : 'deny')
+          }
+
+          // Tell the page (what Notification.requestPermission is waiting for)
           if (activeTab.webviewRef?.current) {
             activeTab.webviewRef.current.injectJavaScript(`
-              console.error('[WebView Response] Permission request failed:', '${error}');
+              try {
+                if (typeof window.Notification !== 'undefined') {
+                  Object.defineProperty(window.Notification, 'permission', {
+                    get: () => '${permissionStr}',
+                    configurable: true
+                  });
+                }
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify({ type: 'NOTIFICATION_PERMISSION_RESPONSE', permission: '${permissionStr}' })
+                }));
+              } catch (e) { console.error('[RN WebView] Failed to send NOTIFICATION_PERMISSION_RESPONSE', e); }
+            `)
+          }
+        } catch (err) {
+          console.error('[Notifications] Error handling request:', err)
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
               window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'PERMISSION_RESPONSE',
-                  permission: '${msg.permission}',
-                  result: 'deny'
-                })
+                data: JSON.stringify({ type: 'NOTIFICATION_PERMISSION_RESPONSE', permission: 'denied' })
               }));
             `)
           }
@@ -1452,143 +1473,53 @@ function Browser() {
         return
       }
 
-      // Handle show notification requests
-      if (msg.type === 'SHOW_NOTIFICATION') {
-        console.log('[WebView] 📢 Show notification request received')
-        console.log('[WebView] 📋 Notification data:', msg)
-        console.log('[WebView] 🌐 Current URL:', activeTab.url)
-
-        try {
-          const domain = domainForUrl(activeTab.url)
-          if (!domain) {
-            console.error('[WebView] ❌ Cannot get domain from URL for notification')
-            return
-          }
-
-          console.log('[WebView] 🌐 Extracted domain:', domain)
-
-          // First check the push notification permission system
-          // Note: Using simplified permission check for now
-          const hasPushPermission = true // Will be properly integrated with backend permission system
-
-          console.log('[WebView] 🔑 Push permissions for domain:', {
-            found: hasPushPermission,
-            permission: hasPushPermission ? 'granted' : 'denied',
-            hasPushPermission
-          })
-
-          // Check the general permission system (this takes precedence)
-          const permissionState = await getPermissionState(domain, 'NOTIFICATIONS')
-
-          console.log('[WebView] 🔑 General permissions for domain:', {
-            permissionState
-          })
-
-          // NOTIFICATIONS now only has Allow/Deny states (defaults to Deny)
-          // Only allow notifications if explicitly set to 'allow' AND push permission is granted
-          const canShowNotification = permissionState === 'allow' && hasPushPermission
-
-          if (permissionState !== 'allow') {
-            console.log('[WebView] ❌ Notifications not allowed - permission state:', permissionState)
-            return
-          }
-
-          if (!hasPushPermission) {
-            console.log('[WebView] ❌ Notifications not allowed - push permission not granted')
-            return
-          }
-
-          console.log('[WebView] 🔍 Final permission check:', {
-            domain,
-            pushPermission: hasPushPermission ? 'granted' : 'denied',
-            generalPermission: permissionState,
-            hasPushPermission,
-            canShowNotification
-          })
-
-          if (!canShowNotification) {
-            console.log('[WebView] ❌ Notifications not allowed for domain:', domain)
-            console.log('[WebView] ❌ Push permission:', hasPushPermission ? 'granted' : 'denied')
-            console.log('[WebView] ❌ General permission:', permissionState)
-            console.log('[WebView] ❌ Reason: Permission denied or not properly granted')
-            return
-          }
-
-          console.log('[WebView] ✅ Permission check passed, scheduling notification')
-
-          // Schedule the notification using Expo Notifications
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: msg.title || 'Notification',
-              body: msg.body || '',
-              data: {
-                url: activeTab.url,
-                domain: domain,
-                ...msg.data
-              }
-            },
-            trigger: null // Show immediately
-          })
-
-          console.log('Notification scheduled successfully')
-        } catch (error) {
-          console.error('Error showing notification:', error)
-        }
+      // --- Camera
+      if (msg.type === 'REQUEST_CAMERA') {
+        await handlePermissionRequest('CAMERA', 'CAMERA', 'CAMERA')
         return
       }
 
-      // Handling of wallet before api call.
-      if (msg.call && (!wallet || isWeb2Mode)) {
-        // console.log('Wallet not ready or in web2 mode, ignoring call:', msg.call);
+      // --- Microphone
+      if (msg.type === 'REQUEST_MICROPHONE') {
+        await handlePermissionRequest('MICROPHONE', 'RECORD_AUDIO', 'MICROPHONE')
         return
       }
 
-      // Handle wallet API calls
-      const origin = activeTab.url.replace(/^https?:\/\//, '').split('/')[0]
-      let response: any
+      // --- Location (use ACCESS_FINE_LOCATION by default)
+      if (msg.type === 'REQUEST_LOCATION') {
+        await handlePermissionRequest('LOCATION', 'ACCESS_FINE_LOCATION', 'LOCATION')
+        return
+      }
 
-      try {
-        switch (msg.call) {
-          case 'getPublicKey':
-          case 'revealCounterpartyKeyLinkage':
-          case 'revealSpecificKeyLinkage':
-          case 'encrypt':
-          case 'decrypt':
-          case 'createHmac':
-          case 'verifyHmac':
-          case 'createSignature':
-          case 'verifySignature':
-          case 'createAction':
-          case 'signAction':
-          case 'abortAction':
-          case 'listActions':
-          case 'internalizeAction':
-          case 'listOutputs':
-          case 'relinquishOutput':
-          case 'acquireCertificate':
-          case 'listCertificates':
-          case 'proveCertificate':
-          case 'relinquishCertificate':
-          case 'discoverByIdentityKey':
-          case 'isAuthenticated':
-          case 'waitForAuthentication':
-          case 'getHeight':
-          case 'getHeaderForHeight':
-          case 'discoverByAttributes':
-          case 'getNetwork':
-          case 'getVersion':
-            response = await (wallet as any)[msg.call](typeof msg.args !== 'undefined' ? msg.args : {}, origin)
-            break
-          default:
-            throw new Error('Unsupported method.')
-        }
-        sendResponseToWebView(msg.id, response)
-      } catch (error) {
-        console.error('Error processing wallet API call:', msg.call, error)
+      // --- Fallback: support any message shape the site sends via your wallet bridge
+      if (msg.type === 'CWI' && msg.id && !msg.isInvocation) {
+        // No-op here; keep parity with prior behavior if needed
+        sendResponseToWebView(msg.id, { ok: true })
+        return
       }
     },
-    [activeTab, wallet, t]
+    [
+      activeTab,
+      exitFullscreen,
+      domainForUrl,
+      checkPermissionForDomain,
+      getPermissionState,
+      setDomainPermission,
+      setPendingDomain,
+      setPendingPermission,
+      setPendingCallback,
+      setPermissionModalVisible,
+      requestPermission
+    ]
   )
+
+  useEffect(() => {
+    if (activeTab?.url && activeTab.url.startsWith('http')) {
+      updateDeniedPermissionsForDomain(activeTab.url).catch(err =>
+        console.error('Failed to refresh denied permissions for domain', err)
+      );
+    }
+  }, [activeTab?.url, updateDeniedPermissionsForDomain]);
 
   /* -------------------------------------------------------------------------- */
   /*                      NAV STATE CHANGE → HISTORY TRACKING                   */
@@ -1650,6 +1581,7 @@ function Browser() {
       console.warn('Share cancelled/failed', err)
     }
   }, [])
+
   const addToHomeScreen = useCallback(async () => {
     try {
       if (Platform.OS === 'android') {
@@ -2050,6 +1982,10 @@ function Browser() {
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
                 injectedJavaScript={injectedJavaScript}
+                injectedJavaScriptBeforeContentLoaded={getPermissionScript(
+                  permissionsDeniedForCurrentDomain,
+                  pendingPermission
+                )}
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 onError={(syntheticEvent: any) => {
@@ -2288,9 +2224,9 @@ function Browser() {
                       />
                       <DrawerItem label={t('settings')} icon="settings-outline" onPress={drawerHandlers.settings} />
                       <DrawerItem
-                        label={t('notifications')}
-                        icon="notifications-outline"
-                        onPress={() => setInfoDrawerRoute('notifications')}
+                        label={t('permissions')}
+                        icon="notifications-outline" // JACKIE TODO: change icon
+                        onPress={() => setInfoDrawerRoute('permissions')}
                       />
                       <View style={styles.divider} />
                     </>
@@ -2328,10 +2264,22 @@ function Browser() {
               )}
 
               {infoDrawerRoute !== 'root' && (
-                <SubDrawerView route={infoDrawerRoute} onBack={() => setInfoDrawerRoute('root')} />
+                <SubDrawerView
+                  route={infoDrawerRoute}
+                  onBack={() => setInfoDrawerRoute('root')}
+                  onPermissionChange={handlePermissionChangeFromScreen}
+                />
               )}
             </Animated.View>
           </Modal>
+
+          <PermissionModal
+            key={pendingPermission || 'none'} // <-- ensure remount per permission
+            visible={permissionModalVisible}
+            domain={pendingDomain ?? ''}
+            permission={pendingPermission ?? 'CAMERA'}
+            onDecision={onDecision}
+          />
 
           {/* Clear History Confirmation Modal */}
           <RNModal transparent visible={clearConfirmVisible} onRequestClose={closeClearConfirm} animationType="fade">
@@ -2612,11 +2560,11 @@ const SubDrawerView = React.memo(
   ({
     route,
     onBack,
-    onOpenNotificationSettings
+    onPermissionChange
   }: {
-    route: 'identity' | 'settings' | 'security' | 'trust' | 'notifications'
+    route: 'identity' | 'settings' | 'security' | 'trust' | 'permissions'
     onBack: () => void
-    onOpenNotificationSettings?: () => void
+    onPermissionChange?: (permission: PermissionType, state: PermissionState) => void
   }) => {
     const { colors } = useTheme()
     const { t } = useTranslation()
@@ -2642,27 +2590,18 @@ const SubDrawerView = React.memo(
           <View style={{ width: 60 }} />
         </View>
         <View style={styles.subDrawerContent}>
-          {route === 'notifications' ? (
-            <View>
+          {route === 'permissions' ? (
+            <View style={{ paddingHorizontal: 20, flex: 1 }}>
               <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>
-                Manage notifications from websites and apps.
+                Manage permissions from websites and apps.
               </Text>
-              <TouchableOpacity
-                style={[styles.drawerItem, { backgroundColor: colors.inputBackground, borderRadius: 8 }]}
-                onPress={onOpenNotificationSettings}
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={22}
-                  color={colors.textSecondary}
-                  style={styles.drawerIcon}
+
+              {tabStore.activeTab?.url && (
+                <PermissionsScreen
+                  origin={new URL(tabStore.activeTab.url).hostname}
+                  onPermissionChange={onPermissionChange}
                 />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Notification Settings</Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Manage website permissions</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+              )}
             </View>
           ) : (
             // Only show web3 screens when not in web2 mode
@@ -2726,15 +2665,7 @@ const BottomToolbar = ({
   })
 
   return (
-    <View
-      style={[
-        styles.bottomBar,
-        {
-          backgroundColor: colors.inputBackground,
-          paddingBottom: 0
-        }
-      ]}
-    >
+    <View style={[styles.bottomBar, { backgroundColor: colors.inputBackground, paddingBottom: 0 }]}>
       <TouchableOpacity
         style={styles.toolbarButton}
         onPress={() => {
@@ -2887,7 +2818,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8
   },
-  tabsViewFooter: {
+  tabsViewFooterBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -2896,7 +2827,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20
   },
-  tabsViewFooterBar: {
+  tabsViewFooter: {
     position: 'absolute',
     bottom: 0,
     left: 0,
