@@ -64,7 +64,7 @@ import TrustScreen from './trust'
 
 import NotificationPermissionModal from '@/components/NotificationPermissionModal'
 import NotificationSettingsModal from '@/components/NotificationSettingsModal'
-import { usePushNotifications } from '@/hooks/usePushNotifications'
+// import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
@@ -364,7 +364,7 @@ function Browser() {
   }, [showInfoDrawer, infoDrawerRoute])
 
   /* ------------------------- push notifications ----------------------------- */
-  const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } = usePushNotifications()
+  // const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } = usePushNotifications()
 
   const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false)
   const [showNotificationSettingsModal, setShowNotificationSettingsModal] = useState(false)
@@ -1078,82 +1078,82 @@ function Browser() {
       }
 
       // Handle push subscription for remote notifications
-      if (msg.type === 'PUSH_SUBSCRIBE') {
-        try {
-          const subscription = await createPushSubscription(activeTab.url, msg.options?.applicationServerKey)
+      // if (msg.type === 'PUSH_SUBSCRIBE') {
+      //   try {
+      //     // const subscription = await createPushSubscription(activeTab.url, msg.options?.applicationServerKey)
 
-          if (activeTab.webviewRef?.current) {
-            activeTab.webviewRef.current.injectJavaScript(`
-                window.dispatchEvent(new MessageEvent('message', {
-                  data: JSON.stringify({
-                    type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                    subscription: ${JSON.stringify(subscription)}
-                  })
-                }));
-              `)
-          }
-        } catch (error) {
-          console.error('Error creating push subscription:', error)
-          if (activeTab.webviewRef?.current) {
-            activeTab.webviewRef.current.injectJavaScript(`
-                window.dispatchEvent(new MessageEvent('message', {
-                  data: JSON.stringify({
-                    type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                    subscription: null,
-                    error: '${error}'
-                  })
-                }));
-              `)
-          }
-        }
-        return
-      }
+      //     if (activeTab.webviewRef?.current) {
+      //       activeTab.webviewRef.current.injectJavaScript(`
+      //           window.dispatchEvent(new MessageEvent('message', {
+      //             data: JSON.stringify({
+      //               type: 'PUSH_SUBSCRIPTION_RESPONSE',
+      //               subscription: ${JSON.stringify(subscription)}
+      //             })
+      //           }));
+      //         `)
+      //     }
+      //   } catch (error) {
+      //     console.error('Error creating push subscription:', error)
+      //     if (activeTab.webviewRef?.current) {
+      //       activeTab.webviewRef.current.injectJavaScript(`
+      //           window.dispatchEvent(new MessageEvent('message', {
+      //             data: JSON.stringify({
+      //               type: 'PUSH_SUBSCRIPTION_RESPONSE',
+      //               subscription: null,
+      //               error: '${error}'
+      //             })
+      //           }));
+      //         `)
+      //     }
+      //   }
+      //   return
+      // }
 
-      // Handle get existing push subscription
-      if (msg.type === 'GET_PUSH_SUBSCRIPTION') {
-        const subscription = getSubscription(activeTab.url)
+      // // Handle get existing push subscription
+      // if (msg.type === 'GET_PUSH_SUBSCRIPTION') {
+      //   const subscription = getSubscription(activeTab.url)
 
-        if (activeTab.webviewRef?.current) {
-          activeTab.webviewRef.current.injectJavaScript(`
-              window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'PUSH_SUBSCRIPTION_RESPONSE',
-                  subscription: ${JSON.stringify(subscription)}
-                })
-              }));
-            `)
-        }
-        return
-      }
+      //   if (activeTab.webviewRef?.current) {
+      //     activeTab.webviewRef.current.injectJavaScript(`
+      //         window.dispatchEvent(new MessageEvent('message', {
+      //           data: JSON.stringify({
+      //             type: 'PUSH_SUBSCRIPTION_RESPONSE',
+      //             subscription: ${JSON.stringify(subscription)}
+      //           })
+      //         }));
+      //       `)
+      //   }
+      //   return
+      // }
 
-      // Handle immediate local notifications
-      if (msg.type === 'SHOW_NOTIFICATION') {
-        try {
-          const permission = getPermission(activeTab.url)
-          if (permission === 'granted') {
-            // Show notification immediately
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: msg.title || t('website_notification'),
-                body: msg.body || '',
-                data: {
-                  origin: activeTab.url,
-                  type: 'website',
-                  url: activeTab.url,
-                  icon: msg.icon,
-                  tag: msg.tag,
-                  ...msg.data
-                },
-                sound: true
-              },
-              trigger: null
-            })
-          }
-        } catch (error) {
-          console.error('Error showing notification:', error)
-        }
-        return
-      }
+      // // Handle immediate local notifications
+      // if (msg.type === 'SHOW_NOTIFICATION') {
+      //   try {
+      //     const permission = getPermission(activeTab.url)
+      //     if (permission === 'granted') {
+      //       // Show notification immediately
+      //       await Notifications.scheduleNotificationAsync({
+      //         content: {
+      //           title: msg.title || t('website_notification'),
+      //           body: msg.body || '',
+      //           data: {
+      //             origin: activeTab.url,
+      //             type: 'website',
+      //             url: activeTab.url,
+      //             icon: msg.icon,
+      //             tag: msg.tag,
+      //             ...msg.data
+      //           },
+      //           sound: true
+      //         },
+      //         trigger: null
+      //       })
+      //     }
+      //   } catch (error) {
+      //     console.error('Error showing notification:', error)
+      //   }
+      //   return
+      // }
 
       // Handling of wallet before api call.
       if (msg.call && (!wallet || isWeb2Mode)) {
@@ -1205,7 +1205,7 @@ function Browser() {
         console.error('Error processing wallet API call:', msg.call, error)
       }
     },
-    [activeTab, wallet, createPushSubscription, getSubscription, getPermission, handleNotificationPermissionRequest, t]
+    [activeTab, wallet, handleNotificationPermissionRequest, t]
   )
 
   /* -------------------------------------------------------------------------- */

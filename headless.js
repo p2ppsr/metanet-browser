@@ -82,6 +82,17 @@ async function getHeadlessWallet() {
   }
 }
 
+async function getFCMToken() {
+  try {
+    const token = await messaging().getToken();
+    console.log('[headless] FCM Token:', token?.substring(0, 20) + '...');
+    return token;
+  } catch (error) {
+    console.error('[headless] Failed to get FCM token..:', error);
+    return null;
+  }
+}
+
 async function showLocalNotification(notification) {
   try {
     await Notifications.scheduleNotificationAsync({
@@ -160,7 +171,7 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
 });
 
 messaging().onMessage(async remoteMessage => {
-  console.log('📱 FCM foreground notification received:', remoteMessage)
+  console.log('HEADLESS notification received', remoteMessage)
   try {
     const wallet = await getHeadlessWallet();
     if (!wallet) {
@@ -229,3 +240,14 @@ messaging().onMessage(async remoteMessage => {
 })
 
 console.log('[headless] 🚀 FCM background handler registered at', new Date().toISOString());
+(async () => {
+
+  const { status } = await Notifications.requestPermissionsAsync()
+  if (status !== 'granted') {
+    throw new Error('Push notifications permission denied')
+  }
+
+  // Get FCM token for debugging/backend registration
+  const fcmToken = await getFCMToken();
+  console.log('[headless] FCM Token:', fcmToken);
+})()
