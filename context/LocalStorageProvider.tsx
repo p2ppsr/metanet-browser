@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useMemo, useRef, useStat
 import * as SecureStore from 'expo-secure-store'
 import * as LocalAuthentication from 'expo-local-authentication'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { NativeModules, Platform } from 'react-native'
 
 export interface LocalStorageContextType {
   /* non-secure */
@@ -41,6 +42,8 @@ export const LocalStorageContext = createContext<LocalStorageContextType>({
 
 export const useLocalStorage = () => useContext(LocalStorageContext)
 
+const APP_GROUP = 'group.org.bsvblockchain.metanet'
+
 export default function LocalStorageProvider({ children }: { children: React.ReactNode }) {
   /* --------------------------------- SECURE -------------------------------- */
 
@@ -73,9 +76,24 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
   /* ------------------------------- non-secure ------------------------------ */
 
+  // ensure we set the suite exactly once
+  let suiteSet = false;
+  function ensureIOSSuite() {
+    if (Platform.OS === 'ios' && NativeModules.RNSharedDefaults?.setSuiteName && !suiteSet) {
+      NativeModules.RNSharedDefaults.setSuiteName!(APP_GROUP);
+      suiteSet = true;
+    }
+  }
+
   const setSnap = useCallback(async (snap: number[]): Promise<void> => {
     try {
-      await AsyncStorage.setItem(SNAP_KEY, JSON.stringify(snap))
+      const snapAsJSON = typeof snap === 'string' ? snap : JSON.stringify(snap);
+      if (Platform.OS === 'ios') {
+        ensureIOSSuite();
+        NativeModules.RNSharedDefaults.setSharedItem(SNAP_KEY, snapAsJSON);
+      } else {
+        await AsyncStorage.setItem(SNAP_KEY, snapAsJSON);
+      }
     } catch (err) {
       console.warn('[setSnap]', err)
     }
@@ -83,7 +101,13 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
   const getSnap = useCallback(async (): Promise<number[] | null> => {
     try {
-      const raw = await AsyncStorage.getItem(SNAP_KEY)
+      let raw: string | null;
+      if (Platform.OS === 'ios') {
+        ensureIOSSuite();
+        raw = await NativeModules.RNSharedDefaults.getSharedItem(SNAP_KEY)
+      } else {
+        raw = await AsyncStorage.getItem(SNAP_KEY)
+      }
       return raw ? (JSON.parse(raw) as number[]) : null
     } catch (err) {
       console.warn('[getSnap]', err)
@@ -93,7 +117,12 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
   const deleteSnap = useCallback(async (): Promise<void> => {
     try {
-      await AsyncStorage.removeItem(SNAP_KEY)
+      if (Platform.OS === 'ios') {
+        ensureIOSSuite();
+        await NativeModules.RNSharedDefaults.removeSharedItem(SNAP_KEY)
+      } else {
+        await AsyncStorage.removeItem(SNAP_KEY)
+      }
     } catch (err) {
       console.warn('[deleteSnap]', err)
     }

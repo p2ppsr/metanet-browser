@@ -44,13 +44,11 @@ function snap2privkey(snap: string): string {
   return Utils.toHex(payloadReader.read(32))
 }
 
-(window as any).run = async (snap: string, messageId: string) => {
+(globalThis as any).run = async (snap: string, messageId: string) => {
   const key = snap2privkey(snap)
   console.log('got key out of snap')
   const wallet = makeWallet('main', key)
   console.log('got wallet', wallet)
-
-
 
   const messageBoxClient = new MessageBoxClient({
     enableLogging: true,
@@ -82,7 +80,6 @@ function snap2privkey(snap: string): string {
       from: 'fcm'
     }
   }
-
   console.log('notification', notification)
   return notification
 }
