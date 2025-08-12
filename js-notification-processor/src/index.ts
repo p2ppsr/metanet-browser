@@ -144,30 +144,19 @@ function snap2privkey(snap: string): string {
   const messageBoxClient = new MessageBoxClient({
     enableLogging: true,
     walletClient: wallet,
-    host: 'http://localhost:8080'
+    host: 'https://messagebox.babbage.systems'
   })
 
   console.error('[headless] 🔍 Listing messages from notifications box...');
   const messages = await messageBoxClient.listMessagesLite({
     messageBox: 'notifications',
-    host: 'http://localhost:8080'
+    host: 'https://messagebox.babbage.systems'
   })
 
   const targetMessage = messages.find(m => m.messageId === messageId)
   if (!targetMessage) {
     console.warn(`[headless] ⚠️ Message ${messageId} not found in notifications box`)
-    return {
-      title: 'New Message',
-      body: 'Message not found',
-      origin: 'FOO',
-      timestamp: Date.now(),
-      data: {
-        messageId: 'FOO',
-        sender: 'FOO',
-        fcmMessageId: messageId,
-        from: 'fcm'
-      }
-    }
+    return null
   }
 
   // await messageBoxClient.acknowledgeMessage({ messageIds: [messageId], host: 'http://localhost:8080' });
