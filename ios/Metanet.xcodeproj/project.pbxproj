@@ -11,6 +11,8 @@
 		32B71D359C5279E76D955AA4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 088BCBC9D0F206E0BD9C6C22 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		4011DB152E46BD4700895373 /* MetanetNotificationService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4011DB0E2E46BD4700895373 /* MetanetNotificationService.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		405C08922E4AA28700F48974 /* JavaScriptCoreExtras in Frameworks */ = {isa = PBXBuildFile; productRef = 405C08912E4AA28700F48974 /* JavaScriptCoreExtras */; };
+		405C08942E4AA2B800F48974 /* JavaScriptCoreExtras in Frameworks */ = {isa = PBXBuildFile; productRef = 405C08932E4AA2B800F48974 /* JavaScriptCoreExtras */; };
 		A0358F6DE2DB053DB4D08C92 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84205F5DDD9D79A024557A48 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		C9F77D526D4642529666662C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5EE8FB6515FE4892AF6A5A6F /* GoogleService-Info.plist */; };
@@ -80,6 +82,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F42136FC9647A4AB1510F26D /* Pods_Metanet.framework in Frameworks */,
+				405C08942E4AA2B800F48974 /* JavaScriptCoreExtras in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				405C08922E4AA28700F48974 /* JavaScriptCoreExtras in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -228,6 +232,7 @@
 			);
 			name = MetanetNotificationService;
 			packageProductDependencies = (
+				405C08912E4AA28700F48974 /* JavaScriptCoreExtras */,
 			);
 			productName = MetanetNotificationService;
 			productReference = 4011DB0E2E46BD4700895373 /* MetanetNotificationService.appex */;
@@ -259,6 +264,9 @@
 				Base,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
+			packageReferences = (
+				405C088E2E4AA24C00F48974 /* XCLocalSwiftPackageReference "../../../../Downloads/javascript-core-extras-main" */,
+			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -847,6 +855,26 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		405C088E2E4AA24C00F48974 /* XCLocalSwiftPackageReference "../../../../Downloads/javascript-core-extras-main" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../../../Downloads/javascript-core-extras-main";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		405C08912E4AA28700F48974 /* JavaScriptCoreExtras */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 405C088E2E4AA24C00F48974 /* XCLocalSwiftPackageReference "../../../../Downloads/javascript-core-extras-main" */;
+			productName = JavaScriptCoreExtras;
+		};
+		405C08932E4AA2B800F48974 /* JavaScriptCoreExtras */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 405C088E2E4AA24C00F48974 /* XCLocalSwiftPackageReference "../../../../Downloads/javascript-core-extras-main" */;
+			productName = JavaScriptCoreExtras;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
 }

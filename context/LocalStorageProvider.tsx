@@ -2,7 +2,8 @@ import React, { createContext, useCallback, useContext, useMemo, useRef, useStat
 import * as SecureStore from 'expo-secure-store'
 import * as LocalAuthentication from 'expo-local-authentication'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { NativeModules, Platform } from 'react-native'
+import SharedGroupPreferences from 'react-native-shared-group-preferences'
+import { Platform } from 'react-native'
 
 export interface LocalStorageContextType {
   /* non-secure */
@@ -76,21 +77,11 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
   /* ------------------------------- non-secure ------------------------------ */
 
-  // ensure we set the suite exactly once
-  let suiteSet = false;
-  function ensureIOSSuite() {
-    if (Platform.OS === 'ios' && NativeModules.RNSharedDefaults?.setSuiteName && !suiteSet) {
-      NativeModules.RNSharedDefaults.setSuiteName!(APP_GROUP);
-      suiteSet = true;
-    }
-  }
-
   const setSnap = useCallback(async (snap: number[]): Promise<void> => {
     try {
       const snapAsJSON = typeof snap === 'string' ? snap : JSON.stringify(snap);
       if (Platform.OS === 'ios') {
-        ensureIOSSuite();
-        NativeModules.RNSharedDefaults.setSharedItem(SNAP_KEY, snapAsJSON);
+        await SharedGroupPreferences.setItem(SNAP_KEY, snapAsJSON, APP_GROUP)
       } else {
         await AsyncStorage.setItem(SNAP_KEY, snapAsJSON);
       }
@@ -103,8 +94,7 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
     try {
       let raw: string | null;
       if (Platform.OS === 'ios') {
-        ensureIOSSuite();
-        raw = await NativeModules.RNSharedDefaults.getSharedItem(SNAP_KEY)
+        raw = await SharedGroupPreferences.getItem(SNAP_KEY, APP_GROUP)
       } else {
         raw = await AsyncStorage.getItem(SNAP_KEY)
       }
@@ -118,8 +108,7 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
   const deleteSnap = useCallback(async (): Promise<void> => {
     try {
       if (Platform.OS === 'ios') {
-        ensureIOSSuite();
-        await NativeModules.RNSharedDefaults.removeSharedItem(SNAP_KEY)
+        await SharedGroupPreferences.setItem(SNAP_KEY, null, APP_GROUP)
       } else {
         await AsyncStorage.removeItem(SNAP_KEY)
       }
