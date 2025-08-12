@@ -578,7 +578,7 @@ final class NotificationService: UNNotificationServiceExtension {
         let headers = http.allHeaderFields.reduce(into: [String:String]()) { acc, kv in
           acc[String(describing: kv.key).lowercased()] = String(describing: kv.value)
         }
-        self.logger.debug("nativeFetch2 ← status=\(http.statusCode) bytes=\(data?.count ?? 0) opId=\(opId, privacy: .public)")
+        self.logger.error("nativeFetch2 ← status=\(http.statusCode) bytes=\(data?.count ?? 0) opId=\(opId, privacy: .public)")
         
         // For JSON/text responses, pass body directly as string
         var result: [String: Any] = [
@@ -591,24 +591,24 @@ final class NotificationService: UNNotificationServiceExtension {
         
         // Always set a body field to prevent null body issues
         if let data = data, !data.isEmpty {
-          self.logger.debug("nativeFetch2 processing response data: \(data.count) bytes")
+          self.logger.error("nativeFetch2 processing response data: \(data.count) bytes")
           
-          // Always override content-type to application/json and return as string
-          result["headers"] = headers.merging(["content-type": "application/json"]) { $1 }
-          
-          if let bodyString = String(data: data, encoding: .utf8) {
-            self.logger.debug("nativeFetch2 UTF-8 decode success: \(bodyString.count) chars, preview: \(String(bodyString.prefix(100)))")
-            result["body"] = bodyString
-          } else {
-            // UTF-8 decode failed - try base64 encoding as fallback
-            let base64String = data.base64EncodedString()
-            self.logger.error("nativeFetch2 UTF-8 decode failed, using base64: \(base64String.count) chars")
-            result["body"] = ""  // Set empty string instead of missing key
-            result["bodyBase64"] = base64String
-          }
+          // // Always override content-type to application/json and return as string
+          // result["headers"] = headers.merging(["content-type": "application/json"]) { $1 }
+            
+            if let bodyString = String(data: data, encoding: .utf8) {
+              self.logger.error("nativeFetch2 UTF-8 decode success: \(bodyString.count) chars, preview: \(String(bodyString.prefix(100)))")
+              result["body"] = bodyString
+            } else {
+              // UTF-8 decode failed - try base64 encoding as fallback
+              let base64String = data.base64EncodedString()
+              self.logger.error("nativeFetch2 UTF-8 decode failed, using base64: \(base64String.count) chars")
+              result["body"] = ""  // Set empty string instead of missing key
+              result["bodyBase64"] = base64String
+            }
         } else {
           // No data or empty data - always set empty body
-          self.logger.debug("nativeFetch2 no data, setting empty body")
+          self.logger.error("nativeFetch2 no data, setting empty body")
           result["body"] = ""
         }
         _ = resolve.call(withArguments: [result])
@@ -726,14 +726,36 @@ final class NotificationService: UNNotificationServiceExtension {
 
       if (typeof Response === 'undefined') {
         class Response {
-          constructor(init = {}) {
+          constructor(body, init = {}) {
+            console.error('[Response] Constructor called with body:', body, 'init:', init)
+            console.error('[Response] typeof body:', typeof body)
+            
+            // Standard Fetch API signature: new Response(body, init)
             this.status = (init.status|0);
             this.statusText = String(init.statusText || '');
             this.ok = !!init.ok;
             this.url = init.url || '';
             this.headers = new Headers(init.headers || {});
-            this._body = init.body ?? null;          // accept plain body
-            this._b64  = init.bodyBase64 ?? null;    // optional base64 body
+            
+            // Handle ArrayBuffer/Uint8Array body - convert to string for text responses
+            if (body && typeof body === 'object' && (body instanceof Uint8Array || body instanceof ArrayBuffer)) {
+              console.error('[Response] Converting binary body to string')
+              const uint8Array = body instanceof ArrayBuffer ? new Uint8Array(body) : body;
+              try {
+                this._body = new TextDecoder().decode(uint8Array);
+                console.error('[Response] Converted to string:', this._body.substring(0, 100))
+              } catch (error) {
+                console.error('[Response] TextDecoder failed, keeping binary body:', error)
+                this._body = body;
+              }
+              console.error('[Response] Converted binary body to string')
+              console.error('[Response] typeof body:', typeof this._body)
+              console.error('[Response] body after conversion:', this._body)
+            } else {
+              this._body = body;                       // body from first argument
+            }
+            
+            this._b64  = init.bodyBase64 ?? null;    // optional base64 body for nativeFetch2
           }
 
     async _bytes() {
@@ -912,7 +934,19 @@ final class NotificationService: UNNotificationServiceExtension {
             function rejectWrap(e){ if (settled) return; settled = true; reject(e); }
             try {
               _nativeFetch2(opId, String(req.url), { method: req.method, headers: headersObj, body: bodyStr },
-                function(r){ resolveWrap(new Response(r)); },
+                function(r){ 
+                  // Extract body and create Response with standard Fetch API signature
+                  const body = r.body || null;
+                  const init = {
+                    status: r.status,
+                    statusText: r.statusText,
+                    ok: r.ok,
+                    url: r.url,
+                    headers: r.headers,
+                    bodyBase64: r.bodyBase64  // Preserve base64 body for binary data
+                  };
+                  resolveWrap(new Response(body, init)); 
+                },
                 function(e){ rejectWrap(new Error(String(e))); });
             } catch (e) {
               rejectWrap(e);
