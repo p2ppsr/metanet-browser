@@ -54,29 +54,9 @@ interface RecommendedAppsProps {
 
 const defaultApps: App[] = [
   {
-    domain: 'https://p2pmnee.atx.systems',
-    appName: 'P2PMNEE',
-    appIconImageUrl: 'https://p2pmnee.atx.systems/p2m.png'
-  },
-  {
-    domain: 'https://metanetstatus.lovable.app',
-    appName: 'Metanet Status',
-    appIconImageUrl: 'https://metanetstatus.lovable.app/favicon.ico'
-  },
-  {
     domain: 'https://todo.metanet.app',
     appName: 'My ToDo List',
     appIconImageUrl: 'https://todo.metanet.app/favicon.ico'
-  },
-  {
-    domain: 'https://peerpay.babbage.systems',
-    appName: 'PeerPay',
-    appIconImageUrl: 'https://peerpay.babbage.systems/favicon.ico'
-  },
-  {
-    domain: 'https://mountaintops.net',
-    appName: 'Mountaintops',
-    appIconImageUrl: 'https://mountaintops.net/favicon.ico'
   },
   {
     domain: 'https://metanetacademy.com',

@@ -2046,11 +2046,13 @@ function Browser() {
                     />
                   )}
                   <DrawerItem label={t('add_bookmark')} icon="star-outline" onPress={drawerHandlers.addBookmark} />
-                  <DrawerItem
-                    label={t('add_to_device_homescreen')}
-                    icon="home-outline"
-                    onPress={drawerHandlers.addToHomeScreen}
-                  />
+                  {Platform.OS !== 'ios' && (
+                    <DrawerItem
+                      label={t('add_to_device_homescreen')}
+                      icon="home-outline"
+                      onPress={drawerHandlers.addToHomeScreen}
+                    />
+                  )}
                   <DrawerItem
                     label={t('back_to_homepage')}
                     icon="apps-outline"

@@ -2060,7 +2060,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType>({
   currentLanguage: 'en',
-  setCurrentLanguage: () => {}
+  setCurrentLanguage: () => { }
 })
 
 interface LanguageProviderProps {
