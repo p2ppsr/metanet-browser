@@ -2030,11 +2030,11 @@ function Browser() {
                         onPress={drawerHandlers.trust}
                       />
                       <DrawerItem label={t('settings')} icon="settings-outline" onPress={drawerHandlers.settings} />
-                      <DrawerItem
+                      {/* <DrawerItem
                         label={t('notifications')}
                         icon="notifications-outline"
                         onPress={() => setInfoDrawerRoute('notifications')}
-                      />
+                      /> */}
                       <View style={styles.divider} />
                     </>
                   )}
