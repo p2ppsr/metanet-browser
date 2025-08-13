@@ -77,10 +77,7 @@
               "scheme": "http"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         },
         {
           "action": "VIEW",
@@ -89,10 +86,7 @@
               "scheme": "metanet"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -108,23 +102,14 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "org.bsvblockchain.metanet.urlscheme",
-            "CFBundleURLSchemes": [
-              "metanet",
-              "http",
-              "https"
-            ]
+            "CFBundleURLSchemes": ["metanet", "http", "https"]
           }
         ],
-        "LSApplicationQueriesSchemes": [
-          "https",
-          "http"
-        ]
+        "LSApplicationQueriesSchemes": ["https", "http"]
       },
       "entitlements": {
         "aps-environment": "development",
-        "com.apple.developer.associated-domains": [
-          "applinks:*"
-        ]
+        "com.apple.developer.associated-domains": ["applinks:*"]
       }
     },
     "notification": {

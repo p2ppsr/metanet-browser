@@ -1,13 +1,13 @@
-const path = require('path');
+const path = require('path')
 
 module.exports = {
-  mode: 'production',          // minifies and tree-shakes
+  mode: 'production', // minifies and tree-shakes
   entry: './src/index.ts',
   output: {
     filename: 'wallet-bundle.js',
     path: path.resolve(__dirname, 'dist'),
     library: {
-      name: 'WalletBundle',    // Swift will access global.WalletBundle.run
+      name: 'WalletBundle', // Swift will access global.WalletBundle.run
       type: 'umd'
     }
   },
@@ -31,5 +31,5 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js']
   },
-  target: ['web']              // guarantees a browser-safe build
-};
+  target: ['web'] // guarantees a browser-safe build
+}

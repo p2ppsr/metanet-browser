@@ -57,7 +57,8 @@ import { useBrowserMode } from '@/context/BrowserModeContext'
 import { useLanguage } from '@/utils/translations'
 // import SecurityScreen from './security'
 import TrustScreen from './trust'
-
+import HomescreenShortcut from '@/components/HomescreenShortcut'
+import Shortcuts from '@rn-bridge/react-native-shortcuts'
 /* -------------------------------------------------------------------------- */
 /*                                   HELPERS                                   */
 /* -------------------------------------------------------------------------- */
@@ -167,6 +168,10 @@ function Browser() {
   const insets = useSafeAreaInsets()
   const { t, i18n } = useTranslation()
   const { isWeb2Mode } = useBrowserMode()
+  useEffect(() => {
+    // hydrate from AsyncStorage once
+    tabStore.initializeTabs()
+  }, [])
 
   /* ----------------------------- language headers ----------------------------- */
   // Map i18n language codes to proper HTTP Accept-Language header values
@@ -326,6 +331,7 @@ function Browser() {
   const [keyboardHeight, setKeyboardHeight] = useState(0)
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
+  const [showShortcutModal, setShowShortcutModal] = useState(false)
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<
     'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'
   >('root')
@@ -347,11 +353,12 @@ function Browser() {
   // Safety check - if somehow activeTab is null, force create a new tab
   // This is done after all hooks to avoid violating Rules of Hooks
   useEffect(() => {
-    if (!activeTab) {
-      console.warn('activeTab is null, creating new tab')
+    if (tabStore.isInitialized && !activeTab) {
       tabStore.newTab()
+      Keyboard.dismiss()
+      setAddressFocused(false)
     }
-  }, [activeTab])
+  }, [tabStore.isInitialized, activeTab])
 
   // Balance handling - only delay on first open
   useEffect(() => {
@@ -422,7 +429,68 @@ function Browser() {
     const timer = setTimeout(checkPendingUrl, 500)
     return () => clearTimeout(timer)
   }, [])
+  // Shortcut launch handling
+  useEffect(() => {
+    const decodeUrlFromShortcutId = (shortcutId: string): string | null => {
+      try {
+        if (shortcutId.startsWith('metanet_')) {
+          const encodedUrl = shortcutId.replace('metanet_', '')
+          console.log('📱 [Shortcut] Encoded URL from ID:', encodedUrl)
+          let base64Url = encodedUrl.replace(/-/g, '+').replace(/_/g, '/')
 
+          while (base64Url.length % 4) {
+            base64Url += '='
+          }
+          const decodedUrl = Buffer.from(base64Url, 'base64').toString('utf-8')
+          return isValidUrl(decodedUrl) ? decodedUrl : null
+        }
+      } catch (error) {
+        console.error('Error decoding URL from shortcut ID:', error)
+      }
+      return null
+    }
+
+    const navigateToShortcutUrl = (url: string) => {
+      console.log('📱 [Shortcut] Navigating to URL:', url)
+      updateActiveTab({ url })
+      setAddressText(url)
+    }
+
+    const handleShortcutLaunch = async () => {
+      try {
+        // Check if app was launched from a shortcut
+        const initialShortcutId = await Shortcuts.getInitialShortcutId()
+        if (initialShortcutId) {
+          console.log('📱 [Shortcut] App launched from shortcut ID:', initialShortcutId)
+          const url = decodeUrlFromShortcutId(initialShortcutId)
+          if (url) {
+            navigateToShortcutUrl(url)
+          }
+        }
+      } catch (error) {
+        console.error('Error handling initial shortcut:', error)
+      }
+    }
+
+    const handleShortcutUsed = (shortcutId: string) => {
+      console.log('📱 [Shortcut] Shortcut used:', shortcutId)
+      const url = decodeUrlFromShortcutId(shortcutId)
+      console.log('📱 [Shortcut] Decoded URL:', url)
+      if (url) {
+        navigateToShortcutUrl(url)
+      }
+    }
+
+    // Handle app launch from shortcut
+    handleShortcutLaunch()
+
+    // Listen for shortcut usage while app is running
+    const subscription = Shortcuts.addOnShortcutUsedListener(handleShortcutUsed)
+
+    return () => {
+      subscription?.remove?.()
+    }
+  }, [])
   // Manifest checking useEffect
   useEffect(() => {
     if (!activeTab) return
@@ -491,13 +559,27 @@ function Browser() {
   /*                              ADDRESS HANDLING                              */
   /* -------------------------------------------------------------------------- */
 
-  const updateActiveTab = useCallback((patch: Partial<Tab>) => {
-    const newUrl = patch.url
-    if (newUrl && !isValidUrl(newUrl) && newUrl !== kNEW_TAB_URL) {
-      patch.url = kNEW_TAB_URL
-    }
-    tabStore.updateTab(tabStore.activeTabId, patch)
-  }, [])
+  const updateActiveTab = useCallback(
+    (patch: Partial<Tab>) => {
+      const raw = patch.url?.trim()
+      if (raw) {
+        if (!isValidUrl(raw)) {
+          // Try only adding https:// (no other fixes)
+          const candidate =
+            raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw.replace(/^\/+/, '')}`
+
+          if (candidate !== raw && isValidUrl(candidate)) {
+            patch.url = candidate
+          } else if (raw !== kNEW_TAB_URL) {
+            patch.url = kNEW_TAB_URL
+          }
+        }
+      }
+
+      tabStore.updateTab(tabStore.activeTabId, patch)
+    },
+    [tabStore /*, isValidUrl, kNEW_TAB_URL if not from module scope */]
+  )
 
   const onAddressSubmit = useCallback(() => {
     let entry = addressText.trim()
@@ -627,10 +709,12 @@ function Browser() {
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
 
   useEffect(() => {
-    if (tabStore.tabs.length === 0) {
+    if (tabStore.tabs.length === 0 && tabStore.isInitialized) {
       tabStore.newTab()
+      setAddressFocused(false)
+      Keyboard.dismiss()
     }
-  }, [])
+  }, [tabStore.isInitialized])
   useEffect(() => {
     if (activeTab && !addressEditing.current) {
       setAddressText(activeTab.url)
@@ -1269,15 +1353,10 @@ function Browser() {
     }
   }, [])
   const addToHomeScreen = useCallback(async () => {
-    try {
-      if (Platform.OS === 'android') {
-      } else {
-        await Linking.openURL('prefs:root=Safari')
-      }
-    } catch (e) {
-      console.warn('Add to homescreen failed', e)
+    if (activeTab && activeTab.url && activeTab.url !== kNEW_TAB_URL && isValidUrl(activeTab.url)) {
+      setShowShortcutModal(true)
     }
-  }, [])
+  }, [activeTab])
 
   /* -------------------------------------------------------------------------- */
   /*                           STAR (BOOKMARK+HISTORY)                          */
@@ -1595,7 +1674,14 @@ function Browser() {
     })
     return () => handle.cancel?.()
   }, [])
-
+  if (!tabStore.isInitialized) {
+    // don’t render the browser UI until tabs are loaded or created
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    )
+  }
   const uri = typeof activeTab?.url === 'string' && activeTab.url.length > 0 ? activeTab.url : 'about:blank'
   if (!ready) {
     return (
@@ -1612,8 +1698,14 @@ function Browser() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardAvoidingView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        enabled={Platform.OS === 'ios'}
+        behavior="padding"
+        keyboardVerticalOffset={0}
+      >
         <SafeAreaView
+          edges={['top', 'left', 'right']}
           style={[
             styles.container,
             {
@@ -1673,6 +1765,12 @@ function Browser() {
                   <Ionicons name="contract-outline" size={20} color="white" />
                 </TouchableOpacity>
               )}
+              <HomescreenShortcut
+                visible={showShortcutModal}
+                onClose={() => setShowShortcutModal(false)}
+                currentUrl={activeTab?.url || ''}
+                currentTitle={activeTab?.title}
+              />
               <WebView
                 ref={activeTab?.webviewRef}
                 source={{
@@ -1722,10 +1820,12 @@ function Browser() {
                   borderColor: colors.inputBorder,
                   paddingTop: addressFocused && keyboardVisible ? 8 : 12,
                   paddingBottom: addressFocused && keyboardVisible ? 0 : 12,
+                  marginBottom: 0,
                   zIndex: 10,
                   elevation: 10
                 }
               ]}
+              pointerEvents={showTabsView ? 'none' : 'auto'}
             >
               {!addressFocused && (
                 <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
@@ -2244,10 +2344,11 @@ const TabsViewBase = ({
                 ImpactFeedbackGenerator.impactAsync(ImpactFeedbackGenerator.ImpactFeedbackStyle.Medium)
               } catch (e) { }
             }
+            onDismiss()
             setAddressFocused(false)
             Keyboard.dismiss()
             tabStore.clearAllTabs()
-            onDismiss()
+            Keyboard.dismiss()
           }}
           activeOpacity={0.7}
         >
