@@ -55,7 +55,7 @@ import IdentityScreen from './identity'
 import { useTranslation } from 'react-i18next'
 import { useBrowserMode } from '@/context/BrowserModeContext'
 import { useLanguage } from '@/utils/translations'
-import SecurityScreen from './security'
+// import SecurityScreen from './security'
 import TrustScreen from './trust'
 
 /* -------------------------------------------------------------------------- */
@@ -1923,7 +1923,7 @@ function Browser() {
                         icon="person-circle-outline"
                         onPress={drawerHandlers.identity}
                       />
-                      <DrawerItem label={t('security')} icon="lock-closed-outline" onPress={drawerHandlers.security} />
+                      {/* <DrawerItem label={t('security')} icon="lock-closed-outline" onPress={drawerHandlers.security} /> */}
                       <DrawerItem
                         label={t('trust_network')}
                         icon="shield-checkmark-outline"
@@ -2303,7 +2303,7 @@ const SubDrawerView = React.memo(
       () => ({
         identity: <IdentityScreen />,
         settings: <SettingsScreen />,
-        security: <SecurityScreen />,
+        // security: <SecurityScreen />,
         trust: <TrustScreen />
       }),
       []
