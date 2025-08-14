@@ -1696,6 +1696,10 @@ function Browser() {
     )
   }
 
+
+  const isBackDisabled = !activeTab?.canGoBack || activeTab?.url === kNEW_TAB_URL
+  const isForwardDisabled = !activeTab?.canGoForward || activeTab?.url === kNEW_TAB_URL
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView
@@ -1818,8 +1822,8 @@ function Browser() {
                 {
                   backgroundColor: colors.inputBackground,
                   borderColor: colors.inputBorder,
-                  paddingTop: addressFocused && keyboardVisible ? 8 : 12,
-                  paddingBottom: addressFocused && keyboardVisible ? 0 : 12,
+                  paddingTop: 3,
+                  paddingBottom: 3,
                   marginBottom: 0,
                   zIndex: 10,
                   elevation: 10
@@ -1827,15 +1831,27 @@ function Browser() {
               ]}
               pointerEvents={showTabsView ? 'none' : 'auto'}
             >
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                disabled={isBackDisabled}
+                onPress={navBack}
+                activeOpacity={0.6}
+                delayPressIn={0.1}
+              >
+                <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
+              </TouchableOpacity>
+              
+              {/* deggen: I moved this to the extended menu
               {!addressFocused && (
                 <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
-                  <Ionicons name="person-circle-outline" size={22} color={colors.textSecondary} />
+                  <Ionicons name="person-circle-outline" size={26} color={colors.primary} />
                 </TouchableOpacity>
-              )}
+              )} */}
 
+              {/* deggen: I think we need to focus on usability and this icon has no function, it should be in the URL bar or something, not here looking like a button. 
               {!addressFocused && !activeTab?.isLoading && activeTab?.url.startsWith('https') && (
                 <Ionicons name="lock-closed" size={16} color={colors.textSecondary} style={styles.padlock} />
-              )}
+              )} */}
 
               <TextInput
                 ref={addressInputRef}
@@ -1876,8 +1892,10 @@ function Browser() {
                     backgroundColor: colors.background,
                     color: colors.textPrimary,
                     textAlign: addressFocused ? 'left' : 'center',
-                    height: 40, // Add explicit height for iOS
-                    paddingVertical: 8 // Add padding for better appearance
+                    height: 35, // Add explicit height for iOS
+                    fontSize: 18,
+                    paddingVertical: 8, // Add padding for better appearance
+                    borderRadius: 5
                   }
                 ]}
                 placeholder={t('search_placeholder')}
@@ -1890,12 +1908,12 @@ function Browser() {
               >
                 <Ionicons
                   name={addressFocused || activeTab?.isLoading ? 'close-circle' : 'refresh'}
-                  size={22}
-                  color={colors.textSecondary}
+                  size={26}
+                  color={colors.primary}
                 />
               </TouchableOpacity>
 
-              {!addressFocused && activeTab?.url !== kNEW_TAB_URL && (
+              {/* {!addressFocused && activeTab?.url !== kNEW_TAB_URL && (
                 <TouchableOpacity onPress={toggleDesktopView} style={styles.addressBarIcon}>
                   <Ionicons
                     name={isDesktopView ? 'phone-portrait' : 'desktop'}
@@ -1903,7 +1921,7 @@ function Browser() {
                     color={isDesktopView ? colors.primary : colors.textSecondary}
                   />
                 </TouchableOpacity>
-              )}
+              )} */}
             </View>
           )}
 
@@ -1983,6 +2001,7 @@ function Browser() {
               shareCurrent={shareCurrent}
               toggleStarDrawer={toggleStarDrawer}
               setShowTabsView={setShowTabsView}
+              toggleInfoDrawer={toggleInfoDrawer}
             />
           )}
 
@@ -2466,7 +2485,8 @@ const BottomToolbar = ({
   navFwd,
   shareCurrent,
   toggleStarDrawer,
-  setShowTabsView
+  setShowTabsView,
+  toggleInfoDrawer
 }: {
   activeTab: Tab
   colors: any
@@ -2475,7 +2495,8 @@ const BottomToolbar = ({
   navFwd: () => void
   shareCurrent: () => void
   toggleStarDrawer: (open: boolean) => void
-  setShowTabsView: (show: boolean) => void
+  setShowTabsView: (show: boolean) => void,
+  toggleInfoDrawer: (open: boolean) => void
 }) => {
   const handleStarPress = useCallback(() => toggleStarDrawer(true), [toggleStarDrawer])
   const handleTabsPress = useCallback(() => setShowTabsView(true), [setShowTabsView])
@@ -2515,7 +2536,10 @@ const BottomToolbar = ({
         }
       ]}
     >
-      <TouchableOpacity
+      <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.toolbarButton}>
+        <Ionicons name="person-circle-outline" size={26} color={colors.primary} />
+      </TouchableOpacity>
+      {/* <TouchableOpacity
         style={styles.toolbarButton}
         disabled={isBackDisabled}
         onPress={() => {
@@ -2531,8 +2555,8 @@ const BottomToolbar = ({
         delayPressIn={0.1}
       >
         <Ionicons name="arrow-back" size={24} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
-      </TouchableOpacity>
-      <TouchableOpacity
+      </TouchableOpacity> */}
+      {/* <TouchableOpacity
         style={styles.toolbarButton}
         disabled={isForwardDisabled}
         onPress={() => {
@@ -2548,7 +2572,7 @@ const BottomToolbar = ({
         delayPressIn={0.1}
       >
         <Ionicons name="arrow-forward" size={24} color={!isForwardDisabled ? colors.textPrimary : '#cccccc'} />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <TouchableOpacity
         style={styles.toolbarButton}
@@ -2592,8 +2616,8 @@ const styles = StyleSheet.create({
   addressBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingBottom: 12
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
   addressInput: {
     paddingHorizontal: 8
@@ -2604,6 +2628,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 6,
+    marginBottom: 10,
     borderTopWidth: StyleSheet.hairlineWidth
   },
   toolbarButton: { padding: 6 },
