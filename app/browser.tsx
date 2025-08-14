@@ -2358,20 +2358,15 @@ const TabsViewBase = ({
         <TouchableOpacity
           onPress={handleNewTabPress}
           disabled={isCreatingTab}
-          style={[styles.newTabBtn, { opacity: isCreatingTab ? 0.5 : 1, backgroundColor: colors.primary }]}
+          style={[styles.toolbarButton, { opacity: isCreatingTab ? 0.5 : 1 }]}
+          activeOpacity={0.6}
+          delayPressIn={0}
         >
-          <Text style={[styles.newTabIcon, { color: colors.background }]}>＋</Text>
+          <Ionicons name="add" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.doneButtonStyled,
-            {
-              backgroundColor: colors.primary,
-              borderWidth: 1,
-              borderColor: colors.inputBorder
-            }
-          ]}
+          style={styles.toolbarButton}
           onPress={() => {
             if (Platform.OS === 'ios') {
               try {
@@ -2385,21 +2380,19 @@ const TabsViewBase = ({
             tabStore.clearAllTabs()
             Keyboard.dismiss()
           }}
-          activeOpacity={0.7}
+          activeOpacity={0.6}
+          delayPressIn={0}
         >
-          <Text style={{ color: colors.background }}>{t('clear_all')}</Text>
+          <Ionicons name="trash-outline" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.doneButtonStyled,
-            {
-              backgroundColor: colors.primary
-            }
-          ]}
+          style={styles.toolbarButton}
           onPress={onDismiss}
+          activeOpacity={0.6}
+          delayPressIn={0}
         >
-          <Text style={[{ color: colors.background }]}>{t('done')}</Text>
+          <Ionicons name="checkmark" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
     </View>
