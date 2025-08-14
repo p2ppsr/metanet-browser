@@ -1822,8 +1822,8 @@ function Browser() {
                 {
                   backgroundColor: colors.inputBackground,
                   borderColor: colors.inputBorder,
-                  paddingTop: 3,
-                  paddingBottom: 3,
+                  paddingTop: 7,
+                  paddingBottom: 7,
                   marginBottom: 0,
                   zIndex: 10,
                   elevation: 10
@@ -1831,15 +1831,29 @@ function Browser() {
               ]}
               pointerEvents={showTabsView ? 'none' : 'auto'}
             >
-              <TouchableOpacity
-                style={styles.toolbarButton}
+              {/* deggen: Back Button unless address bar is active, in which case it's the share button */}
+              {addressFocused ? <TouchableOpacity
+                  style={styles.addressBarIcon}
+                  onPress={shareCurrent}
+                  disabled={activeTab?.url === kNEW_TAB_URL}
+                  activeOpacity={0.6}
+                  delayPressIn={0}
+                >
+                  <Ionicons
+                    name="share-outline"
+                    size={24}
+                    color={activeTab?.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
+                  />
+                </TouchableOpacity>
+              : <TouchableOpacity
+                style={styles.addressBarIcon}
                 disabled={isBackDisabled}
                 onPress={navBack}
                 activeOpacity={0.6}
                 delayPressIn={0.1}
               >
                 <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
-              </TouchableOpacity>
+              </TouchableOpacity>}
               
               {/* deggen: I moved this to the extended menu
               {!addressFocused && (
@@ -2302,7 +2316,7 @@ const TabsViewBase = ({
   }
 
   return (
-    <View style={[styles.tabsViewContainer, { backgroundColor: colors.background + 'CC' }]}>
+    <View style={[styles.tabsViewContainer, { backgroundColor: colors.background + 'cc' }]}>
       <TouchableWithoutFeedback onPress={onDismiss}>
         <View style={StyleSheet.absoluteFill} />
       </TouchableWithoutFeedback>
@@ -2573,7 +2587,7 @@ const BottomToolbar = ({
       >
         <Ionicons name="arrow-forward" size={24} color={!isForwardDisabled ? colors.textPrimary : '#cccccc'} />
       </TouchableOpacity> */}
-
+{/* 
       <TouchableOpacity
         style={styles.toolbarButton}
         onPress={shareCurrent}
@@ -2586,7 +2600,7 @@ const BottomToolbar = ({
           size={24}
           color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
         />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <TouchableOpacity style={styles.toolbarButton} onPress={handleStarPress} activeOpacity={0.6} delayPressIn={0}>
         <Ionicons name="star-outline" size={24} color={colors.textPrimary} />
@@ -2616,16 +2630,21 @@ const styles = StyleSheet.create({
   addressBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    justifyContent: 'space-between',
+    width: '100%',
     paddingBottom: 12,
   },
   addressInput: {
     paddingHorizontal: 8
   },
-  addressBarIcon: { paddingHorizontal: 6 },
+  addressBarIcon: {
+    paddingHorizontal: 24,
+    paddingVertical: 4
+  },
   padlock: { marginRight: 4 },
   bottomBar: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-around',
     paddingVertical: 6,
     marginBottom: 10,
@@ -2846,14 +2865,14 @@ const styles = StyleSheet.create({
   /* backdrop */
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,1)',
     zIndex: 20
   },
 
   /* context menu styles */
   contextMenuBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 1)',
     justifyContent: 'center',
     alignItems: 'center'
   },
