@@ -564,7 +564,7 @@ const componentStyles = StyleSheet.create({
   // Context Menu Styles
   contextMenuBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 1)',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -680,7 +680,7 @@ const componentStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(0,0,0,1)',
     justifyContent: 'center',
     alignItems: 'center'
   }
