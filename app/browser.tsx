@@ -1832,21 +1832,9 @@ function Browser() {
               pointerEvents={showTabsView ? 'none' : 'auto'}
             >
               {/* deggen: Back Button unless address bar is active, in which case it's the share button */}
-              {addressFocused ? <TouchableOpacity
-                  style={styles.addressBarIcon}
-                  onPress={shareCurrent}
-                  disabled={activeTab?.url === kNEW_TAB_URL}
-                  activeOpacity={0.6}
-                  delayPressIn={0}
-                >
-                  <Ionicons
-                    name="share-outline"
-                    size={24}
-                    color={activeTab?.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
-                  />
-                </TouchableOpacity>
+              {addressFocused ? null
               : <TouchableOpacity
-                style={styles.addressBarIcon}
+                style={activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon}
                 disabled={isBackDisabled}
                 onPress={navBack}
                 activeOpacity={0.6}
@@ -1855,12 +1843,23 @@ function Browser() {
                 <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
               </TouchableOpacity>}
               
-              {/* deggen: I moved this to the extended menu
-              {!addressFocused && (
-                <TouchableOpacity onPress={() => toggleInfoDrawer(true)} style={styles.addressBarIcon}>
-                  <Ionicons name="person-circle-outline" size={26} color={colors.primary} />
-                </TouchableOpacity>
-              )} */}
+              {activeTab?.canGoForward && <TouchableOpacity
+                style={styles.addressBarForwardButton}
+                disabled={isForwardDisabled}
+                onPress={() => {
+                  console.log('🔘 Forward Button Pressed:', {
+                    canGoForward: activeTab?.canGoForward,
+                    url: activeTab?.url,
+                    isNewTab: activeTab?.url === kNEW_TAB_URL,
+                    disabled: isForwardDisabled
+                  })
+                  navFwd()
+                }}
+                activeOpacity={0.6}
+                delayPressIn={0.1}
+              >
+                <Ionicons name="arrow-forward" size={26} color={!isForwardDisabled ? colors.textPrimary : '#cccccc'} />
+              </TouchableOpacity>}
 
               {/* deggen: I think we need to focus on usability and this icon has no function, it should be in the URL bar or something, not here looking like a button. 
               {!addressFocused && !activeTab?.isLoading && activeTab?.url.startsWith('https') && (
@@ -2580,7 +2579,7 @@ const BottomToolbar = ({
       >
         <Ionicons name="arrow-forward" size={24} color={!isForwardDisabled ? colors.textPrimary : '#cccccc'} />
       </TouchableOpacity> */}
-{/* 
+
       <TouchableOpacity
         style={styles.toolbarButton}
         onPress={shareCurrent}
@@ -2593,7 +2592,7 @@ const BottomToolbar = ({
           size={24}
           color={activeTab.url === kNEW_TAB_URL ? colors.textSecondary : colors.textPrimary}
         />
-      </TouchableOpacity> */}
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.toolbarButton} onPress={handleStarPress} activeOpacity={0.6} delayPressIn={0}>
         <Ionicons name="star-outline" size={24} color={colors.textPrimary} />
@@ -2632,6 +2631,16 @@ const styles = StyleSheet.create({
   },
   addressBarIcon: {
     paddingHorizontal: 24,
+    paddingVertical: 4
+  },
+  addressBarBackButton: {
+    paddingLeft: 24,
+    paddingRight: 4,
+    paddingVertical: 4
+  },
+  addressBarForwardButton: {
+    paddingRight: 24,
+    paddingLeft: 4,
     paddingVertical: 4
   },
   padlock: { marginRight: 4 },

@@ -218,12 +218,46 @@ export class TabStore {
 
   goForward(tabId: number) {
     const tab = this.tabs.find(t => t.id === tabId)
-
     console.log(`🔜 [TAB_STORE] goForward(): tabId=${tabId}`)
 
-    // CRITICAL FIX: Use WebView's native goForward() instead of custom history
-    // This ensures proper synchronization with WebView's internal state
-    if (tab && tab.canGoForward && tab.webviewRef.current) {
+    if (!tab) {
+      console.log(`🔜 [TAB_STORE] Tab ${tabId} not found`)
+      return
+    }
+
+    const history = this.tabNavigationHistories[tabId] || []
+    const currentIndex = this.tabHistoryIndexes[tabId] ?? -1
+    
+    console.log(`🔜 [TAB_STORE] Navigation state:`, {
+      historyLength: history.length,
+      currentIndex,
+      canGoForward: tab.canGoForward,
+      currentUrl: tab.url,
+      history: history.map((h, i) => `${i === currentIndex ? '→' : ' '} ${(h as any)?.url || h}`)
+    })
+
+    // Use custom history navigation if we have meaningful history
+    if (history.length > 1 && currentIndex < history.length - 1) {
+      console.log(`🔜 [TAB_STORE] Using custom history navigation`)
+      const newIndex = currentIndex + 1
+      const targetEntry = history[newIndex]
+      const url = (targetEntry as any)?.url || targetEntry
+      
+      console.log(`🔜 [TAB_STORE] Navigating forward to index ${newIndex}: ${url}`)
+      
+      // Update history index
+      this.tabHistoryIndexes[tabId] = newIndex
+      
+      // Update tab's navigation state based on new position
+      tab.canGoBack = newIndex > 0
+      tab.canGoForward = newIndex < history.length - 1
+      
+      // Navigate to the URL
+      tab.url = url
+      
+      console.log(`🔜 [TAB_STORE] Updated navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}`)
+    } else if (tab.canGoForward && tab.webviewRef.current) {
+      // Fall back to WebView's native goForward() for single-page scenarios
       console.log(`🔜 [TAB_STORE] Using WebView native goForward()`)
       try {
         tab.webviewRef.current.goForward()
@@ -234,8 +268,10 @@ export class TabStore {
     } else {
       console.log(`🔜 [TAB_STORE] Cannot go forward:`, {
         hasTab: !!tab,
-        canGoForward: tab?.canGoForward || false,
-        hasWebViewRef: !!tab?.webviewRef?.current
+        canGoForward: tab.canGoForward,
+        hasWebViewRef: !!tab.webviewRef?.current,
+        historyLength: history.length,
+        currentIndex
       })
     }
   }
