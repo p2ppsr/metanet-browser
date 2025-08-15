@@ -70,6 +70,7 @@ import NotificationSettingsModal from '@/components/NotificationSettingsModal'
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
 import * as Notifications from 'expo-notifications'
+import NotificationsScreen from './notificationts'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -333,7 +334,7 @@ function Browser() {
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
   const [showShortcutModal, setShowShortcutModal] = useState(false)
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<
-    'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'
+    'root' | 'identity' | 'settings' | 'trust' | 'notifications'
   >('root')
   const drawerAnim = useRef(new Animated.Value(0)).current
 
@@ -1581,9 +1582,9 @@ function Browser() {
   const drawerHandlers = useMemo(
     () => ({
       identity: () => setInfoDrawerRoute('identity'),
-      security: () => setInfoDrawerRoute('security'),
       trust: () => setInfoDrawerRoute('trust'),
       settings: () => setInfoDrawerRoute('settings'),
+      notifications: () => setInfoDrawerRoute('notifications'),
       toggleDesktopView: () => {
         toggleDesktopView()
         toggleInfoDrawer(false)
@@ -2030,6 +2031,7 @@ function Browser() {
                         onPress={drawerHandlers.trust}
                       />
                       <DrawerItem label={t('settings')} icon="settings-outline" onPress={drawerHandlers.settings} />
+                      <DrawerItem label={t('notifications')} icon="notifications-outline" onPress={drawerHandlers.notifications} />
                       {/* <DrawerItem
                         label={t('notifications')}
                         icon="notifications-outline"
@@ -2394,7 +2396,7 @@ const SubDrawerView = React.memo(
     onBack,
     onOpenNotificationSettings
   }: {
-    route: 'identity' | 'settings' | 'security' | 'trust' | 'notifications'
+    route: 'identity' | 'settings' | 'trust' | 'notifications'
     onBack: () => void
     onOpenNotificationSettings?: () => void
   }) => {
@@ -2407,7 +2409,8 @@ const SubDrawerView = React.memo(
         identity: <IdentityScreen />,
         settings: <SettingsScreen />,
         // security: <SecurityScreen />,
-        trust: <TrustScreen />
+        trust: <TrustScreen />,
+        notifications: <NotificationsScreen />
       }),
       []
     )
@@ -2422,37 +2425,15 @@ const SubDrawerView = React.memo(
           <View style={{ width: 60 }} />
         </View>
         <View style={styles.subDrawerContent}>
-          {route === 'notifications' ? (
-            <View>
-              <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>
-                Manage notifications from websites and apps.
-              </Text>
-              <TouchableOpacity
-                style={[styles.drawerItem, { backgroundColor: colors.inputBackground, borderRadius: 8 }]}
-                onPress={onOpenNotificationSettings}
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={22}
-                  color={colors.textSecondary}
-                  style={styles.drawerIcon}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.drawerLabel, { color: colors.textPrimary }]}>Notification Settings</Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Manage website permissions</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            // Only show web3 screens when not in web2 mode
-            !isWeb2Mode && screens[route]
-          )}
+          {/* Only show web3 screens when not in web2 mode */}
+          {!isWeb2Mode && screens[route]}
         </View>
       </View>
     )
   }
 )
+
+SubDrawerView.displayName = 'SubDrawerView'
 
 /* -------------------------------------------------------------------------- */
 /*                              BOTTOM TOOLBAR                               */
