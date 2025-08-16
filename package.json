@@ -114,7 +114,8 @@
   "private": true,
   "overrides": {
     "@expo/config-plugins": "~10.1.1",
-    "@expo/prebuild-config": "~9.0.0"
+    "@expo/prebuild-config": "~9.0.0",
+    "@react-native-async-storage/async-storage": "2.1.2"
   },
   "expo": {
     "doctor": {
