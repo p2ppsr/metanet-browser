@@ -579,11 +579,25 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({ children =
 
         // Setup permissions with provided callbacks.
         const permissionsManager = new WalletPermissionsManager(wallet, adminOriginator, {
+          differentiatePrivilegedOperations: true,
+          seekBasketInsertionPermissions: false,
+          seekBasketListingPermissions: false,
+          seekBasketRemovalPermissions: false,
+          seekCertificateAcquisitionPermissions: true,
+          seekCertificateDisclosurePermissions: true,
+          seekCertificateRelinquishmentPermissions: true,
+          seekCertificateListingPermissions: false,
+          seekGroupedPermission: true,
+          seekPermissionsForIdentityKeyRevelation: false,
+          seekPermissionsForIdentityResolution: false,
+          seekPermissionsForKeyLinkageRevelation: true,
+          seekPermissionsForPublicKeyRevelation: true,
+          seekPermissionWhenApplyingActionLabels: false,
+          seekPermissionWhenListingActionsByLabel: false,
           seekProtocolPermissionsForEncrypting: false,
           seekProtocolPermissionsForHMAC: false,
-          seekPermissionsForPublicKeyRevelation: false,
-          seekPermissionsForIdentityKeyRevelation: false,
-          seekPermissionsForIdentityResolution: false
+          seekProtocolPermissionsForSigning: true,
+          seekSpendingPermissions: true,
         })
 
         if (protocolPermissionCallback) {
