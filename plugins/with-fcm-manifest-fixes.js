@@ -1,4 +1,4 @@
-import { AndroidConfig, withAndroidManifest } from "@expo/config-plugins";
+const { withAndroidManifest, AndroidConfig } = require('@expo/config-plugins');
 
 const withFcmManifestFixes = (config) => {
   return withAndroidManifest(config, (cfg) => {
@@ -11,7 +11,8 @@ const withFcmManifestFixes = (config) => {
     }
 
     // Get <application>
-    const app = AndroidConfig.Manifest.getMainApplicationOrThrow(manifest);
+    const app = AndroidConfig.Manifest.getMainApplication(manifest);
+    if (!app) { throw new Error('Main application not found in AndroidManifest'); }
 
     // Helper to upsert <meta-data> by android:name
     const upsertMetaData = (name, attrs) => {
@@ -39,4 +40,4 @@ const withFcmManifestFixes = (config) => {
   });
 };
 
-export default withFcmManifestFixes;
+module.exports = withFcmManifestFixes;
