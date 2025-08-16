@@ -1,6 +1,6 @@
-import { AndroidConfig, ConfigPlugin, withAndroidManifest } from "@expo/config-plugins";
+import { AndroidConfig, withAndroidManifest } from "@expo/config-plugins";
 
-const withFcmManifestFixes: ConfigPlugin = (config) => {
+const withFcmManifestFixes = (config) => {
   return withAndroidManifest(config, (cfg) => {
     const { manifest } = cfg.modResults;
 
@@ -14,10 +14,10 @@ const withFcmManifestFixes: ConfigPlugin = (config) => {
     const app = AndroidConfig.Manifest.getMainApplicationOrThrow(manifest);
 
     // Helper to upsert <meta-data> by android:name
-    const upsertMetaData = (name: string, attrs: Record<string, string>) => {
+    const upsertMetaData = (name, attrs) => {
       app["meta-data"] = app["meta-data"] || [];
       const idx = app["meta-data"].findIndex(
-        (x: any) => x.$?.["android:name"] === name
+        (x) => x.$?.["android:name"] === name
       );
       const node = { $: { "android:name": name, ...attrs } };
       if (idx === -1) app["meta-data"].push(node);

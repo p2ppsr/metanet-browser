@@ -14,7 +14,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "./plugins/with-fcm-manifest-fixes",
+      "./plugins/with-fcm-manifest-fixes.js",
       "expo-router",
       [
         "expo-splash-screen",
