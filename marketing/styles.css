@@ -50,7 +50,7 @@ h4 {
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #080c1e 0%, #844ba2 100%);
     color: white;
     padding: 100px 0;
     min-height: 100vh;
@@ -253,7 +253,7 @@ h4 {
 /* Technical Highlights */
 .tech-highlights {
     padding: 100px 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #080c1e 0%, #844ba2 100%);
     color: white;
 }
 
