@@ -30,8 +30,6 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>metanet</string>
-          <string>http</string>
-          <string>https</string>
           <string>uhrp</string>
         </array>
       </dict>
