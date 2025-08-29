@@ -122,7 +122,7 @@ const RecoveryKeySaver = () => {
   )
 
   return (
-    <Modal visible={!open} transparent={true} animationType="fade" onRequestClose={onAbandon}>
+    <Modal visible={open} transparent={true} animationType="fade" onRequestClose={onAbandon}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
