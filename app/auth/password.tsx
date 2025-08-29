@@ -116,7 +116,7 @@ export default function PasswordScreen() {
             {loading ? (
               <ActivityIndicator color={colors.buttonText} />
             ) : (
-              <Text style={styles.buttonText}>{t('continue')}</Text>
+              <Text style={[styles.buttonText, (!isValidPassword() || loading) && styles.buttonTextDisabled]}>{t('continue')}</Text>
             )}
           </TouchableOpacity>
 
