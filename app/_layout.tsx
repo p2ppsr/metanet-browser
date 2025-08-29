@@ -102,7 +102,7 @@ export default function RootLayout() {
                     }}
                   >
                     <Stack.Screen name="index" />
-                    <Stack.Screen name="browser" />
+                    <Stack.Screen name="metanet" />
                     <Stack.Screen
                       name="config"
                       options={{

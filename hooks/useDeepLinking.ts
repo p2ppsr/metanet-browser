@@ -41,14 +41,14 @@ export function useDeepLinking() {
         if (validRoutes.includes(route)) {
           router.push(`/${route}` as any)
         } else {
-          router.push('/browser')
+          router.push('/')
         }
       } else {
-        router.push('/browser')
+        router.push('/')
       }
     } catch (error) {
       console.error('Error handling deep link:', error)
-      router.push('/browser')
+      router.push('/')
     }
   }
 
@@ -61,7 +61,7 @@ export function useDeepLinking() {
         if (shouldRedirectToStartUrl(manifest, incomingUrl)) {
           const startUrl = getStartUrl(manifest, incomingUrl)
           await AsyncStorage.setItem(PENDING_URL_KEY, startUrl)
-          router.replace('/browser')
+          router.replace('/')
           return
         }
 
@@ -76,7 +76,7 @@ export function useDeepLinking() {
 
     // Fallback to original URL
     await AsyncStorage.setItem(PENDING_URL_KEY, incomingUrl)
-    router.replace('/browser')
+    router.replace('/')
   }
 }
 
