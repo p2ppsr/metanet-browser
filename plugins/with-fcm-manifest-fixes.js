@@ -2,7 +2,8 @@ const { withAndroidManifest, AndroidConfig } = require('@expo/config-plugins');
 
 const withFcmManifestFixes = (config) => {
   return withAndroidManifest(config, (cfg) => {
-    const { manifest } = cfg.modResults;
+    const androidManifest = cfg.modResults;
+    const { manifest } = androidManifest;
 
     // Ensure tools namespace on <manifest>
     manifest.$ = manifest.$ || {};
@@ -11,7 +12,7 @@ const withFcmManifestFixes = (config) => {
     }
 
     // Get <application>
-    const app = AndroidConfig.Manifest.getMainApplication(manifest);
+    const app = AndroidConfig.Manifest.getMainApplicationOrThrow(androidManifest);
     if (!app) { throw new Error('Main application not found in AndroidManifest'); }
 
     // Helper to upsert <meta-data> by android:name

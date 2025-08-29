@@ -3,7 +3,7 @@
   "description": "Enabling identity, micropayments, and use of Metanet websites on mobile devices",
   "author": "BSV Association",
   "main": "index.js",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "license": "Open BSV",
   "scripts": {
     "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
@@ -25,9 +25,9 @@
     "clean": "rm -rf yarn.lock && rm -rf .expo && rm -rf .expo-shared && rm -rf .vscode && rm -rf .idea && rm -rf ios/Pods && rm -rf android/.gradle && rm -rf android/app/build && rm -rf ./ios"
   },
   "dependencies": {
-    "@bsv/message-box-client": "^1.2.3",
-    "@bsv/sdk": "^1.6.20",
-    "@bsv/wallet-toolbox-mobile": "^1.5.20",
+    "@bsv/message-box-client": "^1.2.6",
+    "@bsv/sdk": "^1.6.24",
+    "@bsv/wallet-toolbox-mobile": "^1.6.4",
     "@dicebear/core": "^9.2.2",
     "@dicebear/identicon": "^9.2.2",
     "@expo/vector-icons": "^14.1.0",

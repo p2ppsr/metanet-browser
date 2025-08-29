@@ -185,6 +185,9 @@ const resources = {
       system_default: 'System Default',
       account: 'Account',
       logout: 'Logout',
+      wallet_configuration: 'Wallet Configuration',
+      wallet_storage_url: 'Wallet Storage URL',
+      logout_to_change_urls: 'You need to logout to change these URLs.',
 
       // Security
       security: 'Security',
@@ -411,6 +414,9 @@ const resources = {
       system_default: '系统默认',
       account: '账户',
       logout: '退出登录',
+      wallet_configuration: '钱包配置',
+      wallet_storage_url: '钱包存储URL',
+      logout_to_change_urls: '您需要退出登录以更改这些URL。',
 
       // Security
       security: '安全',
@@ -637,6 +643,9 @@ const resources = {
       system_default: 'सिस्टम डिफ़ॉल्ट',
       account: 'खाता',
       logout: 'लॉगआउट',
+      wallet_configuration: 'वॉलेट कॉन्फ़िगरेशन',
+      wallet_storage_url: 'वॉलेट स्टोरेज URL',
+      logout_to_change_urls: 'इन URLs को बदलने के लिए आपको लॉगआउट करना होगा।',
 
       // Security
       security: 'सुरक्षा',

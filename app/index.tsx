@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native'
 import ConfigModal from '@/components/ConfigModal'
 import { router } from 'expo-router'
@@ -36,7 +36,7 @@ export default function LoginScreen() {
   }, [])
 
   // Navigate to phone auth screen
-  const handleGetStarted = async () => {
+  const handleGetStarted = useCallback(async () => {
     try {
       await analytics().logEvent('get_started_tapped', {
         screen: 'onboarding'
@@ -53,7 +53,6 @@ export default function LoginScreen() {
         throw new Error(`Failed to fetch info: ${res.status}`)
       }
       const wabInfo = await res.json()
-      console.log({ wabInfo, selectedWabUrl, selectedMethod, selectedNetwork, selectedStorageUrl })
       const finalConfig = {
         wabUrl: selectedWabUrl,
         wabInfo,
@@ -85,7 +84,7 @@ export default function LoginScreen() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedWabUrl, selectedMethod, selectedNetwork, selectedStorageUrl, finalizeConfig, setItem, getSnap, managers?.walletManager])
 
   // Config modal state
   const [showConfig, setShowConfig] = useState(false)
@@ -102,11 +101,8 @@ export default function LoginScreen() {
   const handleConfigured = async () => {
     // After successful config, proceed with auth
     try {
-      const finalConfig = JSON.parse((await getItem('finalConfig')) || '')
-      const success = finalizeConfig(finalConfig)
-      if (!success) {
-        return
-      }
+      // The ConfigModal has already called finalizeConfig() with the new configuration
+      // No need to load from storage - the wallet context already has the updated values
       const snap = await getSnap()
       if (!snap) {
         router.push('/auth/phone')
@@ -175,7 +171,17 @@ export default function LoginScreen() {
                   marginTop: 12
                 }
               ]}
-              onPress={() => {
+              onPress={handleConfig}
+            >
+              <View style={styles.configIconContainer}>
+                <Ionicons name="settings-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={{ color: colors.textPrimary }}>{t('configure_providers')}</Text>
+              </View>
+            </TouchableOpacity>
+
+            <Text style={[styles.termsText, { paddingHorizontal: 50, color: colors.textSecondary }]}>{t('terms_privacy_agreement')}</Text>
+
+            <TouchableOpacity style={styles.configButton} onPress={() => {
                 // Set mode to web2 immediately when button is pressed
                 setWeb2Mode(true)
 
@@ -189,22 +195,18 @@ export default function LoginScreen() {
                     handleGetStarted()
                   }
                 )
-              }}
-            >
-              <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>Continue without login</Text>
-            </TouchableOpacity>
-
-            <Text style={[styles.termsText, { color: colors.textSecondary }]}>{t('terms_privacy_agreement')}</Text>
-
-            <TouchableOpacity style={styles.configButton} onPress={handleConfig}>
-              <View style={styles.configIconContainer}>
-                <Ionicons name="settings-outline" size={20} color={colors.secondary} />
-                <Text style={styles.configButtonText}>{t('configure_providers')}</Text>
-              </View>
+              }}>
+                <Text style={[styles.configButtonText, { color: '#487dbf' }]}>{t('continue_without_login')}</Text>
             </TouchableOpacity>
           </>
         )}
       </View>
+      
+      <ConfigModal
+        visible={showConfig}
+        onDismiss={handleConfigDismiss}
+        onConfigured={handleConfigured}
+      />
     </SafeAreaView>
   )
 }
@@ -226,7 +228,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#0066cc',
+    backgroundColor: '#487dbf',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -257,12 +259,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold'
   },
+  continueButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0066cc'
+  },
   configButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 50,
-    padding: 10
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#487dbf',
+    borderRadius: 10,
+    width: '60%'
   },
   configIconContainer: {
     flexDirection: 'row',
@@ -270,7 +281,6 @@ const styles = StyleSheet.create({
     marginLeft: 8
   },
   configButtonText: {
-    color: '#0066cc',
     fontSize: 14,
     marginLeft: 2
   },
