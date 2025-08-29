@@ -3,6 +3,7 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/context/theme/ThemeContext'
 import { useTranslation } from 'react-i18next'
+import { red } from '@bsv/sdk/primitives/Point.ts'
 
 interface Web3BenefitsModalProps {
   visible: boolean
@@ -63,36 +64,35 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
           {/* Content - Simple approach */}
           <View style={{ padding: 20 }}>
             <Text style={[{ fontSize: 16, marginBottom: 16, color: colors.textPrimary }]}>
-              The benefits of web3 are as follows:
+              A Web3 identity brings you:
             </Text>
 
+            <Text style={[{ fontSize: 16, fontWeight: 'bold', color: colors.textPrimary }]}>Micropayments</Text>
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-              • Never login again - One identity for every Web3 app. No more passwords or sign-ups.
+              where creators to earn directly.
             </Text>
+            <Text style={[{ fontSize: 16, fontWeight: 'bold', color: colors.textPrimary }]}>Private Identity</Text>
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-              • Instant everything - Payments, access, verification - all happen in seconds.
+              with mutual auth means no signups or logins.
             </Text>
+            <Text style={[{ fontSize: 16, fontWeight: 'bold', color: colors.textPrimary }]}>Data Sovereignty</Text>
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-              • You own your data - No companies tracking you or selling your information.
-            </Text>
-            <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-              • Works everywhere - Access thousands of Web3 apps with the same identity.
-            </Text>
-            <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 20, color: colors.textPrimary }]}>
-              • Future-proof - Be early to the next generation of the internet.
+             you're in control, with no 3rd party tracking.
             </Text>
           </View>
+
+          <Text style={[{ padding: 20, fontSize: 16, fontWeight: 'bold', color: colors.textPrimary }]}>Become an early adopter and lead your peers to the future of everything.</Text>
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={onGoToLogin}>
               <Text style={[styles.primaryButtonText, { color: colors.buttonText }]}>
-                🚀 Get My Web3 Identity (30s)
+                Get Started
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.secondaryButton} onPress={onContinueWithoutLogin}>
-              <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>Maybe later</Text>
+              <Text style={[styles.secondaryButtonText, { color: colors.textPrimary }]}>Maybe Later</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -165,10 +165,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     alignItems: 'center',
     alignSelf: 'center',
-    marginTop: 8
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#666'
   },
   secondaryButtonText: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '300',
     opacity: 0.5
   }

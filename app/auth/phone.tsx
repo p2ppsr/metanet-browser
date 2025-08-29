@@ -199,9 +199,9 @@ export default function PhoneScreen() {
             disabled={!isValidPhoneNumber() || loading}
           >
             {loading ? (
-              <ActivityIndicator color={colors.buttonText} />
+              <ActivityIndicator color={colors.buttonTextDisabled} />
             ) : (
-              <Text style={styles.buttonText}>{t('continue')}</Text>
+              <Text style={[styles.buttonText, (!isValidPhoneNumber() || loading) && styles.buttonTextDisabled]}>{t('continue')}</Text>
             )}
           </TouchableOpacity>
 

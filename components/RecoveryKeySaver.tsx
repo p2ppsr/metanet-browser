@@ -127,13 +127,11 @@ const RecoveryKeySaver = () => {
         <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
             <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-              <Text style={[styles.title, { color: colors.textPrimary }]}>Secure Access Backup and Recovery</Text>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Save Your Recovery Key Now</Text>
 
               <ScrollView style={styles.scrollView}>
                 {!affirmative1 && (
                   <View>
-                    <Text style={[styles.subtitle, { color: colors.textPrimary }]}>Save Your Recovery Key Now:</Text>
-
                     <View
                       style={[
                         styles.keyContainer,
@@ -156,7 +154,7 @@ const RecoveryKeySaver = () => {
                           color={colors.buttonText}
                           style={styles.buttonIcon}
                         />
-                        <Text style={[styles.buttonText, { color: colors.buttonText }]}>Copy to Clipboard</Text>
+                        <Text style={[styles.buttonText, { color: colors.buttonText }]}>Copy</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -179,29 +177,19 @@ const RecoveryKeySaver = () => {
                   <Checkbox
                     checked={affirmative1}
                     onPress={() => setAffirmative1(!affirmative1)}
-                    label="I have saved my recovery key in a secure location"
+                    label="I have saved my recovery key"
                   />
                 </View>
 
                 {affirmative1 && (
                   <View>
                     <Text style={[styles.subtitle, { color: colors.textPrimary }]}>
-                      Any 2 of 3 factors are required to access your data:
-                    </Text>
-
-                    <Text style={[styles.centeredText, { color: colors.textPrimary, fontWeight: 'bold' }]}>
-                      Phone, Password, Recovery Key
-                    </Text>
-
-                    <Text style={[styles.description, { color: colors.textSecondary, marginTop: 16 }]}>
-                      When you lose your phone or forget your password, you must use the other factors to re-establish
-                      secure control. This is a perfectly normal and unavoidable fact of life. However -
+                      Any 2 of 3 factors are required to access your data: Phone, Password, Recovery Key
                     </Text>
 
                     <View style={[styles.warningBox, { borderColor: colors.error }]}>
                       <Text style={[styles.warningText, { color: colors.error }]}>
-                        Loss of more than one factor will result in TOTAL LOSS of access to all assets, encrypted data,
-                        and certificates.
+                        Loss of two factors = PERMANENT TOTAL LOSS of all assets, and data.
                       </Text>
                     </View>
 
@@ -231,15 +219,15 @@ const RecoveryKeySaver = () => {
                   style={[
                     styles.buttonPrimary,
                     {
-                      backgroundColor: isAllChecked ? '#006600' : colors.inputBorder,
-                      opacity: isAllChecked ? 1 : 0.5
+                      backgroundColor: colors.buttonBackground,
+                      opacity: isAllChecked ? 1 : 0.2
                     }
                   ]}
                   onPress={onKeySaved}
                   disabled={!isAllChecked}
                 >
                   <Text style={[styles.buttonText, { color: colors.buttonText }]}>Securely Saved</Text>
-                  <Ionicons name="lock-closed" size={20} color={colors.buttonText} style={styles.buttonIcon} />
+                  <Ionicons name={isAllChecked ? "lock-closed" : "lock-open"} size={20} color={colors.buttonText} style={styles.buttonIcon} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -257,7 +245,6 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   keyboardAvoid: {
-    width: '90%',
     maxWidth: 500
   },
   modalContent: {
@@ -271,7 +258,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    maxHeight: '80%'
   },
   scrollView: {
     maxHeight: 450,
@@ -319,7 +305,7 @@ const styles = StyleSheet.create({
     flex: 0.48
   },
   buttonIcon: {
-    marginRight: 8
+    marginLeft: 8
   },
   warningBox: {
     borderWidth: 1,
@@ -379,7 +365,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '500'
+    fontWeight: '500',
   },
   buttonSecondaryText: {
     fontSize: 16
