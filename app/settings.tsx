@@ -10,7 +10,7 @@ export default function SettingsScreen() {
   const { t } = useTranslation()
   const { colors, mode, setThemeMode } = useTheme()
   const styles = useThemeStyles()
-  const { updateSettings, settings, logout } = useWallet()
+  const { updateSettings, settings, logout, selectedWabUrl, selectedStorageUrl, selectedNetwork } = useWallet()
 
   // Handle theme mode change
   const handleThemeChange = async (newMode: ThemeMode) => {
@@ -30,9 +30,95 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={{ flex: 1 }}>
-        <View style={{ padding: 20 }}>
-          <Text style={[styles.title, { textAlign: 'left', alignSelf: 'flex-start' }]}>{t('settings')}</Text>
+      <ScrollView style={{ flex: 1 }}>          
+          {/* Account Section */}
+          <View style={[styles.card, { marginTop: 20 }]}>
+            <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18, marginBottom: 15 }]}>{t('wallet_configuration')}</Text>
+
+            {/* Wallet Configuration URLs */}
+            <View style={{ marginBottom: 20 }}>              
+              {/* WAB URL */}
+              <View style={{ marginBottom: 12 }}>
+                <Text style={[styles.textSecondary, { fontSize: 14, marginBottom: 4 }]}>
+                  {t('wab_url')}
+                </Text>
+                <View style={[
+                  styles.row,
+                  {
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    backgroundColor: colors.paperBackground,
+                    borderWidth: 1,
+                    borderColor: colors.inputBorder,
+                  }
+                ]}>
+                  <Text style={[styles.textSecondary, { fontSize: 14, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+                    {selectedWabUrl || 'Not configured'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Wallet Storage URL */}
+              <View style={{ marginBottom: 12 }}>
+                <Text style={[styles.textSecondary, { fontSize: 14, marginBottom: 4 }]}>
+                  {t('wallet_storage_url')}
+                </Text>
+                <View style={[
+                  styles.row,
+                  {
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    backgroundColor: colors.paperBackground,
+                    borderWidth: 1,
+                    borderColor: colors.inputBorder
+                  }
+                ]}>
+                  <Text style={[styles.textSecondary, { fontSize: 14, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+                    {selectedStorageUrl || 'Not configured'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* NETWORK */}
+              <View style={{ marginBottom: 12 }}>
+                <Text style={[styles.textSecondary, { fontSize: 14, marginBottom: 4 }]}>
+                  {t('bsv_network')}
+                </Text>
+                <View style={[
+                  styles.row,
+                  {
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    backgroundColor: colors.paperBackground,
+                    borderWidth: 1,
+                    borderColor: colors.inputBorder
+                  }
+                ]}>
+                  <Text style={[styles.textSecondary, { fontSize: 14, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+                    {selectedNetwork || 'Not configured'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Explanation text */}
+              <Text style={[styles.textSecondary, { fontSize: 13, fontStyle: 'italic', marginBottom: 15 }]}>
+                {t('logout_to_change_urls')}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.row, { padding: 15, borderRadius: 8, backgroundColor: colors.error + '20' }]}
+              onPress={logout}
+            >
+              <View style={[styles.row, { flex: 1 }]}>
+                <Ionicons name="log-out-outline" size={24} color={colors.error} style={{ marginRight: 10 }} />
+                <Text style={[styles.text, { color: colors.error }]}>{t('logout')}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
 
           {/* Theme Section */}
           <View style={styles.card}>
@@ -103,23 +189,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Account Section */}
-          <View style={[styles.card, { marginTop: 20 }]}>
-            <Text style={[styles.text, { fontWeight: 'bold', fontSize: 18, marginBottom: 15 }]}>{t('account')}</Text>
-
-            <TouchableOpacity
-              style={[styles.row, { padding: 15, borderRadius: 8, backgroundColor: colors.error + '20' }]}
-              onPress={logout}
-            >
-              <View style={[styles.row, { flex: 1 }]}>
-                <Ionicons name="log-out-outline" size={24} color={colors.error} style={{ marginRight: 10 }} />
-                <Text style={[styles.text, { color: colors.error }]}>{t('logout')}</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
           {/* Other Settings Sections can be added here */}
-        </View>
       </ScrollView>
     </SafeAreaView>
   )

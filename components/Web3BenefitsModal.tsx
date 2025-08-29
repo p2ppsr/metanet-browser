@@ -3,7 +3,6 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/context/theme/ThemeContext'
 import { useTranslation } from 'react-i18next'
-import { red } from '@bsv/sdk/primitives/Point.ts'
 
 interface Web3BenefitsModalProps {
   visible: boolean

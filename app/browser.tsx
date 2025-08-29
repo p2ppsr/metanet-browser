@@ -15,7 +15,6 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
-  LayoutAnimation,
   ScrollView,
   Modal as RNModal,
   BackHandler,
@@ -34,7 +33,6 @@ import {
 } from 'react-native-gesture-handler'
 import { TabView, SceneMap } from 'react-native-tab-view'
 import Fuse from 'fuse.js'
-import * as Linking from 'expo-linking'
 import { Ionicons } from '@expo/vector-icons'
 import { observer } from 'mobx-react-lite'
 import { router } from 'expo-router'
@@ -1467,29 +1465,7 @@ function Browser() {
     [updateActiveTab]
   )
 
-  const BookmarksScene = useMemo(() => {
-    return () => (
-      <RecommendedApps
-        includeBookmarks={bookmarkStore.bookmarks
-          .filter(bookmark => {
-            // Filter out invalid URLs to prevent favicon errors
-            return (
-              bookmark.url &&
-              bookmark.url !== kNEW_TAB_URL &&
-              isValidUrl(bookmark.url) &&
-              !bookmark.url.includes('about:blank')
-            )
-          })
-          .reverse()}
-        setStartingUrl={handleSetStartingUrl}
-        onRemoveBookmark={removeBookmark}
-        onRemoveDefaultApp={removeDefaultApp}
-        removedDefaultApps={removedDefaultApps}
-        hideHeader={true}
-        showOnlyBookmarks={true}
-      />
-    )
-  }, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps])
+  // BookmarksScene will be defined after toggleInfoDrawer
 
   const HistoryScene = React.useCallback(() => {
     return (
@@ -1559,9 +1535,39 @@ function Browser() {
   /*                              INFO DRAWER NAV                               */
   /* -------------------------------------------------------------------------- */
   const toggleInfoDrawer = useCallback((open: boolean, route: typeof infoDrawerRoute = 'root') => {
+    console.log('toggleInfoDrawer called with:', { open, route, isFullscreen, showInfoDrawer })
     setInfoDrawerRoute(route)
     setShowInfoDrawer(open)
+    console.log('After setShowInfoDrawer, new value should be:', open)
   }, [])
+
+  const BookmarksScene = useMemo(() => {
+    return () => (
+      <RecommendedApps
+        includeBookmarks={bookmarkStore.bookmarks
+          .filter(bookmark => {
+            // Filter out invalid URLs to prevent favicon errors
+            return (
+              bookmark.url &&
+              bookmark.url !== kNEW_TAB_URL &&
+              isValidUrl(bookmark.url) &&
+              !bookmark.url.includes('about:blank')
+            )
+          })
+          .reverse()}
+        setStartingUrl={handleSetStartingUrl}
+        onRemoveBookmark={removeBookmark}
+        onRemoveDefaultApp={removeDefaultApp}
+        removedDefaultApps={removedDefaultApps}
+        onCloseModal={() => {
+          // Just close the drawer - the bookmark is already added by the component
+          toggleInfoDrawer(false)
+        }}
+        hideHeader={true}
+        showOnlyBookmarks={true}
+      />
+    )
+  }, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps, toggleInfoDrawer])
 
   useEffect(() => {
     Animated.timing(drawerAnim, {
@@ -2077,7 +2083,6 @@ function Browser() {
                       onPress={drawerHandlers.toggleDesktopView}
                     />
                   )}
-                  <DrawerItem label={t('add_bookmark')} icon="star-outline" onPress={drawerHandlers.addBookmark} />
                   {Platform.OS !== 'ios' && (
                     <DrawerItem
                       label={t('add_to_device_homescreen')}
