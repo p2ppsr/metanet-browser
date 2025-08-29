@@ -3,7 +3,7 @@
   "description": "Enabling identity, micropayments, and use of Metanet websites on mobile devices",
   "author": "BSV Association",
   "main": "index.js",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "Open BSV",
   "scripts": {
     "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
