@@ -1868,6 +1868,13 @@ function Browser() {
                         icon="notifications-outline"
                         onPress={() => setInfoDrawerRoute('notifications')}
                       /> */}
+                      {activeTab?.url !== kNEW_TAB_URL && Platform.OS !== 'ios' && (
+                        <DrawerItem
+                          label={t('permissions')}
+                          icon="lock-closed-outline"
+                          onPress={drawerHandlers.permissions}
+                        />
+                      )}
                       <View style={styles.divider} />
                     </>
                   )}
@@ -1876,13 +1883,6 @@ function Browser() {
                       label={isDesktopView ? t('switch_to_mobile_view') : t('switch_to_desktop_view')}
                       icon={isDesktopView ? 'phone-portrait-outline' : 'desktop-outline'}
                       onPress={drawerHandlers.toggleDesktopView}
-                    />
-                  )}
-                  {activeTab?.url !== kNEW_TAB_URL && Platform.OS !== 'ios' && (
-                    <DrawerItem
-                      label={t('permissions')}
-                      icon="lock-closed-outline"
-                      onPress={drawerHandlers.permissions}
                     />
                   )}
                   {Platform.OS !== 'ios' && (

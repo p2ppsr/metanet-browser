@@ -47,7 +47,14 @@ export const getPermissionScript = (
       this.icon = options.icon || '';
       this.tag = options.tag || '';
       this.data = options.data || null;
-      
+
+      const deniedList = window.__metanetDeniedPermissions || [];
+      const perm = (window.Notification && window.Notification.permission) || 'default';
+      if (deniedList.includes('NOTIFICATIONS') || perm !== 'granted') {
+        console.log('[RN WebView] 🔕 Notification blocked by permission state:', perm);
+        return this;
+      }
+
       // Send notification to native
       window.ReactNativeWebView?.postMessage(JSON.stringify({
         type: 'SHOW_NOTIFICATION',
@@ -57,7 +64,7 @@ export const getPermissionScript = (
         tag: this.tag,
         data: this.data
       }));
-      
+
       return this;
     };
 
@@ -76,51 +83,30 @@ export const getPermissionScript = (
             if (data.type === 'NOTIFICATION_PERMISSION_RESPONSE') {
               window.removeEventListener('message', handler);
               const permission = data.permission;
-              
-              // Override Notification.permission to always return 'granted'
-              if (typeof window.Notification !== 'undefined') {
-                Object.defineProperty(window.Notification, 'permission', {
-                  value: 'granted',
-                  writable: false,
-                  configurable: false
-                })
-                
-                // Also ensure Notification.requestPermission resolves to 'granted'
-                const originalRequestPermission = window.Notification.requestPermission;
-                window.Notification.requestPermission = function() {
-                  console.log('[RN WebView] 🔔 Notification.requestPermission() called - returning granted');
-                  return Promise.resolve('granted');
-                };
-              } else {
-                // Create Notification if it doesn't exist
-                window.Notification = class Notification {
-                  constructor(title, options) {
-                    console.log('[RN WebView] 🔔 Notification constructor called:', title, options);
-                    this.title = title;
-                    this.body = options?.body || '';
-                    this.icon = options?.icon || '';
-                    this.badge = options?.badge || '';
-                    this.data = options?.data || {};
+              try {
+                if (typeof window.Notification !== 'undefined') {
+                  try {
+                    Object.defineProperty(window.Notification, 'permission', { value: permission, configurable: true });
+                  } catch (e) {
+                    // Fallback assignment if defineProperty fails
+                    window.Notification.permission = permission;
                   }
-                  
-                  static get permission() {
-                    return 'granted';
-                  }
-                  
-                  static requestPermission() {
-                    console.log('[RN WebView] 🔔 Notification.requestPermission() called - returning granted');
-                    return Promise.resolve('granted');
-                  }
-                  
-                  close() {
-                    console.log('[RN WebView] 🔔 Notification.close() called');
-                  }
-                };
-              }
-              
-              console.log('[RN WebView] Permission updated to:', window.Notification.permission);
-              console.log('[RN WebView] Permission check:', window.Notification.permission === 'granted');
-              
+                } else {
+                  // Minimal fallback constructor with static permission
+                  window.Notification = function() {};
+                  window.Notification.permission = permission;
+                }
+                // Sync denied list for convenience
+                if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+                const deny = window.__metanetDeniedPermissions;
+                const idx = deny.indexOf('NOTIFICATIONS');
+                if (permission === 'denied') {
+                  if (idx === -1) deny.push('NOTIFICATIONS');
+                } else {
+                  if (idx >= 0) deny.splice(idx, 1);
+                }
+              } catch (e) {}
+
               if (callback) callback(permission);
               resolve(permission);
             }
@@ -130,8 +116,8 @@ export const getPermissionScript = (
       });
     };
 
-    // Set initial permission status
-    window.Notification.permission = 'default';
+    // Set initial permission status (honor domain denied list)
+    window.Notification.permission = (window.__metanetDeniedPermissions || []).includes('NOTIFICATIONS') ? 'denied' : 'default';
     
     // Add permission constants
     window.Notification.PERMISSION_GRANTED = 'granted';

@@ -207,13 +207,29 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
 
   const handleShowNotification = async (payload: any) => {
     try {
+      // Gate by domain-level NOTIFICATIONS permission
+      const tab = ctx.getActiveTab()
+      const originUrl = tab?.url || ''
+      const domain = originUrl ? ctx.domainForUrl(originUrl) : ''
+      if (domain) {
+        const state = await ctx.getPermissionState(domain, 'NOTIFICATIONS')
+        if (state !== 'allow') {
+          // Do not show notification; report back to page for compatibility
+          injectIntoActiveTab(
+            ctx,
+            `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'NOTIFICATION_SHOWN', ok: false, error: 'Notification permission not granted' }) }));`
+          )
+          return true
+        }
+      }
+
       const title = typeof payload?.title === 'string' ? payload.title : 'Notification'
       const body = typeof payload?.body === 'string' ? payload.body : ''
       const data = {
         ...(payload?.data || {}),
         tag: payload?.tag ?? null,
         icon: payload?.icon ?? null,
-        origin: ctx.getActiveTab()?.url || ''
+        origin: originUrl
       }
 
       await Notifications.scheduleNotificationAsync({
