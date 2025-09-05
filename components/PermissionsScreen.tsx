@@ -145,8 +145,6 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       .replace('Media', '')
       .replace('Audio', 'Microphone')
       .replace('Record', 'Use')
-      .replace('Camera', 'Camera')
-      .replace('Notifications', 'Notifications')
       .replace('Access Fine Location', 'Precise Location')
       .replace('Access Coarse Location', 'Approximate Location')
       .trim()
