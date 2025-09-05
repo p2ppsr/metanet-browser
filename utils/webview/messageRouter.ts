@@ -1,7 +1,7 @@
 import type { MutableRefObject } from 'react'
 import type { PermissionType, PermissionState } from '@/utils/permissionsManager'
+import * as Notifications from 'expo-notifications'
 
-// Minimal shape we need from the active tab for JS injection
 type ActiveTabLike = {
   id: string | number
   url: string
@@ -205,7 +205,38 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
     return true
   }
 
-  // Easy to extend: add new case to the switch below
+  const handleShowNotification = async (payload: any) => {
+    try {
+      const title = typeof payload?.title === 'string' ? payload.title : 'Notification'
+      const body = typeof payload?.body === 'string' ? payload.body : ''
+      const data = {
+        ...(payload?.data || {}),
+        tag: payload?.tag ?? null,
+        icon: payload?.icon ?? null,
+        origin: ctx.getActiveTab()?.url || ''
+      }
+
+      await Notifications.scheduleNotificationAsync({
+        content: { title, body, data },
+        trigger: null
+      })
+
+      injectIntoActiveTab(
+        ctx,
+        `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'NOTIFICATION_SHOWN', ok: true, tag: ${JSON.stringify(
+          payload?.tag ?? null
+        )} }) }));`
+      )
+    } catch (e) {
+      console.warn('[Notifications] Failed to present local notification', e)
+      injectIntoActiveTab(
+        ctx,
+        `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'NOTIFICATION_SHOWN', ok: false }) }));`
+      )
+    }
+    return true
+  }
+
   return async function route(msg: WebViewMessage): Promise<boolean> {
     switch (msg.type) {
       case 'REQUEST_FULLSCREEN':
@@ -220,6 +251,8 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
         return handlePermissionRequest('MICROPHONE_REQUEST', 'RECORD_AUDIO', 'MICROPHONE_RESPONSE')
       case 'REQUEST_NOTIFICATION_PERMISSION':
         return handleNotificationPermission()
+      case 'SHOW_NOTIFICATION':
+        return handleShowNotification(msg)
       default:
         return false
     }
