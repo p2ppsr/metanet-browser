@@ -73,7 +73,8 @@ import {
   PermissionState,
   getDomainPermissions,
   setDomainPermission,
-  getPermissionState
+  getPermissionState,
+  checkPermissionForDomain
 } from '@/utils/permissionsManager'
 import { getPermissionScript } from '@/utils/permissionScript'
 import { createWebViewMessageRouter } from '@/utils/webview/messageRouter'
@@ -813,6 +814,16 @@ function Browser() {
           })
           await setDomainPermission(pendingDomain, pendingPermission, granted ? 'allow' : 'deny')
 
+          // If enabling OS-backed permissions, proactively request OS permission so it appears in system settings
+          try {
+            const osBacked: PermissionType[] = ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'] as any
+            if (granted && osBacked.includes(pendingPermission)) {
+              await checkPermissionForDomain(pendingDomain, pendingPermission)
+            }
+          } catch (e) {
+            console.warn('[Metanet] OS permission request failed (non-fatal)', e)
+          }
+
           // Update denied list cache used by injection
           console.log('[Metanet] Updating denied-permissions cache for current tab', {
             url: activeTab?.url || ''
@@ -880,6 +891,16 @@ function Browser() {
         // Persist change (PermissionsScreen also persists, but this keeps Browser state consistent)
         if (domain) {
           await setDomainPermission(domain, permission, state)
+        }
+
+        // If enabling OS-backed permissions from the Permissions screen, proactively request OS permission
+        try {
+          const osBacked: PermissionType[] = ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'] as any
+          if (domain && state === 'allow' && osBacked.includes(permission)) {
+            await checkPermissionForDomain(domain, permission)
+          }
+        } catch (e) {
+          console.warn('[Metanet] OS permission request (from PermissionsScreen) failed (non-fatal)', e)
         }
 
         // Update denied permissions cache
@@ -1581,6 +1602,8 @@ function Browser() {
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 mediaPlaybackRequiresUserAction={false}
                 allowsInlineMediaPlayback={true}
+                // Enable WebView geolocation on Android (actual OS permission is requested via our modal flow)
+                geolocationEnabled
                 // Deny all WebView permissions to prevent native camera access
                 onPermissionRequest={() => false}
                 onError={(syntheticEvent: any) => {

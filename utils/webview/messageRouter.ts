@@ -205,6 +205,87 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
     return true
   }
 
+  const handleLocationRequest = async () => {
+    const tab = ctx.getActiveTab()
+    if (!tab) return true
+    const domain = ctx.domainForUrl(tab.url)
+
+    const permission: PermissionType = 'ACCESS_FINE_LOCATION'
+    const currentState = await ctx.getPermissionState(domain, permission)
+
+    if (currentState === 'allow') {
+      // Grant immediately and sync arrays/emit change
+      injectIntoActiveTab(
+        ctx,
+        `
+        // Clear pending and denied arrays for this permission (compat with permissionScript)
+        (function(){ try{
+          var P = '${permission}';
+          if (!Array.isArray(window.__metanetPendingPermissions)) window.__metanetPendingPermissions = [];
+          if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+          var pend = window.__metanetPendingPermissions;
+          var deny = window.__metanetDeniedPermissions;
+          var rm = function(arr){ var i = arr.indexOf(P); if (i >= 0) arr.splice(i,1); };
+          rm(pend); rm(deny);
+        }catch(e){} })();
+        (function(){ try{ const evt = new CustomEvent('permissionchange', { detail: { permission: '${permission}', state: 'granted' } }); document.dispatchEvent(evt); }catch(e){} })();
+      `
+      )
+      return true
+    }
+
+    if (currentState === 'deny') {
+      injectIntoActiveTab(
+        ctx,
+        `
+        // Update pending/denied arrays (compat with permissionScript)
+        (function(){ try{
+          var P = '${permission}';
+          if (!Array.isArray(window.__metanetPendingPermissions)) window.__metanetPendingPermissions = [];
+          if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+          var pend = window.__metanetPendingPermissions;
+          var deny = window.__metanetDeniedPermissions;
+          var rm = function(arr){ var i = arr.indexOf(P); if (i >= 0) arr.splice(i,1); };
+          rm(pend);
+          if (deny.indexOf(P) === -1) deny.push(P);
+        }catch(e){} })();
+        (function(){ try{ const evt = new CustomEvent('permissionchange', { detail: { permission: '${permission}', state: 'denied' } }); document.dispatchEvent(evt); }catch(e){} })();
+      `
+      )
+      return true
+    }
+
+    // Prompt via PermissionModal, resolve later via pending callback
+    ctx.setPendingDomain(domain)
+    ctx.setPendingPermission(permission)
+    ctx.setPendingCallback((granted: boolean) => {
+      const currentTab = ctx.getActiveTab()
+      if (!currentTab) return
+      const currentDomain = ctx.domainForUrl(currentTab.url)
+      if (currentDomain !== domain) return
+
+      const permissionChangeJs = `
+        (function(){ try{ const evt = new CustomEvent('permissionchange', { detail: { permission: '${permission}', state: '${granted ? 'granted' : 'denied'}' } }); document.dispatchEvent(evt); }catch(e){} })();
+      `
+      const syncArraysJs = `
+        (function(){ try{
+          var P = '${permission}';
+          if (!Array.isArray(window.__metanetPendingPermissions)) window.__metanetPendingPermissions = [];
+          if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+          var pend = window.__metanetPendingPermissions;
+          var deny = window.__metanetDeniedPermissions;
+          var rm = function(arr){ var i = arr.indexOf(P); if (i >= 0) arr.splice(i,1); };
+          rm(pend);
+          var granted = ${granted ? 'true' : 'false'};
+          if (granted === true) { rm(deny); } else { if (deny.indexOf(P) === -1) deny.push(P); }
+        }catch(e){} })();
+      `
+      currentTab.webviewRef?.current?.injectJavaScript(permissionChangeJs + syncArraysJs)
+    })
+    ctx.setPermissionModalVisible(true)
+    return true
+  }
+
   const handleShowNotification = async (payload: any) => {
     try {
       // Gate by domain-level NOTIFICATIONS permission
@@ -265,6 +346,8 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
       case 'MICROPHONE_REQUEST':
       case 'REQUEST_MICROPHONE':
         return handlePermissionRequest('MICROPHONE_REQUEST', 'RECORD_AUDIO', 'MICROPHONE_RESPONSE')
+      case 'REQUEST_LOCATION':
+        return handleLocationRequest()
       case 'REQUEST_NOTIFICATION_PERMISSION':
         return handleNotificationPermission()
       case 'SHOW_NOTIFICATION':
