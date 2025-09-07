@@ -80,6 +80,7 @@ h4 {
 
 .hero-description {
     font-size: 1.1rem;
+    margin-top: 2.5rem;
     margin-bottom: 2.5rem;
     opacity: 0.8;
     line-height: 1.7;
@@ -132,6 +133,41 @@ h4 {
 .btn-primary:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+}
+
+/* Store badge buttons - remove conflicting styling */
+.btn-primary:has(.store-badge) {
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
+    padding: 0;
+}
+
+.btn-primary:has(.store-badge):hover {
+    background: transparent;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 24px;
+    color: white;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.desktop-button {
+    margin-top: 40px;
+}
+
+.desktop-label {
+    font-size: 1rem;
 }
 
 .store-badge {
@@ -351,6 +387,20 @@ h4 {
         gap: 40px;
     }
     
+    .hero-text {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .hero-description {
+        order: 3;
+        margin-top: 2rem;
+    }
+    
+    .hero-image {
+        order: 2;
+    }
+    
     .hero-text h1 {
         font-size: 2.5rem;
     }
@@ -377,6 +427,10 @@ h4 {
         justify-content: center;
         flex-direction: column;
         align-items: center;
+    }
+    
+    .desktop-button {
+        display: none;
     }
     
     .footer-links {
