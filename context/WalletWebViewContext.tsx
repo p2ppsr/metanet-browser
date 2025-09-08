@@ -36,7 +36,8 @@ import { router } from 'expo-router'
 import { logWithTimestamp } from '@/utils/logging'
 import WebView from 'react-native-webview'
 import { TouchableOpacity, View, Text } from 'react-native'
-import webviewSource from '../wallet/dist/index.html';
+// For react-native-webview, use a static asset or a URI. Example:
+const webviewSource = require('../wallet/dist/index.html');
 
 // -----
 // Context Types
