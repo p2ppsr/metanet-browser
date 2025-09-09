@@ -26,7 +26,7 @@
     "webpack-dev-server": "^5.2.2"
   },
   "dependencies": {
-    "@bsv/sdk": "^1.6.20",
-    "@bsv/wallet-toolbox-mobile": "^1.5.20"
+    "@bsv/sdk": "^1.6.24",
+    "@bsv/wallet-toolbox-mobile": "^1.6.4"
   }
 }

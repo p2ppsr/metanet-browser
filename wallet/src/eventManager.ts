@@ -6,7 +6,7 @@ export interface EventData {
 }
 
 export class EventManager {
-  listenners: { [key: string]: any[] } = {};
+  listeners: { [key: string]: any[] } = {};
 
   constructor() {
     // Listen to EventManager events
@@ -26,8 +26,8 @@ export class EventManager {
    * @param params Optional parameters to be passed to the listener.
    */
   process(method: string, params: any = {}) {
-    if (this.listenners[method]) {
-      this.listenners[method].forEach((listener: any) => {
+    if (this.listeners[method]) {
+      this.listeners[method].forEach((listener: any) => {
         const fn = listener[method];
         if (typeof fn === 'function') {
           Logger.log('Start process', { method, params });
@@ -72,10 +72,10 @@ export class EventManager {
    * @param object listener object
    */
   listen(event: string, object: any) {
-    if (!this.listenners[event]) {
-      this.listenners[event] = [];
+    if (!this.listeners[event]) {
+      this.listeners[event] = [];
     }
 
-    this.listenners[event].push(object);
+    this.listeners[event].push(object);
   }
 }
