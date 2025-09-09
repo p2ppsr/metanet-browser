@@ -34,11 +34,16 @@ export class AuthenticationManager {
     this.eventManager.listen('setSelectedNetwork', this);
     this.eventManager.listen('setSelectedWabUrl', this);
     this.eventManager.listen('setRecoveryKeySaver', this);
-    this.eventManager.listen('setPasswordRetriver', this);
+    this.eventManager.listen('setPasswordRetriever', this);
     this.eventManager.listen('initialize', this);
     this.eventManager.listen('loadSnapshot', this);
     this.eventManager.listen('startAuth', this);
     this.eventManager.listen('restartAuth', this);
+    this.eventManager.listen('testPassword', this);
+    this.eventManager.listen('testPasswordResolve', this);
+    this.eventManager.listen('testPasswordReject', this);
+    this.eventManager.listen('recoveryKeyResolve', this);
+    this.eventManager.listen('recoveryKeyReject', this);
   }
 
   setAdminOriginator(origin: string) {
@@ -75,9 +80,8 @@ export class AuthenticationManager {
         // When main thread reject key, reject
         this.keySaverRejecter = reject;
 
-        // TODO:Send key as string to main thread
-        // setRecoveryKey(keyAsStr)
-        // setOpen(true)
+        // Send key as string to main thread
+        this.eventManager.send('recoveryKey.completed', keyAsStr);
       })
     };
 
@@ -86,13 +90,9 @@ export class AuthenticationManager {
     return true;
   }
 
-  setPasswordRetriver() {
+  setPasswordRetriever() {
     this.passwordRetriever = (reason: string, testFn: (passwordCandidate: string) => boolean) => {
       return new Promise<string>((resolvePromise: Function, rejectPromise: Function) => {
-        // TODO: Send password_reason event to main thread
-        // Actions to perform
-        // setReason(reason)
-
         // When main thread test password, call this method
         this.passwordTestFn = testFn;
         // When main thread resolves password, call this resolve method
@@ -100,10 +100,7 @@ export class AuthenticationManager {
         // When main thread rejects password, call this reject method
         this.passwordRejecter = rejectPromise;
 
-        // TODO: Send password_retriving event to main thread
-        // Actions to perform
-        // setOpen(true)
-        // manageFocus()
+        this.eventManager.send('passwordRetriever.completed', reason)
       })
     };
 
@@ -117,13 +114,13 @@ export class AuthenticationManager {
       this.adminOriginator,
       this.selectedStorageUrl,
       this.selectedNetwork,
-      this.setSelectedWabUrl,
+      this.selectedWabUrl,
       this.recoveryKeySaver,
       this.passwordRetriever
     )
 
     if (!this.adminOriginator || !this.selectedStorageUrl || !this.selectedNetwork ||
-        !this.setSelectedWabUrl || !this.recoveryKeySaver || !this.passwordRetriever) {
+        !this.selectedWabUrl || !this.recoveryKeySaver || !this.passwordRetriever) {
       return false
     }
 
@@ -260,5 +257,29 @@ export class AuthenticationManager {
     } catch(err) {
       return false;
     }
+  }
+
+  testPassword(password: string) {
+    this.passwordTestFn(password).then((result: boolean) => {
+      this.eventManager.send('testPassword.completed', result);
+    }).catch(() => {
+      this.eventManager.send('testPassword.completed', false);
+    });
+  }
+
+  testPasswordResolve() {
+    this.passwordResolver();
+  }
+
+  testPasswordReject(error: string) {
+    this.passwordRejecter(new Error(error));
+  }
+
+  recoveryKeyResolve(arg: boolean) {
+    this.keySaverResolver(arg);
+  }
+
+  recoveryKeyReject(error: string) {
+    this.keySaverRejecter(new Error(error));
   }
 }
