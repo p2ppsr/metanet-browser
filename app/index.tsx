@@ -171,7 +171,17 @@ export default function LoginScreen() {
                   marginTop: 12
                 }
               ]}
-              onPress={() => {
+              onPress={handleConfig}
+            >
+              <View style={styles.configIconContainer}>
+                <Ionicons name="settings-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={{ color: colors.textPrimary }}>{t('configure_providers')}</Text>
+              </View>
+            </TouchableOpacity>
+
+            <Text style={[styles.termsText, { paddingHorizontal: 50, color: colors.textSecondary }]}>{t('terms_privacy_agreement')}</Text>
+
+            <TouchableOpacity style={styles.configButton} onPress={() => {
                 // Set mode to web2 immediately when button is pressed
                 setWeb2Mode(true)
 
@@ -185,18 +195,8 @@ export default function LoginScreen() {
                     handleGetStarted()
                   }
                 )
-              }}
-            >
-              <Text style={[styles.getStartedButtonText, { color: colors.textPrimary }]}>Continue without login</Text>
-            </TouchableOpacity>
-
-            <Text style={[styles.termsText, { color: colors.textSecondary }]}>{t('terms_privacy_agreement')}</Text>
-
-            <TouchableOpacity style={styles.configButton} onPress={handleConfig}>
-              <View style={styles.configIconContainer}>
-                <Ionicons name="settings-outline" size={20} color={colors.secondary} />
-                <Text style={styles.configButtonText}>{t('configure_providers')}</Text>
-              </View>
+              }}>
+                <Text style={[styles.configButtonText, { color: '#487dbf' }]}>{t('continue_without_login')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#0066cc',
+    backgroundColor: '#487dbf',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -259,12 +259,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold'
   },
+  continueButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0066cc'
+  },
   configButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 50,
-    padding: 10
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#487dbf',
+    borderRadius: 10,
+    width: '60%'
   },
   configIconContainer: {
     flexDirection: 'row',
@@ -272,7 +281,6 @@ const styles = StyleSheet.create({
     marginLeft: 8
   },
   configButtonText: {
-    color: '#0066cc',
     fontSize: 14,
     marginLeft: 2
   },

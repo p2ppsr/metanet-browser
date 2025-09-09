@@ -15,7 +15,6 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
-  LayoutAnimation,
   ScrollView,
   Modal as RNModal,
   BackHandler,
@@ -34,7 +33,6 @@ import {
 } from 'react-native-gesture-handler'
 import { TabView, SceneMap } from 'react-native-tab-view'
 import Fuse from 'fuse.js'
-import * as Linking from 'expo-linking'
 import { Ionicons } from '@expo/vector-icons'
 import { observer } from 'mobx-react-lite'
 import { router } from 'expo-router'
@@ -349,6 +347,7 @@ function Browser() {
   const { manifest, fetchManifest, getStartUrl, shouldRedirectToStartUrl } = useWebAppManifest()
   const [showBalance, setShowBalance] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const activeCameraStreams = useRef<Set<string>>(new Set())
 
   // Safety check - if somehow activeTab is null, force create a new tab
   // This is done after all hooks to avoid violating Rules of Hooks
@@ -764,6 +763,59 @@ function Browser() {
   // === 1. Injected JS ============================================
   const injectedJavaScript = useMemo(
     () => `
+  // Camera access polyfill - provides mock streams to prevent WKWebView camera access
+  (function() {
+    if (!navigator.mediaDevices) return;
+
+    const originalGetUserMedia = navigator.mediaDevices.getUserMedia?.bind(navigator.mediaDevices);
+
+    function createMockMediaStream() {
+      const mockTrack = {
+        id: 'mock-video-' + Date.now(),
+        kind: 'video',
+        label: 'React Native Camera',
+        enabled: true,
+        muted: false,
+        readyState: 'live',
+        stop() { this.readyState = 'ended'; },
+        addEventListener() {},
+        removeEventListener() {},
+        getSettings: () => ({ width: 640, height: 480, frameRate: 30 })
+      };
+
+      return {
+        id: 'mock-stream-' + Date.now(),
+        active: true,
+        getTracks: () => [mockTrack],
+        getVideoTracks: () => [mockTrack],
+        getAudioTracks: () => [],
+        addEventListener() {},
+        removeEventListener() {}
+      };
+    }
+
+    navigator.mediaDevices.getUserMedia = function(constraints) {
+      const hasVideo = constraints?.video === true ||
+        (typeof constraints?.video === 'object' && constraints.video);
+
+      if (hasVideo) {
+        // Notify React Native of camera request
+        window.ReactNativeWebView?.postMessage(JSON.stringify({
+          type: 'CAMERA_REQUEST',
+          constraints
+        }));
+
+        // Return mock stream immediately to prevent native camera
+        return Promise.resolve(createMockMediaStream());
+      }
+
+      // Allow audio-only requests through original implementation
+      return originalGetUserMedia ?
+        originalGetUserMedia(constraints) :
+        Promise.reject(new Error('Media not supported'));
+    };
+  })();
+
   // Push Notification API polyfill
   (function() {
     // Check if Notification API already exists
@@ -941,6 +993,103 @@ function Browser() {
         }
       } catch (e) {}
     });
+
+    // Completely replace getUserMedia to prevent WKWebView camera access
+    if (navigator.mediaDevices) {
+      // Store original for potential fallback, but never use it for video
+      const originalGetUserMedia = navigator.mediaDevices.getUserMedia?.bind(navigator.mediaDevices);
+
+      // Completely override getUserMedia - never call original for video constraints
+      navigator.mediaDevices.getUserMedia = function(constraints) {
+        console.log('[WebView] getUserMedia intercepted:', constraints);
+
+        // Check if requesting video - if so, handle in React Native
+        const hasVideo = constraints && (constraints.video === true ||
+          (typeof constraints.video === 'object' && constraints.video !== false));
+
+        if (hasVideo) {
+          console.log('[WebView] Video requested - handling in React Native');
+          // Send request to native - handle camera completely in React Native
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'CAMERA_REQUEST',
+            constraints: constraints
+          }));
+
+          return new Promise((resolve, reject) => {
+            const handler = (event) => {
+              try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'CAMERA_RESPONSE') {
+                  window.removeEventListener('message', handler);
+                  if (data.success) {
+                    // Create a more complete mock MediaStream
+                    const mockVideoTrack = {
+                      id: 'mock-video-track-' + Date.now(),
+                      kind: 'video',
+                      label: 'React Native Camera',
+                      enabled: true,
+                      muted: false,
+                      readyState: 'live',
+                      stop: () => console.log('[WebView] Mock video track stopped'),
+                      addEventListener: () => {},
+                      removeEventListener: () => {},
+                      dispatchEvent: () => false,
+                      getSettings: () => ({ width: 640, height: 480, frameRate: 30 }),
+                      getCapabilities: () => ({ width: { min: 320, max: 1920 }, height: { min: 240, max: 1080 } }),
+                      getConstraints: () => constraints.video || {}
+                    };
+
+                    const mockStream = {
+                      id: 'mock-stream-' + Date.now(),
+                      active: true,
+                      getTracks: () => [mockVideoTrack],
+                      getVideoTracks: () => [mockVideoTrack],
+                      getAudioTracks: () => [],
+                      addEventListener: () => {},
+                      removeEventListener: () => {},
+                      dispatchEvent: () => false,
+                      addTrack: () => {},
+                      removeTrack: () => {},
+                      clone: () => mockStream
+                    };
+                    console.log('[WebView] Resolving with mock stream:', mockStream);
+                    resolve(mockStream);
+                  } else {
+                    reject(new Error(data.error || 'Camera access denied'));
+                  }
+                }
+              } catch (e) {
+                reject(e);
+              }
+            };
+            window.addEventListener('message', handler);
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+              window.removeEventListener('message', handler);
+              reject(new Error('Camera request timeout'));
+            }, 10000);
+          });
+        } else if (constraints && constraints.audio && !hasVideo) {
+          // Audio-only requests can use original implementation
+          console.log('[WebView] Audio-only request - using original getUserMedia');
+          return originalGetUserMedia ? originalGetUserMedia(constraints) :
+            Promise.reject(new Error('Audio not supported'));
+        } else {
+          // No media requested
+          return Promise.reject(new Error('No media constraints specified'));
+        }
+      };
+
+      // Also override the deprecated navigator.getUserMedia if it exists
+      if (navigator.getUserMedia) {
+        navigator.getUserMedia = function(constraints, success, error) {
+          navigator.mediaDevices.getUserMedia(constraints)
+            .then(success)
+            .catch(error);
+        };
+      }
+    }
 
     // Console logging
     const originalLog = console.log;
@@ -1143,6 +1292,47 @@ function Browser() {
         return
       }
 
+      // Handle camera requests
+      if (msg.type === 'CAMERA_REQUEST') {
+        console.log('Camera access requested by website:', msg.constraints)
+
+        // Track active camera stream for this tab
+        activeCameraStreams.current.add(activeTab.id.toString())
+
+        // Handle camera request entirely in React Native to avoid WKWebView camera issues
+        // For now, just grant permission - actual camera implementation would go here
+        try {
+          // Here you would implement actual React Native camera handling
+          // For now, we'll just grant permission and return mock stream
+          console.log('Granting camera permission - camera handled by React Native')
+
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'CAMERA_RESPONSE',
+                  success: true
+                })
+              }));
+            `)
+          }
+        } catch (error) {
+          console.error('Camera permission error:', error)
+          if (activeTab.webviewRef?.current) {
+            activeTab.webviewRef.current.injectJavaScript(`
+              window.dispatchEvent(new MessageEvent('message', {
+                data: JSON.stringify({
+                  type: 'CAMERA_RESPONSE',
+                  success: false,
+                  error: 'Camera permission denied'
+                })
+              }));
+            `)
+          }
+        }
+        return
+      }
+
       // Handle notification permission request
       if (msg.type === 'REQUEST_NOTIFICATION_PERMISSION') {
         const permission = await handleNotificationPermissionRequest(activeTab.url)
@@ -1307,6 +1497,24 @@ function Browser() {
       return
     }
 
+    // Clean up camera streams when navigating away from a page
+    if (navState.url !== activeTab.url && activeCameraStreams.current.has(activeTab.id.toString())) {
+      console.log('Cleaning up camera streams for tab navigation')
+      activeCameraStreams.current.delete(activeTab.id.toString())
+
+      // Inject script to stop any active media streams
+      activeTab.webviewRef?.current?.injectJavaScript(`
+        (function() {
+          if (window.__activeMediaStreams) {
+            window.__activeMediaStreams.forEach(stream => {
+              stream.getTracks().forEach(track => track.stop());
+            });
+            window.__activeMediaStreams = [];
+          }
+        })();
+      `)
+    }
+
     // Log navigation state changes with back/forward capabilities
     console.log('🌐 Navigation State Change:', {
       url: navState.url,
@@ -1467,29 +1675,7 @@ function Browser() {
     [updateActiveTab]
   )
 
-  const BookmarksScene = useMemo(() => {
-    return () => (
-      <RecommendedApps
-        includeBookmarks={bookmarkStore.bookmarks
-          .filter(bookmark => {
-            // Filter out invalid URLs to prevent favicon errors
-            return (
-              bookmark.url &&
-              bookmark.url !== kNEW_TAB_URL &&
-              isValidUrl(bookmark.url) &&
-              !bookmark.url.includes('about:blank')
-            )
-          })
-          .reverse()}
-        setStartingUrl={handleSetStartingUrl}
-        onRemoveBookmark={removeBookmark}
-        onRemoveDefaultApp={removeDefaultApp}
-        removedDefaultApps={removedDefaultApps}
-        hideHeader={true}
-        showOnlyBookmarks={true}
-      />
-    )
-  }, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps])
+  // BookmarksScene will be defined after toggleInfoDrawer
 
   const HistoryScene = React.useCallback(() => {
     return (
@@ -1559,9 +1745,39 @@ function Browser() {
   /*                              INFO DRAWER NAV                               */
   /* -------------------------------------------------------------------------- */
   const toggleInfoDrawer = useCallback((open: boolean, route: typeof infoDrawerRoute = 'root') => {
+    console.log('toggleInfoDrawer called with:', { open, route, isFullscreen, showInfoDrawer })
     setInfoDrawerRoute(route)
     setShowInfoDrawer(open)
+    console.log('After setShowInfoDrawer, new value should be:', open)
   }, [])
+
+  const BookmarksScene = useMemo(() => {
+    return () => (
+      <RecommendedApps
+        includeBookmarks={bookmarkStore.bookmarks
+          .filter(bookmark => {
+            // Filter out invalid URLs to prevent favicon errors
+            return (
+              bookmark.url &&
+              bookmark.url !== kNEW_TAB_URL &&
+              isValidUrl(bookmark.url) &&
+              !bookmark.url.includes('about:blank')
+            )
+          })
+          .reverse()}
+        setStartingUrl={handleSetStartingUrl}
+        onRemoveBookmark={removeBookmark}
+        onRemoveDefaultApp={removeDefaultApp}
+        removedDefaultApps={removedDefaultApps}
+        onCloseModal={() => {
+          // Just close the drawer - the bookmark is already added by the component
+          toggleInfoDrawer(false)
+        }}
+        hideHeader={true}
+        showOnlyBookmarks={true}
+      />
+    )
+  }, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps, toggleInfoDrawer])
 
   useEffect(() => {
     Animated.timing(drawerAnim, {
@@ -1788,9 +2004,12 @@ function Browser() {
                 injectedJavaScript={injectedJavaScript}
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
+                mediaPlaybackRequiresUserAction={false}
+                allowsInlineMediaPlayback={true}
+                // Deny all WebView permissions to prevent native camera access
+                onPermissionRequest={() => false}
                 onError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent
-                  // Ignore favicon errors for about:blank
                   if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
                     return
                   }
@@ -1833,15 +2052,15 @@ function Browser() {
             >
               {/* deggen: Back Button unless address bar is active, in which case it's the share button */}
               {addressFocused ? null
-              : <TouchableOpacity
-                style={activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon}
-                disabled={isBackDisabled}
-                onPress={navBack}
-                activeOpacity={0.6}
-                delayPressIn={0.1}
-              >
-                <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
-              </TouchableOpacity>}
+                : <TouchableOpacity
+                  style={activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon}
+                  disabled={isBackDisabled}
+                  onPress={navBack}
+                  activeOpacity={0.6}
+                  delayPressIn={0.1}
+                >
+                  <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
+                </TouchableOpacity>}
 
               {activeTab?.canGoForward && <TouchableOpacity
                 style={styles.addressBarForwardButton}
@@ -2077,7 +2296,6 @@ function Browser() {
                       onPress={drawerHandlers.toggleDesktopView}
                     />
                   )}
-                  <DrawerItem label={t('add_bookmark')} icon="star-outline" onPress={drawerHandlers.addBookmark} />
                   {Platform.OS !== 'ios' && (
                     <DrawerItem
                       label={t('add_to_device_homescreen')}

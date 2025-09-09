@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react'
+import { observer } from 'mobx-react-lite'
 import {
   View,
   Text,
@@ -17,6 +18,8 @@ import { useTheme } from '@/context/theme/ThemeContext'
 import { useWallet } from '@/context/WalletWebViewContext'
 import { useBrowserMode } from '@/context/BrowserModeContext'
 import { useTranslation } from 'react-i18next'
+import bookmarkStore from '@/stores/BookmarkStore'
+import tabStore from '@/stores/TabStore'
 
 interface App {
   domain: string
@@ -33,6 +36,7 @@ interface RecommendedAppsProps {
   onRemoveBookmark?: (url: string) => void
   onRemoveDefaultApp?: (url: string) => void
   removedDefaultApps?: string[]
+  onCloseModal?: () => void // Handler to close the modal
   // Homepage customization props
   homepageSettings?: {
     showBookmarks: boolean
@@ -74,7 +78,7 @@ const defaultApps: App[] = [
 /*                         RECOMMENDED APPS COMPONENT                         */
 /* -------------------------------------------------------------------------- */
 
-export const RecommendedApps = ({
+export const RecommendedApps = observer(({
   setStartingUrl,
   includeBookmarks = [],
   hideHeader = false,
@@ -83,6 +87,7 @@ export const RecommendedApps = ({
   onRemoveBookmark,
   onRemoveDefaultApp,
   removedDefaultApps = [],
+  onCloseModal,
   homepageSettings,
   onUpdateHomepageSettings
 }: RecommendedAppsProps) => {
@@ -92,7 +97,7 @@ export const RecommendedApps = ({
   const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [showCustomizeModal, setShowCustomizeModal] = useState(false)
-  const [isDesktopView, setIsDesktopView] = useState(false)
+  const [bookmarkRefresh, setBookmarkRefresh] = useState(0)
 
   // Context menu state
   const [contextMenuVisible, setContextMenuVisible] = useState(false)
@@ -140,6 +145,21 @@ export const RecommendedApps = ({
     setSelectedApp(null)
   }, [])
 
+  const handleAddBookmark = useCallback(() => {
+    const activeTab = tabStore.activeTab
+    if (activeTab && activeTab.url && activeTab.url !== 'about:blank' && !activeTab.url.includes('metanet://')) {
+      const title = activeTab.title || activeTab.url
+      bookmarkStore.addBookmark(title, activeTab.url)
+      // Close the modal after adding bookmark
+      if (onCloseModal) {
+        // Use setTimeout to ensure the bookmark is added first, then close
+        setTimeout(() => {
+          onCloseModal()
+        }, 100)
+      }
+    }
+  }, [onCloseModal])
+
   /* -------------------------- prepare separate data sources -------------------------- */
   const filteredDefaultApps = useMemo(() => {
     if (showOnlyBookmarks) return []
@@ -160,7 +180,11 @@ export const RecommendedApps = ({
   }, [recentApps, showOnlyBookmarks, homepageSettings, isWeb2Mode])
 
   const processedBookmarks = useMemo(() => {
-    const bookmarks = includeBookmarks.map(bm => ({
+    // Always use bookmarks directly from the store to ensure reactivity
+    // This ensures the component updates when bookmarks are added/removed
+    const storeBookmarks = bookmarkStore.bookmarks || []
+    console.log('Processing bookmarks, count:', storeBookmarks.length)
+    const bookmarks = storeBookmarks.map(bm => ({
       domain: bm.url,
       appName: bm.title || bm.url,
       appIconImageUrl: `${bm.url.replace(/\/$/, '')}/favicon.ico`
@@ -172,7 +196,7 @@ export const RecommendedApps = ({
     }
 
     return bookmarks
-  }, [includeBookmarks, showOnlyBookmarks, limitBookmarks])
+  }, [bookmarkStore.bookmarks, showOnlyBookmarks, limitBookmarks, bookmarkRefresh])
 
   // Combined for search functionality
   const allApps = useMemo(() => {
@@ -242,6 +266,9 @@ export const RecommendedApps = ({
 
   return (
     <View style={[componentStyles.container, { backgroundColor: colors.paperBackground }]}>
+
+      {/* Removed Add Bookmark button from top - now at bottom */}
+
       {showOnlyBookmarks && (
         <View style={componentStyles.searchContainer}>
           <TextInput
@@ -343,6 +370,20 @@ export const RecommendedApps = ({
           </View>
         )}
       </ScrollView>
+
+      {/* Add Bookmark Button - Only show in bookmark modal */}
+      {showOnlyBookmarks && (
+        <View style={componentStyles.addBookmarkSection}>
+          <TouchableOpacity
+            style={[componentStyles.addBookmarkButton, { backgroundColor: colors.primary }]}
+            onPress={handleAddBookmark}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="bookmark-outline" size={20} color={colors.background} />
+            <Text style={[componentStyles.addBookmarkText, { color: colors.background }]}>{t('add_bookmark')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Customize Homepage Modal */}
       {showCustomizeModal && homepageSettings && onUpdateHomepageSettings && (
@@ -490,7 +531,7 @@ export const RecommendedApps = ({
       )}
     </View>
   )
-}
+})
 
 /* -------------------------------------------------------------------------- */
 /*                                    CSS                                     */
@@ -683,5 +724,23 @@ const componentStyles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,1)',
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  addBookmarkSection: {
+    padding: 16,
+    paddingBottom: 36,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(0,0,0,0.1)'
+  },
+  addBookmarkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 8,
+    gap: 8
+  },
+  addBookmarkText: {
+    fontSize: 16,
+    fontWeight: '600'
   }
 })
