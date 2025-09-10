@@ -6,9 +6,5 @@
     <string>development</string>
     <key>com.apple.developer.web-browser</key>
     <true/>
-    <key>com.apple.security.application-groups</key>
-    <array>
-      <string>group.org.bsvblockchain.metanet</string>
-    </array>
   </dict>
 </plist>
