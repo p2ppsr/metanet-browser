@@ -61,6 +61,13 @@ const ALL_PERMISSIONS: PermissionType[] = PERMISSION_CATEGORIES.reduce<Permissio
   []
 )
 
+const ALWAYS_SHOW: PermissionType[] = [
+  'NOTIFICATIONS',
+  'CAMERA',
+  'RECORD_AUDIO',
+  'ACCESS_FINE_LOCATION'
+]
+
 interface PermissionsScreenProps {
   origin: string
   onPermissionChange?: (permission: PermissionType, state: PermissionState) => void
@@ -89,18 +96,24 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       lastOriginRef.current = origin
       if (!cancelled) setLoading(true)
       const fetchedPerms = await getDomainPermissions(origin)
+      const requested = new Set(Object.keys(fetchedPerms || {}) as PermissionType[])
+      const visible = new Set<PermissionType>([...ALWAYS_SHOW, ...requested])
 
-      const fullPermissions: Record<PermissionType, PermissionState> = {} as Record<PermissionType, PermissionState>
-      ALL_PERMISSIONS.forEach(perm => {
-        fullPermissions[perm] = fetchedPerms?.[perm] || 'ask'
+      const finalPermissions: Record<PermissionType, PermissionState> = {} as Record<PermissionType, PermissionState>
+      visible.forEach(perm => {
+        const fallback: PermissionState = perm === 'NOTIFICATIONS' ? 'deny' : 'ask'
+        finalPermissions[perm] = (fetchedPerms?.[perm] as PermissionState) || fallback
       })
 
       if (cancelled) return
-      setPermissions(fullPermissions)
+      setPermissions(finalPermissions)
 
       const initialExpandedState: Record<string, boolean> = {}
       PERMISSION_CATEGORIES.forEach(category => {
-        initialExpandedState[category.title] = true
+        const hasAny = category.data.some(p => p in finalPermissions)
+        const isDefaultCategory = category.data.some(p => ALWAYS_SHOW.includes(p))
+        const expand = isDefaultCategory && hasAny
+        initialExpandedState[category.title] = expand
       })
       setExpandedCategories(initialExpandedState)
       setLoading(false)
@@ -139,8 +152,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       .map(word => word.charAt(0) + word.slice(1).toLowerCase())
       .join(' ')
       .replace('Media', '')
-      .replace('Audio', 'Microphone')
-      .replace('Record', 'Use')
+      .replace('Record Audio', 'Microphone')
       .replace('Access Fine Location', 'Precise Location')
       .replace('Access Coarse Location', 'Approximate Location')
       .trim()
@@ -170,11 +182,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       `[PermissionsScreen] Category ${category.title} has ${permissionsInCategory.length} permissions, expanded: ${isExpanded}`
     )
 
-    const availablePermissions = permissionsInCategory.filter(perm => {
-      const exists = permissions.hasOwnProperty(perm)
-      if (!exists) console.log(`[PermissionsScreen] Permission ${perm} does not exist in current permissions object`)
-      return exists
-    })
+    const availablePermissions = permissionsInCategory.filter(perm => perm in permissions)
 
     console.log(
       `[PermissionsScreen] Category ${category.title} has ${availablePermissions.length} available permissions after filtering`
