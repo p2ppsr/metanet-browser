@@ -214,7 +214,6 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
     const currentState = await ctx.getPermissionState(domain, permission)
 
     if (currentState === 'allow') {
-      // Grant immediately and sync arrays/emit change
       injectIntoActiveTab(
         ctx,
         `

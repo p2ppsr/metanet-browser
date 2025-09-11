@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, SectionList, Pressable } from 'react-native'
 import { useTheme } from '@/context/theme/ThemeContext'
 import { getDomainPermissions, setDomainPermission, PermissionState, PermissionType } from '@/utils/permissionsManager'
 import { useTranslation } from 'react-i18next'
 import SegmentedControl from '@react-native-segmented-control/segmented-control'
 
-// Group permissions by category for better organization
 interface PermissionCategory {
   title: string
   data: PermissionType[]
 }
 
-// Define the most commonly used permissions grouped by category
 const PERMISSION_CATEGORIES: PermissionCategory[] = [
   {
     title: 'Notifications',
@@ -58,7 +56,6 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
   }
 ]
 
-// Flatten the categories to get all permissions for search/filter functionality
 const ALL_PERMISSIONS: PermissionType[] = PERMISSION_CATEGORIES.reduce<PermissionType[]>(
   (acc, category) => [...acc, ...category.data],
   []
@@ -77,49 +74,50 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
   const [loading, setLoading] = useState(true)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
 
-  const fetchPermissions = useCallback(async () => {
-    if (origin) {
-      setLoading(true)
-      const fetchedPerms = await getDomainPermissions(origin)
-      console.log('[PermissionsScreen] Fetched permissions for', origin, fetchedPerms)
+  const lastOriginRef = useRef<string | null>(null)
 
-      // Create a default permissions object with 'ask' for all permissions
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      if (!origin) {
+        if (!cancelled) setLoading(false)
+        return
+      }
+      if (lastOriginRef.current === origin && Object.keys(permissions).length > 0) {
+        return
+      }
+      lastOriginRef.current = origin
+      if (!cancelled) setLoading(true)
+      const fetchedPerms = await getDomainPermissions(origin)
+
       const fullPermissions: Record<PermissionType, PermissionState> = {} as Record<PermissionType, PermissionState>
       ALL_PERMISSIONS.forEach(perm => {
         fullPermissions[perm] = fetchedPerms?.[perm] || 'ask'
       })
 
-      // Set the complete permissions object
+      if (cancelled) return
       setPermissions(fullPermissions)
-      console.log('[PermissionsScreen] Complete permissions object with defaults:', fullPermissions)
 
-      // By default, expand all categories to ensure content is visible
       const initialExpandedState: Record<string, boolean> = {}
       PERMISSION_CATEGORIES.forEach(category => {
         initialExpandedState[category.title] = true
       })
-      console.log('[PermissionsScreen] Setting initial expanded categories:', initialExpandedState)
       setExpandedCategories(initialExpandedState)
-
-      setLoading(false)
-    } else {
-      console.log('[PermissionsScreen] No origin provided, cannot fetch permissions')
       setLoading(false)
     }
+    run()
+    return () => {
+      cancelled = true
+    }
+    // Only rerun when origin changes or when local permissions are empty for first load
   }, [origin])
-
-  useEffect(() => {
-    fetchPermissions()
-  }, [fetchPermissions])
 
   const handleValueChange = (permission: PermissionType, value: string) => {
     const state = value.toLowerCase() as PermissionState
     console.log(`[PermissionsScreen] Setting ${permission} to ${state} for ${origin}`)
 
-    // Update local state
     setPermissions(prev => ({ ...prev, [permission]: state }))
 
-    // Save to storage
     setDomainPermission(origin, permission, state)
       .then(() => {
         console.log(`[PermissionsScreen] Successfully updated ${permission} to ${state}`)
@@ -135,9 +133,7 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       })
   }
 
-  // Format permission name for better readability
   const formatPermissionName = (permission: string) => {
-    // First replace underscores with spaces and convert to title case
     const formatted = permission
       .split('_')
       .map(word => word.charAt(0) + word.slice(1).toLowerCase())
@@ -159,7 +155,6 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
     )
   }
 
-  // Add debug info
   console.log('[PermissionsScreen] Current state before rendering:', {
     origin,
     loading,
@@ -168,7 +163,6 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
     allPermCount: ALL_PERMISSIONS.length
   })
 
-  // Transform categories into sections for SectionList
   const sectionsToRender = PERMISSION_CATEGORIES.map(category => {
     const permissionsInCategory = category.data
     const isExpanded = expandedCategories[category.title] ?? false
@@ -176,7 +170,6 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       `[PermissionsScreen] Category ${category.title} has ${permissionsInCategory.length} permissions, expanded: ${isExpanded}`
     )
 
-    // Filter permissions to only those that exist in this domain or have defaults
     const availablePermissions = permissionsInCategory.filter(perm => {
       const exists = permissions.hasOwnProperty(perm)
       if (!exists) console.log(`[PermissionsScreen] Permission ${perm} does not exist in current permissions object`)
@@ -187,8 +180,6 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
       `[PermissionsScreen] Category ${category.title} has ${availablePermissions.length} available permissions after filtering`
     )
 
-    // Always include the category in sections, even when empty
-    // If there are no permissions available for this category, exclude it entirely
     if (availablePermissions.length === 0) {
       return null
     }
@@ -321,50 +312,50 @@ const styles = StyleSheet.create({
     flex: 1
   },
   header: {
-    fontSize: 20, // Increased size
-    fontWeight: '700', // Bolder
+    fontSize: 20,
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 8 // Added spacing
+    marginBottom: 8
   },
   origin: {
-    fontSize: 16, // Increased size
+    fontSize: 16,
     textAlign: 'center',
     paddingBottom: 16,
     marginBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ccc' // Explicit border color
+    borderBottomColor: '#ccc'
   },
   sectionHeader: {
-    paddingVertical: 10, // More padding
+    paddingVertical: 10,
     paddingHorizontal: 16,
     marginTop: 12,
-    marginBottom: 4, // Added bottom margin
+    marginBottom: 4,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0', // Explicit background color
+    backgroundColor: '#f0f0f0',
     flexDirection: 'row',
     alignItems: 'center'
   },
   sectionHeaderText: {
     fontSize: 16,
-    fontWeight: '700', // Bolder
-    color: '#333' // Explicit text color
+    fontWeight: '700',
+    color: '#333'
   },
   permissionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12, // More padding
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderBottomWidth: 1, // Added bottom border
-    borderBottomColor: '#eee', // Light border color
-    backgroundColor: 'white' // Explicit background color
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: 'white'
   },
   permissionLabel: {
     fontSize: 15,
     flex: 1,
     paddingRight: 12,
-    color: '#333' // Explicit text color
+    color: '#333'
   }
 })
 
-export default PermissionsScreen
+export default memo(PermissionsScreen)
