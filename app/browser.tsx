@@ -1450,8 +1450,8 @@ function Browser() {
   /*                                  RENDER                                    */
   /* -------------------------------------------------------------------------- */
 
-  const showAddressBar = !keyboardVisible || addressFocused
-  const showBottomBar = !(keyboardVisible && addressFocused)
+  const showAddressBar = Platform.OS === 'android' ? !keyboardVisible || addressFocused : true
+  const showBottomBar = Platform.OS === 'android' ? !(keyboardVisible || addressFocused) : !(keyboardVisible && addressFocused)
 
   // Exit fullscreen on back button or gesture when in fullscreen
   useEffect(() => {
@@ -1530,12 +1530,12 @@ function Browser() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        enabled={Platform.OS === 'ios'}
+        enabled={Platform.OS === 'ios' && addressFocused}
         behavior="padding"
         keyboardVerticalOffset={0}
       >
         <SafeAreaView
-          edges={['top', 'left', 'right']}
+          edges={['top', 'left', 'right']}  
           style={[
             styles.container,
             {
@@ -1625,6 +1625,8 @@ function Browser() {
                 geolocationEnabled
                 // Deny all WebView permissions to prevent native camera access
                 onPermissionRequest={() => false}
+                androidLayerType={Platform.OS === 'android' ? 'software' : 'hardware'}
+                androidHardwareAccelerationDisabled={Platform.OS === 'android'}
                 onError={(syntheticEvent: any) => {
                   const { nativeEvent } = syntheticEvent
                   if (nativeEvent.url?.includes('favicon.ico') && activeTab?.url === kNEW_TAB_URL) {
@@ -1650,7 +1652,7 @@ function Browser() {
               />
             </View>
           ) : null}
-          {!isFullscreen && (
+          {!isFullscreen && showAddressBar && (
             <View
               onLayout={e => setAddressBarHeight(e.nativeEvent.layout.height)}
               style={[
@@ -2261,6 +2263,8 @@ const TabsViewBase = ({
                 source={{ uri: item.url || kNEW_TAB_URL }}
                 style={{ flex: 1 }}
                 scrollEnabled={false}
+                androidLayerType={Platform.OS === 'android' ? 'software' : undefined as any}
+                androidHardwareAccelerationDisabled={Platform.OS === 'android'}
                 pointerEvents="none"
               />
             )}
