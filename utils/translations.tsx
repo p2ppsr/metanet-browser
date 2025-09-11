@@ -152,6 +152,7 @@ const resources = {
       add_to_device_homescreen: 'Add to Device Homescreen',
       back_to_homepage: 'Back to Homepage',
       preferences: 'Preferences',
+      permissions: 'Permissions',
 
       // Browser actions
       clear_browsing_history: 'Clear browsing history?',
@@ -381,6 +382,7 @@ const resources = {
       add_to_device_homescreen: '添加到设备主屏幕',
       back_to_homepage: '返回主页',
       notifications: '通知',
+      permissions: '权限',
 
       // Browser actions
       clear_browsing_history: '清除浏览历史记录？',
@@ -610,6 +612,7 @@ const resources = {
       add_to_device_homescreen: 'डिवाइस होमस्क्रीन पर जोड़ें',
       back_to_homepage: 'होमपेज पर वापस',
       notifications: 'सूचनाएं',
+      permissions: 'अनुमतियाँ',
 
       // Browser actions
       clear_browsing_history: 'ब्राउज़िंग इतिहास साफ़ करें?',
@@ -834,6 +837,7 @@ const resources = {
       add_to_device_homescreen: 'Agregar a Pantalla de Inicio',
       back_to_homepage: 'Volver al Inicio',
       notifications: 'Notificaciones',
+      permissions: 'Permisos',
 
       // Browser actions
       clear_browsing_history: '¿Limpiar historial de navegación?',
@@ -1004,6 +1008,7 @@ const resources = {
       add_to_device_homescreen: "Ajouter à l'Écran d'Accueil",
       back_to_homepage: "Retour à la Page d'Accueil",
       notifications: 'Notifications',
+      permissions: 'Autorisations',
 
       // Browser actions
       clear_browsing_history: "Effacer l'historique de navigation ?",
@@ -1192,6 +1197,7 @@ const resources = {
       add_to_device_homescreen: 'إضافة إلى الشاشة الرئيسية للجهاز',
       back_to_homepage: 'العودة إلى الصفحة الرئيسية',
       notifications: 'الإشعارات',
+      permissions: 'الأذونات',
 
       // Browser actions
       clear_browsing_history: 'مسح تاريخ التصفح؟',
@@ -1370,6 +1376,7 @@ const resources = {
       add_to_device_homescreen: 'Adicionar à Tela Inicial do Dispositivo',
       back_to_homepage: 'Voltar à Página Inicial',
       notifications: 'Notificações',
+      permissions: 'Permissões',
 
       // Browser actions
       clear_browsing_history: 'Limpar histórico de navegação?',
@@ -1556,6 +1563,7 @@ const resources = {
       add_to_device_homescreen: 'ডিভাইস হোমস্ক্রিনে যোগ করুন',
       back_to_homepage: 'হোমপেজে ফিরে যান',
       notifications: 'বিজ্ঞপ্তি',
+      permissions: 'অনুমতি',
 
       // Browser actions
       clear_browsing_history: 'ব্রাউজিং ইতিহাস মুছবেন?',
@@ -1735,6 +1743,7 @@ const resources = {
       add_to_device_homescreen: 'Добавить на Главный Экран Устройства',
       back_to_homepage: 'Вернуться на Главную Страницу',
       notifications: 'Уведомления',
+      permissions: 'Разрешения',
 
       // Browser actions
       clear_browsing_history: 'Очистить историю браузера?',
@@ -1915,6 +1924,7 @@ const resources = {
       add_to_device_homescreen: 'Tambahkan ke Layar Utama Perangkat',
       back_to_homepage: 'Kembali ke Beranda',
       notifications: 'Notifikasi',
+      permissions: 'Izin',
 
       // Browser actions
       clear_browsing_history: 'Hapus riwayat penjelajahan?',
