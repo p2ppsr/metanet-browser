@@ -1626,17 +1626,18 @@ function Browser() {
               pointerEvents={showTabsView ? 'none' : 'auto'}
             >
               {/* deggen: Back Button unless address bar is active, in which case it's the share button */}
-              {addressFocused ? null : (
-                <TouchableOpacity
-                  style={activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon}
-                  disabled={isBackDisabled}
-                  onPress={navBack}
-                  activeOpacity={0.6}
-                  delayPressIn={0.1}
-                >
-                  <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={[
+                  activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon,
+                  { opacity: addressFocused ? 0 : 1 }
+                ]}
+                disabled={isBackDisabled || addressFocused}
+                onPress={navBack}
+                activeOpacity={0.6}
+                delayPressIn={0.1}
+              >
+                <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
+              </TouchableOpacity>
 
               {activeTab?.canGoForward && (
                 <TouchableOpacity
