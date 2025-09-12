@@ -837,7 +837,7 @@ function Browser() {
 
                 window.__metanetDeniedPermissions = ${JSON.stringify(updatedDenied)};
                 window.__metanetPendingPermissions = window.__metanetPendingPermissions.filter(p => p !== '${pendingPermission}');
-
+                
                 const evt = new CustomEvent('permissionchange', {
                   detail: { permission: '${pendingPermission}', state: '${granted ? 'granted' : 'denied'}' }
                 });
@@ -1626,18 +1626,17 @@ function Browser() {
               pointerEvents={showTabsView ? 'none' : 'auto'}
             >
               {/* deggen: Back Button unless address bar is active, in which case it's the share button */}
-              <TouchableOpacity
-                style={[
-                  activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon,
-                  { opacity: addressFocused ? 0 : 1 }
-                ]}
-                disabled={isBackDisabled || addressFocused}
-                onPress={navBack}
-                activeOpacity={0.6}
-                delayPressIn={0.1}
-              >
-                <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
-              </TouchableOpacity>
+              {addressFocused ? null : (
+                <TouchableOpacity
+                  style={activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon}
+                  disabled={isBackDisabled}
+                  onPress={navBack}
+                  activeOpacity={0.6}
+                  delayPressIn={0.1}
+                >
+                  <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
+                </TouchableOpacity>
+              )}
 
               {activeTab?.canGoForward && (
                 <TouchableOpacity
