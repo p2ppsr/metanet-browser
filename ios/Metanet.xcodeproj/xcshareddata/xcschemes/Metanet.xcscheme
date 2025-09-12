@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "BSV Browser.app"
-               BlueprintName = "BSV Browser"
-               ReferencedContainer = "container:BSV Browser.xcodeproj">
+               BuildableName = "Metanet.app"
+               BlueprintName = "Metanet"
+               ReferencedContainer = "container:Metanet.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
