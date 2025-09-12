@@ -61,7 +61,7 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
       if (authenticated) return true
 
       const { success } = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to auto-fill your Metanet password',
+        promptMessage: 'Authenticate to auto-fill your password',
         cancelLabel: 'Cancel',
         disableDeviceFallback: false
       })

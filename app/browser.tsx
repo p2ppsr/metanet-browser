@@ -837,7 +837,7 @@ function Browser() {
 
                 window.__metanetDeniedPermissions = ${JSON.stringify(updatedDenied)};
                 window.__metanetPendingPermissions = window.__metanetPendingPermissions.filter(p => p !== '${pendingPermission}');
-
+                
                 const evt = new CustomEvent('permissionchange', {
                   detail: { permission: '${pendingPermission}', state: '${granted ? 'granted' : 'denied'}' }
                 });

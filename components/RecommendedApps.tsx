@@ -64,7 +64,7 @@ const defaultApps: App[] = [
   },
   {
     domain: 'https://metanetacademy.com',
-    appName: 'Metanet Academy',
+    appName: 'BSV Academy',
     appIconImageUrl: 'https://metanetacademy.com/favicon.ico'
   },
   {
