@@ -61,13 +61,22 @@ import Shortcuts from '@rn-bridge/react-native-shortcuts'
 /*                                   HELPERS                                   */
 /* -------------------------------------------------------------------------- */
 
-import NotificationPermissionModal from '@/components/NotificationPermissionModal'
-import NotificationSettingsModal from '@/components/NotificationSettingsModal'
 // import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 import { getPendingUrl, clearPendingUrl } from '@/hooks/useDeepLinking'
 import { useWebAppManifest } from '@/hooks/useWebAppManifest'
-import * as Notifications from 'expo-notifications'
+import { buildInjectedJavaScript } from '@/utils/webview/injectedPolyfills'
+import PermissionModal from '@/components/PermissionModal'
+import PermissionsScreen from '@/components/PermissionsScreen'
+import {
+  PermissionType,
+  PermissionState,
+  getDomainPermissions,
+  setDomainPermission,
+  getPermissionState
+} from '@/utils/permissionsManager'
+import { getPermissionScript } from '@/utils/permissionScript'
+import { createWebViewMessageRouter } from '@/utils/webview/messageRouter'
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONSTS                                   */
@@ -331,7 +340,7 @@ function Browser() {
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
   const [showShortcutModal, setShowShortcutModal] = useState(false)
   const [infoDrawerRoute, setInfoDrawerRoute] = useState<
-    'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications'
+    'root' | 'identity' | 'settings' | 'security' | 'trust' | 'notifications' | 'permissions'
   >('root')
   const drawerAnim = useRef(new Animated.Value(0)).current
 
@@ -372,12 +381,13 @@ function Browser() {
   /* ------------------------- push notifications ----------------------------- */
   // const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } = usePushNotifications()
 
-  const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false)
-  const [showNotificationSettingsModal, setShowNotificationSettingsModal] = useState(false)
-  const [notificationRequestOrigin, setNotificationRequestOrigin] = useState('')
-  const [notificationRequestResolver, setNotificationRequestResolver] = useState<((granted: boolean) => void) | null>(
-    null
-  )
+  const [permissionModalVisible, setPermissionModalVisible] = useState(false)
+
+  // Pending permission request state (for generic PermissionModal)
+  const [pendingPermission, setPendingPermission] = useState<PermissionType | null>(null)
+  const [pendingDomain, setPendingDomain] = useState<string | null>(null)
+  const [pendingCallback, setPendingCallback] = useState<((granted: boolean) => void) | null>(null)
+  const [permissionsDeniedForCurrentDomain, setPermissionsDeniedForCurrentDomain] = useState<PermissionType[]>([])
 
   /* ------------------------------ keyboard hook ----------------------------- */
   useEffect(() => {
@@ -554,6 +564,33 @@ function Browser() {
       return u
     }
   }, [])
+
+  // Cache denied permissions per current domain for quick access and JS injection
+  const updateDeniedPermissionsForDomain = useCallback(
+    async (urlString: string) => {
+      try {
+        const domain = domainForUrl(urlString)
+        if (!domain) {
+          setPermissionsDeniedForCurrentDomain([])
+          return
+        }
+        const domainPerms = await getDomainPermissions(domain)
+        const denied = Object.entries(domainPerms)
+          .filter(([, state]) => state === 'deny')
+          .map(([perm]) => perm as PermissionType)
+        setPermissionsDeniedForCurrentDomain(denied)
+      } catch (e) {
+        console.warn('Failed updating denied permissions cache', e)
+      }
+    },
+    [domainForUrl]
+  )
+
+  useEffect(() => {
+    if (activeTab?.url) {
+      updateDeniedPermissionsForDomain(activeTab.url)
+    }
+  }, [activeTab, updateDeniedPermissionsForDomain])
   /* -------------------------------------------------------------------------- */
   /*                              ADDRESS HANDLING                              */
   /* -------------------------------------------------------------------------- */
@@ -728,9 +765,9 @@ function Browser() {
   const responderProps =
     addressFocused && keyboardVisible
       ? {
-        onStartShouldSetResponder: () => true,
-        onResponderRelease: dismissKeyboard
-      }
+          onStartShouldSetResponder: () => true,
+          onResponderRelease: dismissKeyboard
+        }
       : {}
 
   /* -------------------------------------------------------------------------- */
@@ -739,22 +776,136 @@ function Browser() {
 
   const handleNotificationPermissionRequest = async (origin: string): Promise<'granted' | 'denied' | 'default'> => {
     return new Promise(resolve => {
-      setNotificationRequestOrigin(origin)
-      setNotificationRequestResolver(() => (granted: boolean) => {
+      console.log('[Metanet] Requesting notification permission for', origin)
+      // Set generic PermissionModal context
+      const domain = domainForUrl(origin)
+      setPendingDomain(domain)
+      setPendingPermission('NOTIFICATIONS' as PermissionType)
+      // Use the generic pendingCallback to resolve this flow
+      setPendingCallback(() => (granted: boolean) => {
         resolve(granted ? 'granted' : 'denied')
       })
-      setShowNotificationPermissionModal(true)
+      setPermissionModalVisible(true)
     })
   }
 
-  const handleNotificationPermissionResponse = (granted: boolean) => {
-    if (notificationRequestResolver) {
-      notificationRequestResolver(granted)
-      setNotificationRequestResolver(null)
-    }
-    setShowNotificationPermissionModal(false)
-    setNotificationRequestOrigin('')
-  }
+  // Unified permission decision handler for PermissionModal
+  const onDecision = useCallback(
+    async (granted: boolean) => {
+      setPermissionModalVisible(false)
+
+      if (!pendingDomain || !pendingPermission) {
+        throw new Error('No pending permission found')
+      }
+
+      const domain = pendingDomain
+      const permission = pendingPermission
+      const decisionStart = Date.now()
+      console.log('[Metanet] PermissionModal decision', { domain, permission, granted })
+
+      try {
+        if (pendingDomain && pendingPermission) {
+          // Persist domain-level choice
+          console.log('[Metanet] Persisting domain permission', {
+            domain: pendingDomain,
+            permission: pendingPermission,
+            state: granted ? 'allow' : 'deny'
+          })
+          await setDomainPermission(pendingDomain, pendingPermission, granted ? 'allow' : 'deny')
+
+          // Update denied list cache used by injection
+          console.log('[Metanet] Updating denied-permissions cache for current tab', {
+            url: activeTab?.url || ''
+          })
+          await updateDeniedPermissionsForDomain(activeTab?.url || '')
+
+          // Live-update the page (remove from pending + fire change event)
+          if (activeTab?.url && domainForUrl(activeTab.url) === pendingDomain && activeTab.webviewRef?.current) {
+            const updatedDenied = granted
+              ? permissionsDeniedForCurrentDomain.filter(p => p !== pendingPermission)
+              : [...new Set([...permissionsDeniedForCurrentDomain, pendingPermission])]
+
+            console.log('[Metanet] Injecting permissionchange into page', {
+              permission: pendingPermission,
+              state: granted ? 'granted' : 'denied'
+            })
+            const js = `
+            (function () {
+              try {
+                if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+                if (!Array.isArray(window.__metanetPendingPermissions)) window.__metanetPendingPermissions = [];
+
+                window.__metanetDeniedPermissions = ${JSON.stringify(updatedDenied)};
+                window.__metanetPendingPermissions = window.__metanetPendingPermissions.filter(p => p !== '${pendingPermission}');
+
+                const evt = new CustomEvent('permissionchange', {
+                  detail: { permission: '${pendingPermission}', state: '${granted ? 'granted' : 'denied'}' }
+                });
+                document.dispatchEvent(evt);
+              } catch (e) { console.error('[Metanet] permissionchange injection error', e); }
+            })();
+          `
+            activeTab.webviewRef.current.injectJavaScript(js)
+            console.log('[Metanet] permissionchange injected')
+          }
+        }
+      } finally {
+        // 2) Resolve the page-side awaiter no matter what
+        console.log('[Metanet] Resolving pendingCallback for permission decision', { granted })
+        pendingCallback?.(granted)
+
+        // 3) Clear pending state
+        setPendingDomain(null)
+        setPendingPermission(null)
+        setPendingCallback(null)
+
+        console.log('[Metanet] Permission flow complete', {
+          domain,
+          permission,
+          granted,
+          elapsedMs: Date.now() - decisionStart
+        })
+      }
+    },
+    [pendingDomain, pendingPermission, activeTab, permissionsDeniedForCurrentDomain, pendingCallback]
+  )
+
+  // Handle permission changes from PermissionsScreen
+  const handlePermissionChange = useCallback(
+    async (permission: PermissionType, state: PermissionState) => {
+      try {
+        const url = activeTab?.url
+        const domain = url ? domainForUrl(url) : ''
+
+        // Persist change (PermissionsScreen also persists, but this keeps Browser state consistent)
+        if (domain) {
+          await setDomainPermission(domain, permission, state)
+        }
+
+        // Update denied permissions cache
+        if (url) {
+          await updateDeniedPermissionsForDomain(url)
+        }
+
+        // Inject permissionchange event into WebView for immediate UI updates
+        if (activeTab?.webviewRef?.current) {
+          const stateStr = state === 'allow' ? 'granted' : state === 'deny' ? 'denied' : 'prompt'
+          const js = `
+            (function () {
+              try {
+                const evt = new CustomEvent('permissionchange', { detail: { permission: '${permission}', state: '${stateStr}' } });
+                document.dispatchEvent(evt);
+              } catch (e) {}
+            })();
+          `
+          activeTab.webviewRef.current.injectJavaScript(js)
+        }
+      } catch (e) {
+        console.warn('Failed handling permission change', e)
+      }
+    },
+    [activeTab, domainForUrl, updateDeniedPermissionsForDomain]
+  )
 
   /* -------------------------------------------------------------------------- */
   /*                           WEBVIEW MESSAGE HANDLER                          */
@@ -762,433 +913,28 @@ function Browser() {
 
   // === 1. Injected JS ============================================
   const injectedJavaScript = useMemo(
-    () => `
-  // Camera access polyfill - provides mock streams to prevent WKWebView camera access
-  (function() {
-    if (!navigator.mediaDevices) return;
-    
-    const originalGetUserMedia = navigator.mediaDevices.getUserMedia?.bind(navigator.mediaDevices);
-    
-    function createMockMediaStream() {
-      const mockTrack = {
-        id: 'mock-video-' + Date.now(),
-        kind: 'video',
-        label: 'React Native Camera',
-        enabled: true,
-        muted: false,
-        readyState: 'live',
-        stop() { this.readyState = 'ended'; },
-        addEventListener() {},
-        removeEventListener() {},
-        getSettings: () => ({ width: 640, height: 480, frameRate: 30 })
-      };
-      
-      return {
-        id: 'mock-stream-' + Date.now(),
-        active: true,
-        getTracks: () => [mockTrack],
-        getVideoTracks: () => [mockTrack],
-        getAudioTracks: () => [],
-        addEventListener() {},
-        removeEventListener() {}
-      };
-    }
-    
-    navigator.mediaDevices.getUserMedia = function(constraints) {
-      const hasVideo = constraints?.video === true || 
-        (typeof constraints?.video === 'object' && constraints.video);
-      
-      if (hasVideo) {
-        // Notify React Native of camera request
-        window.ReactNativeWebView?.postMessage(JSON.stringify({
-          type: 'CAMERA_REQUEST',
-          constraints
-        }));
-        
-        // Return mock stream immediately to prevent native camera
-        return Promise.resolve(createMockMediaStream());
-      }
-      
-      // Allow audio-only requests through original implementation
-      return originalGetUserMedia ? 
-        originalGetUserMedia(constraints) : 
-        Promise.reject(new Error('Media not supported'));
-    };
-  })();
-
-  // Push Notification API polyfill
-  (function() {
-    // Check if Notification API already exists
-    if ('Notification' in window) {
-      return;
-    }
-    (function() {
-    const style = document.createElement('style');
-    style.innerHTML = '* { -webkit-tap-highlight-color: transparent; }';
-    document.head.appendChild(style);
-  })();
-    // Polyfill Notification constructor
-    window.Notification = function(title, options = {}) {
-      this.title = title;
-      this.body = options.body || '';
-      this.icon = options.icon || '';
-      this.tag = options.tag || '';
-      this.data = options.data || null;
-      
-      // Send notification to native
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'SHOW_NOTIFICATION',
-        title: this.title,
-        body: this.body,
-        icon: this.icon,
-        tag: this.tag,
-        data: this.data
-      }));
-      
-      return this;
-    };
-
-    // Static methods
-    window.Notification.requestPermission = function(callback) {
-      return new Promise((resolve) => {
-        window.ReactNativeWebView?.postMessage(JSON.stringify({
-          type: 'REQUEST_NOTIFICATION_PERMISSION',
-          callback: true
-        }));
-        
-        // Listen for response
-        const handler = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'NOTIFICATION_PERMISSION_RESPONSE') {
-              window.removeEventListener('message', handler);
-              const permission = data.permission;
-              if (callback) callback(permission);
-              resolve(permission);
-            }
-          } catch (e) {}
-        };
-        window.addEventListener('message', handler);
-      });
-    };
-
-    window.Notification.permission = 'default';
-
-    // ServiceWorker registration polyfill for push
-    if (!('serviceWorker' in navigator)) {
-      navigator.serviceWorker = {
-        register: function() {
-          return Promise.resolve({
-            pushManager: {
-              subscribe: function(options) {
-                return new Promise((resolve) => {
-                  window.ReactNativeWebView?.postMessage(JSON.stringify({
-                    type: 'PUSH_SUBSCRIBE',
-                    options: options
-                  }));
-                  
-                  const handler = (event) => {
-                    try {
-                      const data = JSON.parse(event.data);
-                      if (data.type === 'PUSH_SUBSCRIPTION_RESPONSE') {
-                        window.removeEventListener('message', handler);
-                        resolve(data.subscription);
-                      }
-                    } catch (e) {}
-                  };
-                  window.addEventListener('message', handler);
-                });
-              },
-              getSubscription: function() {
-                return new Promise((resolve) => {
-                  window.ReactNativeWebView?.postMessage(JSON.stringify({
-                    type: 'GET_PUSH_SUBSCRIPTION'
-                  }));
-                  
-                  const handler = (event) => {
-                    try {
-                      const data = JSON.parse(event.data);
-                      if (data.type === 'PUSH_SUBSCRIPTION_RESPONSE') {
-                        window.removeEventListener('message', handler);
-                        resolve(data.subscription);
-                      }
-                    } catch (e) {}
-                  };
-                  window.addEventListener('message', handler);
-                });
-              }
-            }
-          });
-        }
-      };
-    }
-
-    // Fullscreen API polyfill
-    if (!document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen = function() {
-        return new Promise((resolve, reject) => {
-          window.ReactNativeWebView?.postMessage(JSON.stringify({
-            type: 'REQUEST_FULLSCREEN'
-          }));
-          
-          const handler = (event) => {
-            try {
-              const data = JSON.parse(event.data);
-              if (data.type === 'FULLSCREEN_RESPONSE') {
-                window.removeEventListener('message', handler);
-                if (data.success) {
-                  resolve();
-                } else {
-                  reject(new Error('Fullscreen request denied'));
-                }
-              }
-            } catch (e) {}
-          };
-          window.addEventListener('message', handler);
-        });
-      };
-    }
-
-    if (!document.exitFullscreen) {
-      document.exitFullscreen = function() {
-        return new Promise((resolve) => {
-          window.ReactNativeWebView?.postMessage(JSON.stringify({
-            type: 'EXIT_FULLSCREEN'
-          }));
-          
-          const handler = (event) => {
-            try {
-              const data = JSON.parse(event.data);
-              if (data.type === 'FULLSCREEN_RESPONSE') {
-                window.removeEventListener('message', handler);
-                resolve();
-              }
-            } catch (e) {}
-          };
-          window.addEventListener('message', handler);
-        });
-      };
-    }
-
-    // Define fullscreen properties
-    Object.defineProperty(document, 'fullscreenElement', {
-      get: function() {
-        return window.__fullscreenElement || null;
-      }
-    });
-
-    Object.defineProperty(document, 'fullscreen', {
-      get: function() {
-        return !!window.__fullscreenElement;
-      }
-    });
-
-    // Listen for fullscreen changes from native
-    window.addEventListener('message', function(event) {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'FULLSCREEN_CHANGE') {
-          window.__fullscreenElement = data.isFullscreen ? document.documentElement : null;
-          document.dispatchEvent(new Event('fullscreenchange'));
-        }
-      } catch (e) {}
-    });
-
-    // Completely replace getUserMedia to prevent WKWebView camera access
-    if (navigator.mediaDevices) {
-      // Store original for potential fallback, but never use it for video
-      const originalGetUserMedia = navigator.mediaDevices.getUserMedia?.bind(navigator.mediaDevices);
-      
-      // Completely override getUserMedia - never call original for video constraints
-      navigator.mediaDevices.getUserMedia = function(constraints) {
-        console.log('[WebView] getUserMedia intercepted:', constraints);
-        
-        // Check if requesting video - if so, handle in React Native
-        const hasVideo = constraints && (constraints.video === true || 
-          (typeof constraints.video === 'object' && constraints.video !== false));
-        
-        if (hasVideo) {
-          console.log('[WebView] Video requested - handling in React Native');
-          // Send request to native - handle camera completely in React Native
-          window.ReactNativeWebView?.postMessage(JSON.stringify({
-            type: 'CAMERA_REQUEST',
-            constraints: constraints
-          }));
-          
-          return new Promise((resolve, reject) => {
-            const handler = (event) => {
-              try {
-                const data = JSON.parse(event.data);
-                if (data.type === 'CAMERA_RESPONSE') {
-                  window.removeEventListener('message', handler);
-                  if (data.success) {
-                    // Create a more complete mock MediaStream
-                    const mockVideoTrack = {
-                      id: 'mock-video-track-' + Date.now(),
-                      kind: 'video',
-                      label: 'React Native Camera',
-                      enabled: true,
-                      muted: false,
-                      readyState: 'live',
-                      stop: () => console.log('[WebView] Mock video track stopped'),
-                      addEventListener: () => {},
-                      removeEventListener: () => {},
-                      dispatchEvent: () => false,
-                      getSettings: () => ({ width: 640, height: 480, frameRate: 30 }),
-                      getCapabilities: () => ({ width: { min: 320, max: 1920 }, height: { min: 240, max: 1080 } }),
-                      getConstraints: () => constraints.video || {}
-                    };
-                    
-                    const mockStream = {
-                      id: 'mock-stream-' + Date.now(),
-                      active: true,
-                      getTracks: () => [mockVideoTrack],
-                      getVideoTracks: () => [mockVideoTrack],
-                      getAudioTracks: () => [],
-                      addEventListener: () => {},
-                      removeEventListener: () => {},
-                      dispatchEvent: () => false,
-                      addTrack: () => {},
-                      removeTrack: () => {},
-                      clone: () => mockStream
-                    };
-                    console.log('[WebView] Resolving with mock stream:', mockStream);
-                    resolve(mockStream);
-                  } else {
-                    reject(new Error(data.error || 'Camera access denied'));
-                  }
-                }
-              } catch (e) {
-                reject(e);
-              }
-            };
-            window.addEventListener('message', handler);
-            
-            // Timeout after 10 seconds
-            setTimeout(() => {
-              window.removeEventListener('message', handler);
-              reject(new Error('Camera request timeout'));
-            }, 10000);
-          });
-        } else if (constraints && constraints.audio && !hasVideo) {
-          // Audio-only requests can use original implementation
-          console.log('[WebView] Audio-only request - using original getUserMedia');
-          return originalGetUserMedia ? originalGetUserMedia(constraints) : 
-            Promise.reject(new Error('Audio not supported'));
-        } else {
-          // No media requested
-          return Promise.reject(new Error('No media constraints specified'));
-        }
-      };
-      
-      // Also override the deprecated navigator.getUserMedia if it exists
-      if (navigator.getUserMedia) {
-        navigator.getUserMedia = function(constraints, success, error) {
-          navigator.mediaDevices.getUserMedia(constraints)
-            .then(success)
-            .catch(error);
-        };
-      }
-    }
-
-    // Console logging
-    const originalLog = console.log;
-    const originalWarn = console.warn;
-    const originalError = console.error;
-    const originalInfo = console.info;
-    const originalDebug = console.debug;
-
-    console.log = function(...args) {
-      originalLog.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'log',
-        args: args
-      }));
-    };
-
-    console.warn = function(...args) {
-      originalWarn.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'warn',
-        args: args
-      }));
-    };
-
-    console.error = function(...args) {
-      originalError.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'error',
-        args: args
-      }));
-    };
-
-    console.info = function(...args) {
-      originalInfo.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'info',
-        args: args
-      }));
-    };
-
-    console.debug = function(...args) {
-      originalDebug.apply(console, args);
-      window.ReactNativeWebView?.postMessage(JSON.stringify({
-        type: 'CONSOLE',
-        method: 'debug',
-        args: args
-      }));
-    };
-
-    // Intercept fetch requests to add Accept-Language header
-    const originalFetch = window.fetch;
-    window.fetch = function(input, init = {}) {
-      // Get current language header from React Native
-      const acceptLanguage = '${getAcceptLanguageHeader()}';
-      
-      // Merge headers
-      const headers = new Headers(init.headers);
-      if (!headers.has('Accept-Language')) {
-        headers.set('Accept-Language', acceptLanguage);
-      }
-      
-      // Update init with new headers
-      const newInit = {
-        ...init,
-        headers: headers
-      };
-      
-      return originalFetch.call(this, input, newInit);
-    };
-
-    // Also intercept XMLHttpRequest for older APIs
-    const originalXHROpen = XMLHttpRequest.prototype.open;
-    const originalXHRSend = XMLHttpRequest.prototype.send;
-    
-    XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-      this._method = method;
-      this._url = url;
-      return originalXHROpen.call(this, method, url, async, user, password);
-    };
-    
-    XMLHttpRequest.prototype.send = function(data) {
-      // Add Accept-Language header if not already set
-      if (!this.getRequestHeader('Accept-Language')) {
-        const acceptLanguage = '${getAcceptLanguageHeader()}';
-        this.setRequestHeader('Accept-Language', acceptLanguage);
-      }
-      return originalXHRSend.call(this, data);
-    };
-  })();
-  true;
-`,
+    () => buildInjectedJavaScript(getAcceptLanguageHeader()),
     [getAcceptLanguageHeader]
   )
 
   // === 2. RN ⇄ WebView message bridge ========================================
+  // Centralized router for fullscreen and permission-related messages
+  const routeWebViewMessage = useMemo(
+    () =>
+      createWebViewMessageRouter({
+        getActiveTab: () => tabStore.activeTab,
+        domainForUrl,
+        getPermissionState,
+        setPendingDomain: (d: string) => setPendingDomain(d),
+        setPendingPermission: (p: PermissionType) => setPendingPermission(p),
+        setPendingCallback: (cb: (granted: boolean) => void) => setPendingCallback(() => cb),
+        setPermissionModalVisible: (v: boolean) => setPermissionModalVisible(v),
+        activeCameraStreams,
+        setIsFullscreen: (v: boolean) => setIsFullscreen(v),
+        handleNotificationPermissionRequest
+      }),
+    [domainForUrl, getPermissionState, setPermissionModalVisible, handleNotificationPermissionRequest]
+  )
 
   const handleMessage = useCallback(
     async (event: WebViewMessageEvent) => {
@@ -1241,193 +987,9 @@ function Browser() {
         }
         return
       }
-
-      // Handle fullscreen requests
-      if (msg.type === 'REQUEST_FULLSCREEN') {
-        console.log('Fullscreen requested by website')
-        setIsFullscreen(true)
-
-        // Send success response back to webview
-        if (activeTab.webviewRef?.current) {
-          activeTab.webviewRef.current.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'FULLSCREEN_RESPONSE',
-                success: true
-              })
-            }));
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'FULLSCREEN_CHANGE',
-                isFullscreen: true
-              })
-            }));
-          `)
-        }
-        return
-      }
-
-      // Handle exit fullscreen requests
-      if (msg.type === 'EXIT_FULLSCREEN') {
-        console.log('Exit fullscreen requested by website')
-        setIsFullscreen(false)
-
-        // Send response back to webview
-        if (activeTab.webviewRef?.current) {
-          activeTab.webviewRef.current.injectJavaScript(`
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'FULLSCREEN_RESPONSE',
-                success: true
-              })
-            }));
-            window.dispatchEvent(new MessageEvent('message', {
-              data: JSON.stringify({
-                type: 'FULLSCREEN_CHANGE',
-                isFullscreen: false
-              })
-            }));
-          `)
-        }
-        return
-      }
-
-      // Handle camera requests
-      if (msg.type === 'CAMERA_REQUEST') {
-        console.log('Camera access requested by website:', msg.constraints)
-
-        // Track active camera stream for this tab
-        activeCameraStreams.current.add(activeTab.id.toString())
-
-        // Handle camera request entirely in React Native to avoid WKWebView camera issues
-        // For now, just grant permission - actual camera implementation would go here
-        try {
-          // Here you would implement actual React Native camera handling
-          // For now, we'll just grant permission and return mock stream
-          console.log('Granting camera permission - camera handled by React Native')
-
-          if (activeTab.webviewRef?.current) {
-            activeTab.webviewRef.current.injectJavaScript(`
-              window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'CAMERA_RESPONSE',
-                  success: true
-                })
-              }));
-            `)
-          }
-        } catch (error) {
-          console.error('Camera permission error:', error)
-          if (activeTab.webviewRef?.current) {
-            activeTab.webviewRef.current.injectJavaScript(`
-              window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'CAMERA_RESPONSE',
-                  success: false,
-                  error: 'Camera permission denied'
-                })
-              }));
-            `)
-          }
-        }
-        return
-      }
-
-      // Handle notification permission request
-      if (msg.type === 'REQUEST_NOTIFICATION_PERMISSION') {
-        const permission = await handleNotificationPermissionRequest(activeTab.url)
-
-        if (activeTab.webviewRef?.current) {
-          activeTab.webviewRef.current.injectJavaScript(`
-              window.Notification.permission = '${permission}';
-              window.dispatchEvent(new MessageEvent('message', {
-                data: JSON.stringify({
-                  type: 'NOTIFICATION_PERMISSION_RESPONSE',
-                  permission: '${permission}'
-                })
-              }));
-            `)
-        }
-        return
-      }
-
-      // Handle push subscription for remote notifications
-      // if (msg.type === 'PUSH_SUBSCRIBE') {
-      //   try {
-      //     // const subscription = await createPushSubscription(activeTab.url, msg.options?.applicationServerKey)
-
-      //     if (activeTab.webviewRef?.current) {
-      //       activeTab.webviewRef.current.injectJavaScript(`
-      //           window.dispatchEvent(new MessageEvent('message', {
-      //             data: JSON.stringify({
-      //               type: 'PUSH_SUBSCRIPTION_RESPONSE',
-      //               subscription: ${JSON.stringify(subscription)}
-      //             })
-      //           }));
-      //         `)
-      //     }
-      //   } catch (error) {
-      //     console.error('Error creating push subscription:', error)
-      //     if (activeTab.webviewRef?.current) {
-      //       activeTab.webviewRef.current.injectJavaScript(`
-      //           window.dispatchEvent(new MessageEvent('message', {
-      //             data: JSON.stringify({
-      //               type: 'PUSH_SUBSCRIPTION_RESPONSE',
-      //               subscription: null,
-      //               error: '${error}'
-      //             })
-      //           }));
-      //         `)
-      //     }
-      //   }
-      //   return
-      // }
-
-      // // Handle get existing push subscription
-      // if (msg.type === 'GET_PUSH_SUBSCRIPTION') {
-      //   const subscription = getSubscription(activeTab.url)
-
-      //   if (activeTab.webviewRef?.current) {
-      //     activeTab.webviewRef.current.injectJavaScript(`
-      //         window.dispatchEvent(new MessageEvent('message', {
-      //           data: JSON.stringify({
-      //             type: 'PUSH_SUBSCRIPTION_RESPONSE',
-      //             subscription: ${JSON.stringify(subscription)}
-      //           })
-      //         }));
-      //       `)
-      //   }
-      //   return
-      // }
-
-      // // Handle immediate local notifications
-      // if (msg.type === 'SHOW_NOTIFICATION') {
-      //   try {
-      //     const permission = getPermission(activeTab.url)
-      //     if (permission === 'granted') {
-      //       // Show notification immediately
-      //       await Notifications.scheduleNotificationAsync({
-      //         content: {
-      //           title: msg.title || t('website_notification'),
-      //           body: msg.body || '',
-      //           data: {
-      //             origin: activeTab.url,
-      //             type: 'website',
-      //             url: activeTab.url,
-      //             icon: msg.icon,
-      //             tag: msg.tag,
-      //             ...msg.data
-      //           },
-      //           sound: true
-      //         },
-      //         trigger: null
-      //       })
-      //     }
-      //   } catch (error) {
-      //     console.error('Error showing notification:', error)
-      //   }
-      //   return
-      // }
+      console.log('WebView message received:', msg.type, msg)
+      // Delegate permission/fullscreen-related messages to central router
+      if (await routeWebViewMessage(msg)) return
 
       // Handling of wallet before api call.
       if (msg.call && (!wallet || isWeb2Mode)) {
@@ -1479,7 +1041,7 @@ function Browser() {
         console.error('Error processing wallet API call:', msg.call, error)
       }
     },
-    [activeTab, wallet, handleNotificationPermissionRequest, t]
+    [activeTab, wallet, routeWebViewMessage, t]
   )
 
   /* -------------------------------------------------------------------------- */
@@ -1543,7 +1105,7 @@ function Browser() {
         title: navState.title || navState.url,
         url: navState.url,
         timestamp: Date.now()
-      }).catch(() => { })
+      }).catch(() => {})
     }
   }
 
@@ -1752,7 +1314,7 @@ function Browser() {
   }, [])
 
   const BookmarksScene = useMemo(() => {
-    return () => (
+    const Comp: React.FC = () => (
       <RecommendedApps
         includeBookmarks={bookmarkStore.bookmarks
           .filter(bookmark => {
@@ -1777,7 +1339,16 @@ function Browser() {
         showOnlyBookmarks={true}
       />
     )
-  }, [bookmarkStore.bookmarks, handleSetStartingUrl, removeBookmark, removeDefaultApp, removedDefaultApps, toggleInfoDrawer])
+    Comp.displayName = 'BookmarksScene'
+    return Comp
+  }, [
+    bookmarkStore.bookmarks,
+    handleSetStartingUrl,
+    removeBookmark,
+    removeDefaultApp,
+    removedDefaultApps,
+    toggleInfoDrawer
+  ])
 
   useEffect(() => {
     Animated.timing(drawerAnim, {
@@ -1800,6 +1371,7 @@ function Browser() {
       security: () => setInfoDrawerRoute('security'),
       trust: () => setInfoDrawerRoute('trust'),
       settings: () => setInfoDrawerRoute('settings'),
+      permissions: () => setInfoDrawerRoute('permissions'),
       toggleDesktopView: () => {
         toggleDesktopView()
         toggleInfoDrawer(false)
@@ -1912,7 +1484,6 @@ function Browser() {
     )
   }
 
-
   const isBackDisabled = !activeTab?.canGoBack || activeTab?.url === kNEW_TAB_URL
   const isForwardDisabled = !activeTab?.canGoForward || activeTab?.url === kNEW_TAB_URL
 
@@ -2002,6 +1573,10 @@ function Browser() {
                 originWhitelist={['https://*', 'http://*']}
                 onMessage={handleMessage}
                 injectedJavaScript={injectedJavaScript}
+                injectedJavaScriptBeforeContentLoaded={getPermissionScript(
+                  permissionsDeniedForCurrentDomain,
+                  pendingPermission
+                )}
                 onNavigationStateChange={handleNavStateChange}
                 userAgent={isDesktopView ? desktopUserAgent : mobileUserAgent}
                 mediaPlaybackRequiresUserAction={false}
@@ -2022,7 +1597,7 @@ function Browser() {
                   }
                   console.warn('WebView HTTP error:', nativeEvent)
                 }}
-                onLoadEnd={navState =>
+                onLoadEnd={(navState: any) =>
                   tabStore.handleNavigationStateChange(activeTab.id, { ...navState, loading: false })
                 }
                 javaScriptEnabled
@@ -2051,34 +1626,42 @@ function Browser() {
               pointerEvents={showTabsView ? 'none' : 'auto'}
             >
               {/* deggen: Back Button unless address bar is active, in which case it's the share button */}
-              {addressFocused ? null
-                : <TouchableOpacity
-                  style={activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon}
-                  disabled={isBackDisabled}
-                  onPress={navBack}
-                  activeOpacity={0.6}
-                  delayPressIn={0.1}
-                >
-                  <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
-                </TouchableOpacity>}
-
-              {activeTab?.canGoForward && <TouchableOpacity
-                style={styles.addressBarForwardButton}
-                disabled={isForwardDisabled}
-                onPress={() => {
-                  console.log('🔘 Forward Button Pressed:', {
-                    canGoForward: activeTab?.canGoForward,
-                    url: activeTab?.url,
-                    isNewTab: activeTab?.url === kNEW_TAB_URL,
-                    disabled: isForwardDisabled
-                  })
-                  navFwd()
-                }}
+              <TouchableOpacity
+                style={[
+                  activeTab?.canGoForward ? styles.addressBarBackButton : styles.addressBarIcon,
+                  { opacity: addressFocused ? 0 : 1 }
+                ]}
+                disabled={isBackDisabled || addressFocused}
+                onPress={navBack}
                 activeOpacity={0.6}
                 delayPressIn={0.1}
               >
-                <Ionicons name="arrow-forward" size={26} color={!isForwardDisabled ? colors.textPrimary : '#cccccc'} />
-              </TouchableOpacity>}
+                <Ionicons name="arrow-back" size={26} color={!isBackDisabled ? colors.textPrimary : '#cccccc'} />
+              </TouchableOpacity>
+
+              {activeTab?.canGoForward && (
+                <TouchableOpacity
+                  style={styles.addressBarForwardButton}
+                  disabled={isForwardDisabled}
+                  onPress={() => {
+                    console.log('🔘 Forward Button Pressed:', {
+                      canGoForward: activeTab?.canGoForward,
+                      url: activeTab?.url,
+                      isNewTab: activeTab?.url === kNEW_TAB_URL,
+                      disabled: isForwardDisabled
+                    })
+                    navFwd()
+                  }}
+                  activeOpacity={0.6}
+                  delayPressIn={0.1}
+                >
+                  <Ionicons
+                    name="arrow-forward"
+                    size={26}
+                    color={!isForwardDisabled ? colors.textPrimary : '#cccccc'}
+                  />
+                </TouchableOpacity>
+              )}
 
               {/* deggen: I think we need to focus on usability and this icon has no function, it should be in the URL bar or something, not here looking like a button. 
               {!addressFocused && !activeTab?.isLoading && activeTab?.url.startsWith('https') && (
@@ -2286,6 +1869,13 @@ function Browser() {
                         icon="notifications-outline"
                         onPress={() => setInfoDrawerRoute('notifications')}
                       /> */}
+                      {activeTab?.url !== kNEW_TAB_URL && Platform.OS !== 'ios' && (
+                        <DrawerItem
+                          label={t('permissions')}
+                          icon="lock-closed-outline"
+                          onPress={drawerHandlers.permissions}
+                        />
+                      )}
                       <View style={styles.divider} />
                     </>
                   )}
@@ -2323,7 +1913,12 @@ function Browser() {
               )}
 
               {infoDrawerRoute !== 'root' && (
-                <SubDrawerView route={infoDrawerRoute} onBack={() => setInfoDrawerRoute('root')} />
+                <SubDrawerView
+                  route={infoDrawerRoute}
+                  onBack={() => setInfoDrawerRoute('root')}
+                  origin={activeTab?.url ? domainForUrl(activeTab.url) : ''}
+                  onPermissionChange={handlePermissionChange}
+                />
               )}
             </Animated.View>
           </Modal>
@@ -2367,18 +1962,15 @@ function Browser() {
             </Pressable>
           </RNModal>
 
-          {/* Add these notification modals */}
-          <NotificationPermissionModal
-            visible={showNotificationPermissionModal}
-            origin={notificationRequestOrigin}
-            onDismiss={() => setShowNotificationPermissionModal(false)}
-            onResponse={handleNotificationPermissionResponse}
-          />
-
-          <NotificationSettingsModal
-            visible={showNotificationSettingsModal}
-            onDismiss={() => setShowNotificationSettingsModal(false)}
-          />
+          {pendingPermission && pendingDomain && (
+            <PermissionModal
+              key={pendingPermission || 'none'}
+              visible={permissionModalVisible}
+              domain={pendingDomain}
+              permission={pendingPermission}
+              onDecision={onDecision}
+            />
+          )}
         </SafeAreaView>
       </KeyboardAvoidingView>
     </GestureHandlerRootView>
@@ -2434,23 +2026,31 @@ const TabsViewBase = ({
       progress: Animated.AnimatedInterpolation<number>,
       dragX: Animated.AnimatedInterpolation<number>
     ) => {
-      const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
-        inputRange: [-101, 0],
-        outputRange: [0, 1],
+      const opacity = dragX.interpolate({
+        inputRange: [-100, 0],
+        outputRange: [1, 0],
         extrapolate: 'clamp'
       })
-      return <Animated.View style={[styles.swipeDelete]}></Animated.View>
+      return (
+        <Animated.View style={[styles.swipeDelete, { backgroundColor: '#FF3B30', opacity }]}>
+          <Ionicons name="trash-outline" size={22} color="#fff" />
+        </Animated.View>
+      )
     }
     const renderLeftActions = (
       progress: Animated.AnimatedInterpolation<number>,
       dragX: Animated.AnimatedInterpolation<number>
     ) => {
-      const trans: Animated.AnimatedInterpolation<number> = dragX.interpolate({
-        inputRange: [0, 101],
-        outputRange: [1, 0],
+      const opacity = dragX.interpolate({
+        inputRange: [0, 100],
+        outputRange: [0, 1],
         extrapolate: 'clamp'
       })
-      return <Animated.View style={[styles.swipeDelete]}></Animated.View>
+      return (
+        <Animated.View style={[styles.swipeDelete, { backgroundColor: '#FF3B30', opacity }]}>
+          <Ionicons name="trash-outline" size={22} color="#fff" />
+        </Animated.View>
+      )
     }
 
     return (
@@ -2553,7 +2153,7 @@ const TabsViewBase = ({
           offset: (ITEM_H + screen.width * 0.08) * Math.floor(index / 2),
           index
         })}
-        onContentSizeChange={() => { }}
+        onContentSizeChange={() => {}}
         extraData={tabStore.activeTabId}
         contentContainerStyle={{
           padding: 12,
@@ -2589,7 +2189,7 @@ const TabsViewBase = ({
               try {
                 const { ImpactFeedbackGenerator } = require('expo-haptics')
                 ImpactFeedbackGenerator.impactAsync(ImpactFeedbackGenerator.ImpactFeedbackStyle.Medium)
-              } catch (e) { }
+              } catch (e) {}
             }
             onDismiss()
             setAddressFocused(false)
@@ -2603,12 +2203,7 @@ const TabsViewBase = ({
           <Ionicons name="trash-outline" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.toolbarButton}
-          onPress={onDismiss}
-          activeOpacity={0.6}
-          delayPressIn={0}
-        >
+        <TouchableOpacity style={styles.toolbarButton} onPress={onDismiss} activeOpacity={0.6} delayPressIn={0}>
           <Ionicons name="checkmark" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -2631,14 +2226,20 @@ const DrawerItem = React.memo(
   }
 )
 
+DrawerItem.displayName = 'DrawerItem'
+
 const SubDrawerView = React.memo(
   ({
     route,
     onBack,
+    origin,
+    onPermissionChange,
     onOpenNotificationSettings
   }: {
-    route: 'identity' | 'settings' | 'security' | 'trust' | 'notifications'
+    route: 'identity' | 'settings' | 'security' | 'trust' | 'notifications' | 'permissions'
     onBack: () => void
+    origin?: string
+    onPermissionChange?: (permission: PermissionType, state: PermissionState) => void
     onOpenNotificationSettings?: () => void
   }) => {
     const { colors } = useTheme()
@@ -2665,7 +2266,9 @@ const SubDrawerView = React.memo(
           <View style={{ width: 60 }} />
         </View>
         <View style={styles.subDrawerContent}>
-          {route === 'notifications' ? (
+          {route === 'permissions' ? (
+            <PermissionsScreen origin={origin || ''} onPermissionChange={onPermissionChange} />
+          ) : route === 'notifications' ? (
             <View>
               <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>
                 Manage notifications from websites and apps.
@@ -2687,15 +2290,17 @@ const SubDrawerView = React.memo(
                 <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
-          ) : (
-            // Only show web3 screens when not in web2 mode
-            !isWeb2Mode && screens[route]
-          )}
+          ) : // Only show web3 screens when not in web2 mode and when route matches available screens
+          !isWeb2Mode && (route === 'identity' || route === 'settings' || route === 'trust') ? (
+            screens[route as 'identity' | 'settings' | 'trust']
+          ) : null}
         </View>
       </View>
     )
   }
 )
+
+SubDrawerView.displayName = 'SubDrawerView'
 
 /* -------------------------------------------------------------------------- */
 /*                              BOTTOM TOOLBAR                               */
@@ -2719,7 +2324,7 @@ const BottomToolbar = ({
   navFwd: () => void
   shareCurrent: () => void
   toggleStarDrawer: (open: boolean) => void
-  setShowTabsView: (show: boolean) => void,
+  setShowTabsView: (show: boolean) => void
   toggleInfoDrawer: (open: boolean) => void
 }) => {
   const handleStarPress = useCallback(() => toggleStarDrawer(true), [toggleStarDrawer])
@@ -2842,7 +2447,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    paddingBottom: 12,
+    paddingBottom: 12
   },
   addressInput: {
     paddingHorizontal: 8

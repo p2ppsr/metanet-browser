@@ -2,7 +2,7 @@
   "expo": {
     "name": "Metanet",
     "slug": "metanet-mobile",
-    "version": "0.2.2",
+    "version": "0.3.2",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
@@ -14,6 +14,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/with-fcm-manifest-fixes.js",
       "expo-router",
       [
         "expo-splash-screen",
@@ -53,7 +54,7 @@
       "eas": {
         "projectId": "f18a56d2-60e6-4170-95ca-839868f329fa"
       },
-      "useFirebase": false
+      "useFirebase": true
     },
     "android": {
       "package": "org.bsvblockchain.metanet",
@@ -62,7 +63,9 @@
         "android.permission.VIBRATE",
         "android.permission.WAKE_LOCK",
         "android.permission.INTERNET",
-        "android.permission.SYSTEM_ALERT_WINDOW"
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "googleServicesFile": "google-services.json",
       "intentFilters": [
@@ -77,10 +80,7 @@
               "scheme": "http"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         },
         {
           "action": "VIEW",
@@ -89,10 +89,7 @@
               "scheme": "metanet"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -108,23 +105,16 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "org.bsvblockchain.metanet.urlscheme",
-            "CFBundleURLSchemes": [
-              "metanet",
-              "http",
-              "https"
-            ]
+            "CFBundleURLSchemes": ["metanet"]
           }
         ],
-        "LSApplicationQueriesSchemes": [
-          "https",
-          "http"
-        ]
+        "LSApplicationQueriesSchemes": ["https", "http"],
+        "NSLocationWhenInUseUsageDescription": "BSV Browser may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use."
       },
       "entitlements": {
         "aps-environment": "development",
-        "com.apple.developer.associated-domains": [
-          "applinks:*"
-        ]
+        "com.apple.developer.associated-domains": ["applinks:*"],
+        "com.apple.developer.web-browser": true
       }
     },
     "notification": {

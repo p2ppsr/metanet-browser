@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>Metanet</string>
+    <string>BSV Browser</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -19,7 +19,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.3.2</string>
+    <string>0.3.3</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -30,8 +30,6 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>metanet</string>
-          <string>http</string>
-          <string>https</string>
         </array>
       </dict>
       <dict>
@@ -65,6 +63,8 @@
     <string>This app needs camera access to scan QR codes.</string>
     <key>NSFaceIDUsageDescription</key>
     <string>This app uses Face ID/Touch ID to securely authenticate you and protect your wallet.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>BSV Browser may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>This app needs microphone access for video recording features.</string>
     <key>NSPhotoLibraryUsageDescription</key>

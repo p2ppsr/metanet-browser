@@ -32,7 +32,7 @@ export default function DefaultBrowserPrompt() {
   const showDefaultBrowserPrompt = () => {
     Alert.alert(
       'Set as Default Browser',
-      'Would you like to set Metanet as your default browser? This will allow you to open web links directly in Metanet.',
+      'Would you like to set BSV Browser as your default browser? This will allow you to open web links directly in BSV Browser.',
       [
         {
           text: 'Not Now',
@@ -78,7 +78,7 @@ export default function DefaultBrowserPrompt() {
         // Show iOS instructions
         Alert.alert(
           'Set Default Browser',
-          'To set Metanet as your default browser:\n\n1. Go to Settings\n2. Scroll down to Metanet\n3. Tap "Default Browser App"\n4. Select Metanet',
+          'To set BSV Browser as your default browser:\n\n1. Go to Settings\n2. Scroll down to BSV Browser\n3. Tap "Default Browser App"\n4. Select BSV Browser',
           [
             {
               text: 'Open Settings',
@@ -97,7 +97,7 @@ export default function DefaultBrowserPrompt() {
       console.error('Error opening settings:', error)
       Alert.alert(
         'Error',
-        'Could not open settings. Please manually set Metanet as your default browser in your device settings.'
+        'Could not open settings. Please manually set BSV Browser as your default browser in your device settings.'
       )
       await markPromptShown()
     }
@@ -115,7 +115,7 @@ export default function DefaultBrowserPrompt() {
 }
 
 export const showManualDefaultBrowserPrompt = () => {
-  Alert.alert('Set as Default Browser', 'Set Metanet as your default browser to open web links directly in the app.', [
+  Alert.alert('Set as Default Browser', 'Set BSV Browser as your default browser to open web links directly in the app.', [
     {
       text: 'Cancel',
       style: 'cancel'
@@ -128,7 +128,7 @@ export const showManualDefaultBrowserPrompt = () => {
         } else {
           Alert.alert(
             'Set Default Browser',
-            'To set Metanet as your default browser:\n\n1. Go to Settings\n2. Scroll down to Metanet\n3. Tap "Default Browser App"\n4. Select Metanet',
+            'To set BSV Browser as your default browser:\n\n1. Go to Settings\n2. Scroll down to BSV Browser\n3. Tap "Default Browser App"\n4. Select BSV Browser',
             [
               {
                 text: 'Open Settings',

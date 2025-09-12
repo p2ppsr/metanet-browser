@@ -152,6 +152,7 @@ const resources = {
       add_to_device_homescreen: 'Add to Device Homescreen',
       back_to_homepage: 'Back to Homepage',
       preferences: 'Preferences',
+      permissions: 'Permissions',
 
       // Browser actions
       clear_browsing_history: 'Clear browsing history?',
@@ -300,8 +301,8 @@ const resources = {
       failed_resend_code: 'Failed to resend verification code. Please try again.',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
-      browser_with_identity_payments: 'Browser with identity and payments built in',
+      metanet: 'BSV Browser',
+      browser_with_identity_payments: 'With identity and payments built in',
       get_started: 'Get Started',
       terms_privacy_agreement: 'By continuing, you agree to our Terms of Service and Privacy Policy',
 
@@ -381,6 +382,7 @@ const resources = {
       add_to_device_homescreen: '添加到设备主屏幕',
       back_to_homepage: '返回主页',
       notifications: '通知',
+      permissions: '权限',
 
       // Browser actions
       clear_browsing_history: '清除浏览历史记录？',
@@ -529,7 +531,7 @@ const resources = {
       failed_resend_code: '重新发送验证码失败。请重试。',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: '内置身份和支付功能的浏览器',
       get_started: '开始使用',
       terms_privacy_agreement: '继续即表示您同意我们的服务条款和隐私政策',
@@ -610,6 +612,7 @@ const resources = {
       add_to_device_homescreen: 'डिवाइस होमस्क्रीन पर जोड़ें',
       back_to_homepage: 'होमपेज पर वापस',
       notifications: 'सूचनाएं',
+      permissions: 'अनुमतियाँ',
 
       // Browser actions
       clear_browsing_history: 'ब्राउज़िंग इतिहास साफ़ करें?',
@@ -754,7 +757,7 @@ const resources = {
       continue_without_login: 'बिना लॉगिन के जारी रखें',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: 'पहचान और भुगतान सुविधा के साथ ब्राउज़र',
       get_started: 'शुरू करें',
       terms_privacy_agreement: 'जारी रखकर, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
@@ -834,6 +837,7 @@ const resources = {
       add_to_device_homescreen: 'Agregar a Pantalla de Inicio',
       back_to_homepage: 'Volver al Inicio',
       notifications: 'Notificaciones',
+      permissions: 'Permisos',
 
       // Browser actions
       clear_browsing_history: '¿Limpiar historial de navegación?',
@@ -923,7 +927,7 @@ const resources = {
       continue_without_login: 'Continuar sin iniciar sesión',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: 'Navegador con identidad y pagos integrados',
       get_started: 'Comenzar',
       terms_privacy_agreement: 'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad',
@@ -1004,6 +1008,7 @@ const resources = {
       add_to_device_homescreen: "Ajouter à l'Écran d'Accueil",
       back_to_homepage: "Retour à la Page d'Accueil",
       notifications: 'Notifications',
+      permissions: 'Autorisations',
 
       // Browser actions
       clear_browsing_history: "Effacer l'historique de navigation ?",
@@ -1109,7 +1114,7 @@ const resources = {
       continue_without_login: 'Continuer sans se connecter',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: 'Navigateur avec identité et paiements intégrés',
       get_started: 'Commencer',
 
@@ -1192,6 +1197,7 @@ const resources = {
       add_to_device_homescreen: 'إضافة إلى الشاشة الرئيسية للجهاز',
       back_to_homepage: 'العودة إلى الصفحة الرئيسية',
       notifications: 'الإشعارات',
+      permissions: 'الأذونات',
 
       // Browser actions
       clear_browsing_history: 'مسح تاريخ التصفح؟',
@@ -1289,7 +1295,7 @@ const resources = {
       continue_without_login: 'المتابعة بدون تسجيل الدخول',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: 'متصفح مع الهوية والمدفوعات المدمجة',
       get_started: 'ابدأ',
       terms_privacy_agreement: 'من خلال المتابعة، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا',
@@ -1370,6 +1376,7 @@ const resources = {
       add_to_device_homescreen: 'Adicionar à Tela Inicial do Dispositivo',
       back_to_homepage: 'Voltar à Página Inicial',
       notifications: 'Notificações',
+      permissions: 'Permissões',
 
       // Browser actions
       clear_browsing_history: 'Limpar histórico de navegação?',
@@ -1475,7 +1482,7 @@ const resources = {
       continue_without_login: 'Continuar sem fazer login',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: 'Navegador com identidade e pagamentos integrados',
       get_started: 'Começar',
       terms_privacy_agreement: 'Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade',
@@ -1556,6 +1563,7 @@ const resources = {
       add_to_device_homescreen: 'ডিভাইস হোমস্ক্রিনে যোগ করুন',
       back_to_homepage: 'হোমপেজে ফিরে যান',
       notifications: 'বিজ্ঞপ্তি',
+      permissions: 'অনুমতি',
 
       // Browser actions
       clear_browsing_history: 'ব্রাউজিং ইতিহাস মুছবেন?',
@@ -1654,7 +1662,7 @@ const resources = {
       continue_without_login: 'লগইন ছাড়া চালিয়ে যান',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: 'পরিচয় এবং পেমেন্ট সুবিধা সহ ব্রাউজার',
       get_started: 'শুরু করুন',
       terms_privacy_agreement: 'চালিয়ে যেতে, আপনি আমাদের সেবার শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মত হচ্ছেন',
@@ -1735,6 +1743,7 @@ const resources = {
       add_to_device_homescreen: 'Добавить на Главный Экран Устройства',
       back_to_homepage: 'Вернуться на Главную Страницу',
       notifications: 'Уведомления',
+      permissions: 'Разрешения',
 
       // Browser actions
       clear_browsing_history: 'Очистить историю браузера?',
@@ -1832,7 +1841,7 @@ const resources = {
       continue_without_login: 'Продолжить без входа',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: 'Браузер со встроенной идентификацией и платежами',
       get_started: 'Начать',
 
@@ -1915,6 +1924,7 @@ const resources = {
       add_to_device_homescreen: 'Tambahkan ke Layar Utama Perangkat',
       back_to_homepage: 'Kembali ke Beranda',
       notifications: 'Notifikasi',
+      permissions: 'Izin',
 
       // Browser actions
       clear_browsing_history: 'Hapus riwayat penjelajahan?',
@@ -1992,7 +2002,7 @@ const resources = {
       continue_without_login: 'Lanjutkan tanpa masuk',
 
       // Login/Welcome Screen
-      metanet: 'Metanet',
+      metanet: 'BSV Browser',
       browser_with_identity_payments: 'Browser dengan identitas dan pembayaran terintegrasi',
       get_started: 'Mulai',
       terms_privacy_agreement: 'Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi kami',
