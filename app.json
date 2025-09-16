@@ -2,7 +2,7 @@
   "expo": {
     "name": "Metanet",
     "slug": "metanet-mobile",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
@@ -111,7 +111,7 @@
           }
         ],
         "LSApplicationQueriesSchemes": ["https", "http"],
-        "NSLocationWhenInUseUsageDescription": "Metanet may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use."
+        "NSLocationWhenInUseUsageDescription": "BSV Browser may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use."
       },
       "entitlements": {
         "aps-environment": "development",

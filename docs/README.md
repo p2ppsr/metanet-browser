@@ -1,6 +1,6 @@
-# Metanet Mobile Marketing Website
+# BSV Browser Marketing Website
 
-This is the marketing website for Metanet Mobile, a secure BSV Blockchain wallet app for iOS and Android.
+This is the marketing website for BSV Browser, a secure BSV Blockchain wallet app for iOS and Android.
 
 ## Website Features
 
@@ -46,9 +46,9 @@ marketing/
 - **iOS (TestFlight)**: https://testflight.apple.com/join/K3jmxevG
 - **Android**: Coming soon to Google Play Store
 
-## About Metanet Mobile
+## About BSV Browser
 
-Metanet Mobile is a secure BSV Blockchain wallet that provides:
+BSV Browser is a secure BSV Blockchain wallet that provides:
 
 - Secure key management and encryption
 - Decentralized identity management

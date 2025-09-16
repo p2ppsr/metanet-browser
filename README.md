@@ -1,6 +1,6 @@
-# Metanet Browser
+# BSV Browser
 
-Enabling identity, micropayments, and use of Metanet websites on mobile devices.
+Enabling identity, micropayments, and use of BSV websites on mobile devices.
 
 - Runs ReactNative substrate via WebView
 - Lets web apps talk to a wallet
