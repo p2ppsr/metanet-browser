@@ -337,6 +337,7 @@ function Browser() {
 
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
+  const iosSoftKeyboardShown = useRef(false)
 
   const [showInfoDrawer, setShowInfoDrawer] = useState(false)
   const [showShortcutModal, setShowShortcutModal] = useState(false)
@@ -388,18 +389,21 @@ function Browser() {
       setKeyboardVisible(true)
       const height = event.endCoordinates.height
       setKeyboardHeight(height)
+      if (Platform.OS === 'ios') iosSoftKeyboardShown.current = true
     })
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardVisible(false)
       setKeyboardHeight(0)
 
+      const shouldHandleHide = Platform.OS === 'ios' ? iosSoftKeyboardShown.current : true
       setTimeout(() => {
-        if (addressEditing.current || addressInputRef.current?.isFocused()) {
+        if (shouldHandleHide && (addressEditing.current || addressInputRef.current?.isFocused())) {
           addressEditing.current = false
           setAddressFocused(false)
           setAddressSuggestions([])
           addressInputRef.current?.blur()
         }
+        if (Platform.OS === 'ios') iosSoftKeyboardShown.current = false
       }, 50)
     })
     return () => {
@@ -1355,10 +1359,6 @@ function Browser() {
         onRemoveBookmark={removeBookmark}
         onRemoveDefaultApp={removeDefaultApp}
         removedDefaultApps={removedDefaultApps}
-        onCloseModal={() => {
-          // Just close the drawer - the bookmark is already added by the component
-          toggleInfoDrawer(false)
-        }}
         hideHeader={true}
         showOnlyBookmarks={true}
       />

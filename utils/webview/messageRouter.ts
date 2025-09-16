@@ -1,6 +1,8 @@
 import type { MutableRefObject } from 'react'
 import type { PermissionType, PermissionState } from '@/utils/permissionsManager'
 import * as Notifications from 'expo-notifications'
+import { Platform } from 'react-native'
+import { setDomainPermission } from '@/utils/permissionsManager'
 
 type ActiveTabLike = {
   id: string | number
@@ -141,6 +143,33 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
       return true
     }
 
+    // iOS: never show in-app PermissionModal for camera/microphone. Auto-allow when state is 'ask'.
+    if (Platform.OS === 'ios') {
+      try {
+        await setDomainPermission(domain, permission, 'allow')
+      } catch (e) {}
+      injectIntoActiveTab(
+        ctx,
+        `
+        window.dispatchEvent(new MessageEvent('message', {
+          data: JSON.stringify({ type: '${responseType}', success: true })
+        }));
+        // Clear pending and denied arrays for this permission (compat with permissionScript)
+        (function(){ try{
+          var P = '${permission}';
+          if (!Array.isArray(window.__metanetPendingPermissions)) window.__metanetPendingPermissions = [];
+          if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+          var pend = window.__metanetPendingPermissions;
+          var deny = window.__metanetDeniedPermissions;
+          var rm = function(arr){ var i = arr.indexOf(P); if (i >= 0) arr.splice(i,1); };
+          rm(pend); rm(deny);
+        }catch(e){} })();
+        (function(){ try{ const evt = new CustomEvent('permissionchange', { detail: { permission: '${permission}', state: 'granted' } }); document.dispatchEvent(evt); }catch(e){} })();
+      `
+      )
+      return true
+    }
+
     // Prompt via PermissionModal, resolve later via pending callback
     ctx.setPendingDomain(domain)
     ctx.setPendingPermission(permission)
@@ -185,23 +214,6 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
       )
     })
     ctx.setPermissionModalVisible(true)
-    return true
-  }
-
-  const handleNotificationPermission = async () => {
-    const tab = ctx.getActiveTab()
-    if (!tab) return true
-    const permission = await ctx.handleNotificationPermissionRequest(tab.url)
-    injectIntoActiveTab(
-      ctx,
-      `
-      window.Notification.permission = '${permission}';
-      window.dispatchEvent(new MessageEvent('message', {
-        data: JSON.stringify({ type: 'NOTIFICATION_PERMISSION_RESPONSE', permission: '${permission}' })
-      }));
-      (function(){ try{ const mapped = '${permission}' === 'default' ? 'prompt' : '${permission}'; const evt = new CustomEvent('permissionchange', { detail: { permission: 'NOTIFICATIONS', state: mapped } }); document.dispatchEvent(evt);}catch(e){} })();
-      `
-    )
     return true
   }
 
@@ -254,6 +266,29 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
       return true
     }
 
+    // iOS: never show in-app PermissionModal for location.
+    // Auto-allow at the domain level and signal 'granted' so the page's wrapper calls the original geolocation,
+    // which triggers the OS location prompt. This avoids react-native-permissions.
+    if (Platform.OS === 'ios') {
+      try { await setDomainPermission(domain, permission, 'allow') } catch(e) {}
+      injectIntoActiveTab(
+        ctx,
+        `
+        (function(){ try{
+          var P = '${permission}';
+          if (!Array.isArray(window.__metanetPendingPermissions)) window.__metanetPendingPermissions = [];
+          if (!Array.isArray(window.__metanetDeniedPermissions)) window.__metanetDeniedPermissions = [];
+          var pend = window.__metanetPendingPermissions;
+          var deny = window.__metanetDeniedPermissions;
+          var rm = function(arr){ var i = arr.indexOf(P); if (i >= 0) arr.splice(i,1); };
+          rm(pend); rm(deny);
+        }catch(e){} })();
+        (function(){ try{ const evt = new CustomEvent('permissionchange', { detail: { permission: '${permission}', state: 'granted' } }); document.dispatchEvent(evt); }catch(e){} })();
+      `
+      )
+      return true
+    }
+
     // Prompt via PermissionModal, resolve later via pending callback
     ctx.setPendingDomain(domain)
     ctx.setPendingPermission(permission)
@@ -282,6 +317,23 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
       currentTab.webviewRef?.current?.injectJavaScript(permissionChangeJs + syncArraysJs)
     })
     ctx.setPermissionModalVisible(true)
+    return true
+  }
+
+  const handleNotificationPermission = async () => {
+    const tab = ctx.getActiveTab()
+    if (!tab) return true
+    const permission = await ctx.handleNotificationPermissionRequest(tab.url)
+    injectIntoActiveTab(
+      ctx,
+      `
+      window.Notification.permission = '${permission}';
+      window.dispatchEvent(new MessageEvent('message', {
+        data: JSON.stringify({ type: 'NOTIFICATION_PERMISSION_RESPONSE', permission: '${permission}' })
+      }));
+      (function(){ try{ const mapped = '${permission}' === 'default' ? 'prompt' : '${permission}'; const evt = new CustomEvent('permissionchange', { detail: { permission: 'NOTIFICATIONS', state: mapped } }); document.dispatchEvent(evt);}catch(e){} })();
+      `
+    )
     return true
   }
 
