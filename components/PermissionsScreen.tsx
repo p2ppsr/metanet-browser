@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, memo } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator, SectionList, Pressable } from 'react-native'
+import { View, Text, StyleSheet, ActivityIndicator, SectionList, Pressable, Platform } from 'react-native'
 import { useTheme } from '@/context/theme/ThemeContext'
 import { getDomainPermissions, setDomainPermission, PermissionState, PermissionType } from '@/utils/permissionsManager'
 import { useTranslation } from 'react-i18next'
@@ -199,6 +199,8 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
     }
   }).filter((section): section is { title: string; data: PermissionType[]; isExpanded: boolean } => section !== null)
 
+  const isIOS = Platform.OS === 'ios'
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text
@@ -242,45 +244,58 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
             }}
             renderItem={({ item: perm }) => {
               if (perm === 'NOTIFICATIONS') {
-                const state = permissions[perm] || 'deny'
-                const selectedIndex = state === 'allow' ? 0 : 1
+                const state = (permissions[perm] as PermissionState) || (isIOS ? 'ask' : 'deny')
+                const selectedIndex = isIOS ? (state === 'deny' ? 1 : 0) : state === 'allow' ? 0 : 1
                 return (
                   <View style={[styles.permissionRow, { backgroundColor: colors.background }]}>
                     <Text style={[styles.permissionLabel, { color: colors.textPrimary }]}>
                       {formatPermissionName(perm)}
                     </Text>
                     <SegmentedControl
-                      values={[t('allow') || 'Allow', t('deny') || 'Deny']}
+                      values={isIOS ? [t('ask') || 'Ask', t('deny') || 'Deny'] : [t('allow') || 'Allow', t('deny') || 'Deny']}
                       selectedIndex={selectedIndex}
                       onValueChange={value => {
-                        const newState = value === (t('allow') || 'Allow') ? 'allow' : 'deny'
-                        handleValueChange(perm, newState)
+                        if (isIOS) {
+                          const newState: PermissionState = value === (t('ask') || 'Ask') ? 'ask' : 'deny'
+                          handleValueChange(perm, newState)
+                        } else {
+                          const newState: PermissionState = value === (t('allow') || 'Allow') ? 'allow' : 'deny'
+                          handleValueChange(perm, newState)
+                        }
                       }}
                       tintColor={colors.buttonBackground}
                       fontStyle={{ color: colors.buttonText }}
                       activeFontStyle={{ color: colors.buttonText, fontWeight: '600' }}
-                      style={{ width: 120 }}
+                      style={{ width: isIOS ? 140 : 120 }}
                     />
                   </View>
                 )
               }
 
-              // Regular handling for other permissions - Allow/Ask/Deny
-              const state = permissions[perm] || 'ask'
-              const selectedIndex = Math.max(['allow', 'ask', 'deny'].indexOf(state), 0)
+              const state = (permissions[perm] as PermissionState) || 'ask'
+              const selectedIndex = isIOS
+                ? (state === 'deny' ? 1 : 0) // treat 'allow' as 'ask' for display on iOS
+                : Math.max(['allow', 'ask', 'deny'].indexOf(state), 0)
               return (
                 <View style={[styles.permissionRow, { backgroundColor: colors.background }]}>
                   <Text style={[styles.permissionLabel, { color: colors.textPrimary }]}>
                     {formatPermissionName(perm)}
                   </Text>
                   <SegmentedControl
-                    values={[t('allow') || 'Allow', t('ask') || 'Ask', t('deny') || 'Deny']}
+                    values={isIOS ? [t('ask') || 'Ask', t('deny') || 'Deny'] : [t('allow') || 'Allow', t('ask') || 'Ask', t('deny') || 'Deny']}
                     selectedIndex={selectedIndex}
-                    onValueChange={value => handleValueChange(perm, value)}
+                    onValueChange={value => {
+                      if (isIOS) {
+                        const newState: PermissionState = value === (t('ask') || 'Ask') ? 'ask' : 'deny'
+                        handleValueChange(perm, newState)
+                      } else {
+                        handleValueChange(perm, value)
+                      }
+                    }}
                     tintColor={colors.buttonBackground}
                     fontStyle={{ color: colors.buttonText }}
                     activeFontStyle={{ color: colors.buttonText, fontWeight: '600' }}
-                    style={{ width: 180 }}
+                    style={{ width: isIOS ? 140 : 180 }}
                   />
                 </View>
               )

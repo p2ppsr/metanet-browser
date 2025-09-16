@@ -2010,14 +2010,13 @@ function Browser() {
                       icon="person-circle-outline"
                       onPress={drawerHandlers.identity}
                     />
-                    {/* <DrawerItem label={t('security')} icon="lock-closed-outline" onPress={drawerHandlers.security} /> */}
                     <DrawerItem
                       label={t('trust_network')}
                       icon="shield-checkmark-outline"
                       onPress={drawerHandlers.trust}
                     />
                     <DrawerItem label={t('settings')} icon="settings-outline" onPress={drawerHandlers.settings} />
-                    {Platform.OS !== 'ios' && activeTab?.url !== kNEW_TAB_URL && (
+                    {activeTab?.url !== kNEW_TAB_URL && (
                       <DrawerItem
                         label={t('permissions')}
                         icon="lock-closed-outline"
