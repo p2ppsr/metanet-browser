@@ -201,6 +201,56 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
 
   const isIOS = Platform.OS === 'ios'
 
+  const UnifiedSegmented = ({
+    values,
+    selectedIndex,
+    onValueChange,
+    style
+  }: {
+    values: string[]
+    selectedIndex: number
+    onValueChange: (value: string) => void
+    style?: any
+  }) => {
+    const { colors } = useTheme()
+    return (
+      <View
+        style={[
+          {
+            flexDirection: 'row',
+            borderRadius: 8,
+            overflow: 'hidden',
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.inputBorder,
+            backgroundColor: colors.inputBackground,
+            height: 32
+          },
+          style
+        ]}
+      >
+        {values.map((label, idx) => {
+          const selected = idx === selectedIndex
+          return (
+            <Pressable
+              key={idx}
+              onPress={() => onValueChange(label)}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: selected ? colors.buttonBackground : 'transparent'
+              }}
+            >
+              <Text style={{ color: selected ? colors.buttonText : colors.textSecondary, fontWeight: selected ? '600' : '500' }}>
+                {label}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+    )
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text
@@ -251,23 +301,37 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
                     <Text style={[styles.permissionLabel, { color: colors.textPrimary }]}>
                       {formatPermissionName(perm)}
                     </Text>
-                    <SegmentedControl
-                      values={isIOS ? [t('ask') || 'Ask', t('deny') || 'Deny'] : [t('allow') || 'Allow', t('deny') || 'Deny']}
-                      selectedIndex={selectedIndex}
-                      onValueChange={value => {
-                        if (isIOS) {
+                    {isIOS ? (
+                      <UnifiedSegmented
+                        values={[t('ask') || 'Ask', t('deny') || 'Deny']}
+                        selectedIndex={selectedIndex}
+                        onValueChange={value => {
                           const newState: PermissionState = value === (t('ask') || 'Ask') ? 'ask' : 'deny'
                           handleValueChange(perm, newState)
-                        } else {
+                        }}
+                        style={{ width: 120 }}
+                      />
+                    ) : (
+                      <SegmentedControl
+                        values={[t('allow') || 'Allow', t('deny') || 'Deny']}
+                        selectedIndex={selectedIndex}
+                        onValueChange={value => {
                           const newState: PermissionState = value === (t('allow') || 'Allow') ? 'allow' : 'deny'
                           handleValueChange(perm, newState)
-                        }
-                      }}
-                      tintColor={colors.buttonBackground}
-                      fontStyle={{ color: colors.buttonText }}
-                      activeFontStyle={{ color: colors.buttonText, fontWeight: '600' }}
-                      style={{ width: isIOS ? 140 : 120 }}
-                    />
+                        }}
+                        tintColor={colors.buttonBackground}
+                        fontStyle={{ color: colors.textPrimary }}
+                        activeFontStyle={{ color: colors.buttonText, fontWeight: '600' }}
+                        style={{
+                          width: 120,
+                          backgroundColor: colors.inputBackground,
+                          borderColor: colors.inputBorder,
+                          borderWidth: StyleSheet.hairlineWidth,
+                          borderRadius: 8,
+                          height: 32
+                        }}
+                      />
+                    )}
                   </View>
                 )
               }
@@ -281,22 +345,36 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
                   <Text style={[styles.permissionLabel, { color: colors.textPrimary }]}>
                     {formatPermissionName(perm)}
                   </Text>
-                  <SegmentedControl
-                    values={isIOS ? [t('ask') || 'Ask', t('deny') || 'Deny'] : [t('allow') || 'Allow', t('ask') || 'Ask', t('deny') || 'Deny']}
-                    selectedIndex={selectedIndex}
-                    onValueChange={value => {
-                      if (isIOS) {
+                  {isIOS ? (
+                    <UnifiedSegmented
+                      values={[t('ask') || 'Ask', t('deny') || 'Deny']}
+                      selectedIndex={selectedIndex}
+                      onValueChange={value => {
                         const newState: PermissionState = value === (t('ask') || 'Ask') ? 'ask' : 'deny'
                         handleValueChange(perm, newState)
-                      } else {
+                      }}
+                      style={{ width: 180 }}
+                    />
+                  ) : (
+                    <SegmentedControl
+                      values={[t('allow') || 'Allow', t('ask') || 'Ask', t('deny') || 'Deny']}
+                      selectedIndex={selectedIndex}
+                      onValueChange={value => {
                         handleValueChange(perm, value)
-                      }
-                    }}
-                    tintColor={colors.buttonBackground}
-                    fontStyle={{ color: colors.buttonText }}
-                    activeFontStyle={{ color: colors.buttonText, fontWeight: '600' }}
-                    style={{ width: isIOS ? 140 : 180 }}
-                  />
+                      }}
+                      tintColor={colors.buttonBackground}
+                      fontStyle={{ color: colors.textPrimary }}
+                      activeFontStyle={{ color: colors.buttonText, fontWeight: '600' }}
+                      style={{
+                        width: 180,
+                        backgroundColor: colors.inputBackground,
+                        borderColor: colors.inputBorder,
+                        borderWidth: StyleSheet.hairlineWidth,
+                        borderRadius: 8,
+                        height: 32
+                      }}
+                    />
+                  )}
                 </View>
               )
             }}
