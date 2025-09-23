@@ -6,7 +6,7 @@
   "version": "0.3.3",
   "license": "Open BSV",
   "scripts": {
-    "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
+    "apk-android": "eas build --profile preview-apk --platform android --local --verbose-logs --build-logger-level trace",
     "aab-android": "cd android && ./gradlew bundleRelease",
     "ipa-ios": "eas build --profile production --platform ios --local --verbose-logs --build-logger-level trace",
     "start": "expo start --dev-client",
