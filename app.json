@@ -122,7 +122,7 @@
           "https",
           "http"
         ],
-        "NSLocationWhenInUseUsageDescription": "BSV Browser may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use."
+        "NSLocationWhenInUseUsageDescription": "Metanet Explorer may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use."
       },
       "entitlements": {
         "aps-environment": "development",

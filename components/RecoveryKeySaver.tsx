@@ -98,8 +98,8 @@ const RecoveryKeySaver = () => {
   const handleShare = async () => {
     try {
       const result = await Share.share({
-        message: `BSV Browser Recovery Key:\n\n${recoveryKey}\n\nSaved: ${new Date().toLocaleString()}`,
-        title: 'BSV Browser Recovery Key'
+        message: `Metanet Explorer Recovery Key:\n\n${recoveryKey}\n\nSaved: ${new Date().toLocaleString()}`,
+        title: 'Metanet Explorer Recovery Key'
       })
 
       if (result.action === Share.sharedAction) {

@@ -131,7 +131,7 @@ const HomescreenShortcut: React.FC<HomescreenShortcutProps> = ({
         // iOS - Show enhanced options
         Alert.alert(
           'Add to Home Screen - iOS',
-          `We've saved "${shortcutName}" as a quick action!\n\nTo access it:\n\n1. Long-press the BSV Browser app icon\n2. Select "${shortcutName}" from the menu\n\nAlternatively, you can add it to your home screen manually:\n1. Open Safari and navigate to the page\n2. Tap the Share button\n3. Select "Add to Home Screen"\n\nWould you like to open this page in Safari now?`,
+          `We've saved "${shortcutName}" as a quick action!\n\nTo access it:\n\n1. Long-press the Metanet Explorer app icon\n2. Select "${shortcutName}" from the menu\n\nAlternatively, you can add it to your home screen manually:\n1. Open Safari and navigate to the page\n2. Tap the Share button\n3. Select "Add to Home Screen"\n\nWould you like to open this page in Safari now?`,
           [
             {
               text: 'Just Save Quick Action',

@@ -1,6 +1,6 @@
-# BSV Browser Marketing Website
+# Metanet Explorer Marketing Website
 
-This is the marketing website for BSV Browser, a secure BSV Blockchain wallet app for iOS and Android.
+This is the marketing website for Metanet Explorer, a secure BSV Blockchain wallet app for iOS and Android.
 
 ## Website Features
 
@@ -46,9 +46,9 @@ marketing/
 - **iOS (TestFlight)**: https://testflight.apple.com/join/K3jmxevG
 - **Android**: Coming soon to Google Play Store
 
-## About BSV Browser
+## About Metanet Explorer
 
-BSV Browser is a secure BSV Blockchain wallet that provides:
+Metanet Explorer is a secure BSV Blockchain wallet that provides:
 
 - Secure key management and encryption
 - Decentralized identity management

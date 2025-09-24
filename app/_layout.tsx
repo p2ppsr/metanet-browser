@@ -80,7 +80,7 @@ export default function RootLayout() {
   return (
     <LanguageProvider>
       <LocalStorageProvider>
-        <UserContextProvider nativeHandlers={nativeHandlers} appVersion={packageJson.version} appName="BSV Browser">
+        <UserContextProvider nativeHandlers={nativeHandlers} appVersion={packageJson.version} appName="Metanet Explorer">
           <ExchangeRateContextProvider>
             <WalletContextProvider>
               <BrowserModeProvider>

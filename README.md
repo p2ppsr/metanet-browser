@@ -1,4 +1,4 @@
-# BSV Browser
+# Metanet Explorer
 
 Enabling identity, micropayments, and use of BSV websites on mobile devices.
 

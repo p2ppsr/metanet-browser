@@ -80,7 +80,7 @@ export const UserContext = createContext<UserContextValue>({} as UserContextValu
  */
 export const UserContextProvider: React.FC<UserContextProps> = ({
   appVersion = packageJson.version,
-  appName = 'BSV Browser',
+  appName = 'Metanet Explorer',
   children,
   nativeHandlers = defaultNativeHandlers
 }) => {
