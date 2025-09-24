@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>org.bsvblockchain.metanet</string>
+	<string>app.metanet.explorer</string>
 	<key>PROJECT_ID</key>
 	<string>mobile-app-464022</string>
 	<key>STORAGE_BUCKET</key>

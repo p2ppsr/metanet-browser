@@ -452,8 +452,8 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = org.bsvblockchain.metanet;
-				PRODUCT_NAME = "BSVBrowser";
+				PRODUCT_BUNDLE_IDENTIFIER = app.metanet.explorer;
+				PRODUCT_NAME = "Metanet Explorer";
 				SWIFT_OBJC_BRIDGING_HEADER = "Metanet/Metanet-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -484,8 +484,8 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = org.bsvblockchain.metanet;
-				PRODUCT_NAME = "BSVBrowser";
+				PRODUCT_BUNDLE_IDENTIFIER = app.metanet.explorer;
+				PRODUCT_NAME = "Metanet Explorer";
 				SWIFT_OBJC_BRIDGING_HEADER = "Metanet/Metanet-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1";

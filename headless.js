@@ -14,7 +14,7 @@ import { WalletStorageManager, WalletSigner, Services, Wallet, StorageClient } f
 import * as crypto from 'crypto'
 global.self = { crypto }
 
-const APP_GROUP = 'group.org.bsvblockchain.metanet'
+const APP_GROUP = 'group.app.metanet.explorer'
 const SNAP_KEY = 'snap';
 
 // Helper functions (duplicated from fcmBackground.ts for headless isolation)

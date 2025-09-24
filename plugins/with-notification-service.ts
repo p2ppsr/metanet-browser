@@ -8,9 +8,9 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-const APP_GROUP = 'group.org.bsvblockchain.metanet';
+const APP_GROUP = 'group.app.metanet.explorer';
 const EXTENSION_NAME = 'MetanetNotificationService';
-const MAIN_BUNDLE_ID = 'org.bsvblockchain.metanet';
+const MAIN_BUNDLE_ID = 'app.metanet.explorer';
 
 const withNotificationService: ConfigPlugin = (config) => {
   // 1) Ensure App Group on app target

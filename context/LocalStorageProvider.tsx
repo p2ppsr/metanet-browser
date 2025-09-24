@@ -43,7 +43,7 @@ export const LocalStorageContext = createContext<LocalStorageContextType>({
 
 export const useLocalStorage = () => useContext(LocalStorageContext)
 
-const APP_GROUP = 'group.org.bsvblockchain.metanet'
+const APP_GROUP = 'group.app.metanet.explorer'
 
 export default function LocalStorageProvider({ children }: { children: React.ReactNode }) {
   /* --------------------------------- SECURE -------------------------------- */

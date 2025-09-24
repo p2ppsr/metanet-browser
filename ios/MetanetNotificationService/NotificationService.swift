@@ -109,7 +109,7 @@ private final class JSTimerCenter {
   }
 }
 
-private let APP_GROUP_ID = "group.org.bsvblockchain.metanet"
+private let APP_GROUP_ID = "group.app.metanet.explorer"
 private let SNAP_KEY = "snap"
 
 final class NotificationService: UNNotificationServiceExtension {
@@ -119,7 +119,7 @@ final class NotificationService: UNNotificationServiceExtension {
          invalidURL, networkError, noHTTPResponse
   }
 
-  private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "org.bsvblockchain.metanet",
+  private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.metanet.explorer",
                               category: "NSE")
 
   // Track in-flight URLSessionTasks so we can cancel from JS (AbortController)

@@ -57,7 +57,7 @@
       "useFirebase": true
     },
     "android": {
-      "package": "org.bsvblockchain.metanet",
+      "package": "app.metanet.explorer",
       "permissions": [
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
@@ -96,7 +96,7 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "org.bsvblockchain.metanet",
+      "bundleIdentifier": "app.metanet.explorer",
       "googleServicesFile": "GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs camera access to scan QR codes.",
@@ -106,7 +106,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
-            "CFBundleURLName": "org.bsvblockchain.metanet.urlscheme",
+            "CFBundleURLName": "app.metanet.explorer.urlscheme",
             "CFBundleURLSchemes": ["metanet"]
           }
         ],
@@ -115,8 +115,7 @@
       },
       "entitlements": {
         "aps-environment": "development",
-        "com.apple.developer.associated-domains": ["applinks:*"],
-        "com.apple.developer.web-browser": true
+        "com.apple.developer.associated-domains": ["applinks:*"]
       }
     },
     "notification": {

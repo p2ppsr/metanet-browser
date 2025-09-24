@@ -6,7 +6,7 @@
 	<string>development</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.org.bsvblockchain.metanet</string>
+		<string>group.app.metanet.explorer</string>
 	</array>
 </dict>
 </plist>
