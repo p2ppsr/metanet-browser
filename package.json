@@ -1,9 +1,9 @@
 {
   "name": "metanet-mobile",
   "description": "Metanet Explorer - Enabling identity, micropayments, and use of BSV websites on mobile devices",
-  "author": "BSV Association",
+  "author": "Peer-to-peer Privacy Systems Research, LLC",
   "main": "index.js",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "license": "Open BSV",
   "scripts": {
     "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
