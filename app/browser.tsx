@@ -368,7 +368,6 @@ function Browser() {
     }
   }, [tabStore.isInitialized, activeTab])
 
-
   /* ------------------------- push notifications ----------------------------- */
   // const { requestNotificationPermission, createPushSubscription, unsubscribe, getPermission, getSubscription } = usePushNotifications()
 
@@ -1451,7 +1450,8 @@ function Browser() {
   /* -------------------------------------------------------------------------- */
 
   const showAddressBar = Platform.OS === 'android' ? !keyboardVisible || addressFocused : true
-  const showBottomBar = Platform.OS === 'android' ? !(keyboardVisible || addressFocused) : !(keyboardVisible && addressFocused)
+  const showBottomBar =
+    Platform.OS === 'android' ? !(keyboardVisible || addressFocused) : !(keyboardVisible && addressFocused)
 
   // Exit fullscreen on back button or gesture when in fullscreen
   useEffect(() => {
@@ -1535,7 +1535,7 @@ function Browser() {
         keyboardVerticalOffset={0}
       >
         <SafeAreaView
-          edges={['top', 'left', 'right']}  
+          edges={['top', 'left', 'right']}
           style={[
             styles.container,
             {
@@ -1861,7 +1861,7 @@ function Browser() {
                 backdropOpacity={0.7}
                 closeInstantly={identityCloseInstant}
               >
-                <View style={[styles.subDrawerHeader, { borderBottomColor: colors.textSecondary + '33' }]}> 
+                <View style={[styles.subDrawerHeader, { borderBottomColor: colors.textSecondary + '33' }]}>
                   <TouchableOpacity
                     onPress={() => {
                       setIdentityCloseInstant(true)
@@ -1893,7 +1893,7 @@ function Browser() {
                 backdropOpacity={0.7}
                 closeInstantly={settingsCloseInstant}
               >
-                <View style={[styles.subDrawerHeader, { borderBottomColor: colors.textSecondary + '33' }]}> 
+                <View style={[styles.subDrawerHeader, { borderBottomColor: colors.textSecondary + '33' }]}>
                   <TouchableOpacity
                     onPress={() => {
                       setSettingsCloseInstant(true)
@@ -1924,7 +1924,7 @@ function Browser() {
                 backdropOpacity={0.7}
                 closeInstantly={permissionsCloseInstant}
               >
-                <View style={[styles.subDrawerHeader, { borderBottomColor: colors.textSecondary + '33' }]}> 
+                <View style={[styles.subDrawerHeader, { borderBottomColor: colors.textSecondary + '33' }]}>
                   <TouchableOpacity
                     onPress={() => {
                       setPermissionsCloseInstant(true)
@@ -1955,7 +1955,7 @@ function Browser() {
                 backdropOpacity={0.7}
                 closeInstantly={trustCloseInstant}
               >
-                <View style={[styles.subDrawerHeader, { borderBottomColor: colors.textSecondary + '33' }]}> 
+                <View style={[styles.subDrawerHeader, { borderBottomColor: colors.textSecondary + '33' }]}>
                   <TouchableOpacity
                     onPress={() => {
                       setTrustCloseInstant(true)
@@ -2005,11 +2005,7 @@ function Browser() {
                 {!isWeb2Mode && <Balance />}
                 {!isWeb2Mode && (
                   <>
-                    <DrawerItem
-                      label={t('identity')}
-                      icon="person-circle-outline"
-                      onPress={drawerHandlers.identity}
-                    />
+                    <DrawerItem label={t('identity')} icon="person-circle-outline" onPress={drawerHandlers.identity} />
                     <DrawerItem
                       label={t('trust_network')}
                       icon="shield-checkmark-outline"
@@ -2040,11 +2036,7 @@ function Browser() {
                     onPress={drawerHandlers.addToHomeScreen}
                   />
                 )}
-                <DrawerItem
-                  label={t('back_to_homepage')}
-                  icon="apps-outline"
-                  onPress={drawerHandlers.backToHomepage}
-                />
+                <DrawerItem label={t('back_to_homepage')} icon="apps-outline" onPress={drawerHandlers.backToHomepage} />
                 {/* Login button for web2 mode users */}
                 {isWeb2Mode && (
                   <>
@@ -2262,7 +2254,7 @@ const TabsViewBase = ({
                 source={{ uri: item.url || kNEW_TAB_URL }}
                 style={{ flex: 1 }}
                 scrollEnabled={false}
-                androidLayerType={Platform.OS === 'android' ? 'software' : undefined as any}
+                androidLayerType={Platform.OS === 'android' ? 'software' : (undefined as any)}
                 androidHardwareAccelerationDisabled={Platform.OS === 'android'}
                 pointerEvents="none"
               />

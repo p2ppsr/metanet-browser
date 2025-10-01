@@ -61,12 +61,7 @@ const ALL_PERMISSIONS: PermissionType[] = PERMISSION_CATEGORIES.reduce<Permissio
   []
 )
 
-const ALWAYS_SHOW: PermissionType[] = [
-  'NOTIFICATIONS',
-  'CAMERA',
-  'RECORD_AUDIO',
-  'ACCESS_FINE_LOCATION'
-]
+const ALWAYS_SHOW: PermissionType[] = ['NOTIFICATIONS', 'CAMERA', 'RECORD_AUDIO', 'ACCESS_FINE_LOCATION']
 
 interface PermissionsScreenProps {
   origin: string
@@ -241,7 +236,12 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
                 backgroundColor: selected ? colors.buttonBackground : 'transparent'
               }}
             >
-              <Text style={{ color: selected ? colors.buttonText : colors.textSecondary, fontWeight: selected ? '600' : '500' }}>
+              <Text
+                style={{
+                  color: selected ? colors.buttonText : colors.textSecondary,
+                  fontWeight: selected ? '600' : '500'
+                }}
+              >
                 {label}
               </Text>
             </Pressable>
@@ -338,7 +338,9 @@ const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ origin, onPermiss
 
               const state = (permissions[perm] as PermissionState) || 'ask'
               const selectedIndex = isIOS
-                ? (state === 'deny' ? 1 : 0) // treat 'allow' as 'ask' for display on iOS
+                ? state === 'deny'
+                  ? 1
+                  : 0 // treat 'allow' as 'ask' for display on iOS
                 : Math.max(['allow', 'ask', 'deny'].indexOf(state), 0)
               return (
                 <View style={[styles.permissionRow, { backgroundColor: colors.background }]}>

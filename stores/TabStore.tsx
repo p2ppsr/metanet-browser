@@ -170,19 +170,19 @@ export class TabStore {
       // Use custom history navigation for new tab page scenarios
       const newIndex = currentIndex - 1
       const url = history[newIndex]
-      
+
       console.log(`🔙 [TAB_STORE] Using custom history navigation to: ${url} (index ${newIndex})`)
-      
+
       this.tabHistoryIndexes[tabId] = newIndex
-      
+
       // Update tab's navigation state based on new position
       tab.canGoBack = newIndex > 0
       tab.canGoForward = newIndex < history.length - 1
-      
+
       // Navigate to the URL
       tab.url = url
       tab.title = url
-      
+
       try {
         if (url === kNEW_TAB_URL) {
           // Navigate to new tab page
@@ -194,7 +194,7 @@ export class TabStore {
       } catch (error) {
         console.error(`🔙 [TAB_STORE] Error navigating to ${url}:`, error)
       }
-      
+
       this.saveTabs()
     } else if (tab.canGoBack) {
       // Fall back to WebView's native goBack for regular navigation
@@ -227,7 +227,7 @@ export class TabStore {
 
     const history = this.tabNavigationHistories[tabId] || []
     const currentIndex = this.tabHistoryIndexes[tabId] ?? -1
-    
+
     console.log(`🔜 [TAB_STORE] Navigation state:`, {
       historyLength: history.length,
       currentIndex,
@@ -242,20 +242,22 @@ export class TabStore {
       const newIndex = currentIndex + 1
       const targetEntry = history[newIndex]
       const url = (targetEntry as any)?.url || targetEntry
-      
+
       console.log(`🔜 [TAB_STORE] Navigating forward to index ${newIndex}: ${url}`)
-      
+
       // Update history index
       this.tabHistoryIndexes[tabId] = newIndex
-      
+
       // Update tab's navigation state based on new position
       tab.canGoBack = newIndex > 0
       tab.canGoForward = newIndex < history.length - 1
-      
+
       // Navigate to the URL
       tab.url = url
-      
-      console.log(`🔜 [TAB_STORE] Updated navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}`)
+
+      console.log(
+        `🔜 [TAB_STORE] Updated navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}`
+      )
     } else if (tab.canGoForward && tab.webviewRef.current) {
       // Fall back to WebView's native goForward() for single-page scenarios
       console.log(`🔜 [TAB_STORE] Using WebView native goForward()`)
@@ -345,7 +347,7 @@ export class TabStore {
           // Check if this URL is already at our current position
           if (currentUrl !== history[currentIndex]) {
             console.log(`📝 Adding URL to history: ${currentUrl}`)
-            
+
             // For new tab page, ensure it's always the first entry
             if (currentUrl === kNEW_TAB_URL) {
               // If navigating back to new tab page, update index but don't add duplicate
@@ -379,18 +381,22 @@ export class TabStore {
     // This ensures canGoBack/canGoForward reflect the current history state
     const finalHistory = this.tabNavigationHistories[tabId] || []
     const finalCurrentIndex = this.tabHistoryIndexes[tabId] ?? -1
-    
+
     // Use custom history logic if we have meaningful history (more than just current page)
     // Otherwise fall back to WebView's native state
     if (finalHistory.length > 1) {
       tab.canGoBack = finalCurrentIndex > 0
       tab.canGoForward = finalCurrentIndex < finalHistory.length - 1
-      console.log(`🔄 Using custom navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}, historyIndex=${finalCurrentIndex}/${finalHistory.length - 1}`)
+      console.log(
+        `🔄 Using custom navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}, historyIndex=${finalCurrentIndex}/${finalHistory.length - 1}`
+      )
     } else {
       // Fall back to WebView's native state for single-page scenarios
       tab.canGoBack = navState.canGoBack
       tab.canGoForward = navState.canGoForward
-      console.log(`🔄 Using WebView native navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}`)
+      console.log(
+        `🔄 Using WebView native navigation state: canGoBack=${tab.canGoBack}, canGoForward=${tab.canGoForward}`
+      )
     }
 
     console.log(`handleNavigationStateChange(): Final tab state:`, {

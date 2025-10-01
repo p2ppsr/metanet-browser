@@ -146,10 +146,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
   )
 
   return (
-    <View
-      style={StyleSheet.absoluteFill}
-      pointerEvents={visible || isAnimating ? 'auto' : 'none'}
-    >
+    <View style={StyleSheet.absoluteFill} pointerEvents={visible || isAnimating ? 'auto' : 'none'}>
       {(visible || isAnimating) && (
         <Pressable
           style={[styles.backdrop, { backgroundColor: `rgba(0,0,0,${backdropOpacity})` }]}

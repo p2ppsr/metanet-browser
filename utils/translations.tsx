@@ -521,7 +521,7 @@ const resources = {
       // Auth - OTP
       verification_code: '验证码',
       enter_6_digit_code: '输入发送到以下号码的6位数字代码',
-      didnt_receive_code: "没有收到验证码？",
+      didnt_receive_code: '没有收到验证码？',
       resend_code: '重新发送验证码',
       resend_in: '重新发送时间',
       change_phone_number: '更改电话号码',
@@ -2097,7 +2097,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType>({
   currentLanguage: 'en',
-  setCurrentLanguage: () => { }
+  setCurrentLanguage: () => {}
 })
 
 interface LanguageProviderProps {

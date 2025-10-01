@@ -56,7 +56,6 @@ export const usePushNotifications = () => {
     //   data: notification.request.content.data
     // })
     // })
-
     // responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
     //   console.log('📱 Notification tapped:', {
     //     actionIdentifier: response.actionIdentifier,
@@ -66,14 +65,12 @@ export const usePushNotifications = () => {
     //       data: response.notification.request.content.data
     //     }
     //   })
-
     //   const data = response.notification.request.content.data
     //   if (data?.url) {
     //     console.log('🌐 Should navigate to URL:', data.url)
     //     // URL navigation will be handled by the WebView bridge
     //   }
     // })
-
     // return () => {
     //   notificationListener.current?.remove()
     //   responseListener.current?.remove()
@@ -211,9 +208,7 @@ export const usePushNotifications = () => {
       }
 
       // Update local state
-      setPermissions(prev =>
-        prev.map(p => p.origin === origin ? { ...p, permission: 'denied' as const } : p)
-      )
+      setPermissions(prev => prev.map(p => (p.origin === origin ? { ...p, permission: 'denied' as const } : p)))
       setSubscriptions(prev => prev.filter(s => s.origin !== origin))
 
       return true
@@ -238,7 +233,6 @@ export const usePushNotifications = () => {
       // Clear local state
       setPermissions([])
       setSubscriptions([])
-
     } catch (error) {
       console.error('❌ Error clearing permissions:', error)
     }

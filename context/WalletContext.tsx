@@ -597,7 +597,7 @@ export const WalletContextProvider: React.FC<WalletContextProps> = ({ children =
           seekProtocolPermissionsForEncrypting: false,
           seekProtocolPermissionsForHMAC: false,
           seekProtocolPermissionsForSigning: true,
-          seekSpendingPermissions: true,
+          seekSpendingPermissions: true
         })
 
         if (protocolPermissionCallback) {

@@ -115,33 +115,37 @@ export default function DefaultBrowserPrompt() {
 }
 
 export const showManualDefaultBrowserPrompt = () => {
-  Alert.alert('Set as Default Browser', 'Set Metanet Explorer as your default browser to open web links directly in the app.', [
-    {
-      text: 'Cancel',
-      style: 'cancel'
-    },
-    {
-      text: 'Open Settings',
-      onPress: () => {
-        if (Platform.OS === 'android') {
-          Linking.openSettings()
-        } else {
-          Alert.alert(
-            'Set Default Browser',
-            'To set Metanet Explorer as your default browser:\n\n1. Go to Settings\n2. Scroll down to Metanet Explorer\n3. Tap "Default Browser App"\n4. Select Metanet Explorer',
-            [
-              {
-                text: 'Open Settings',
-                onPress: () => Linking.openSettings()
-              },
-              {
-                text: 'Cancel',
-                style: 'cancel'
-              }
-            ]
-          )
+  Alert.alert(
+    'Set as Default Browser',
+    'Set Metanet Explorer as your default browser to open web links directly in the app.',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel'
+      },
+      {
+        text: 'Open Settings',
+        onPress: () => {
+          if (Platform.OS === 'android') {
+            Linking.openSettings()
+          } else {
+            Alert.alert(
+              'Set Default Browser',
+              'To set Metanet Explorer as your default browser:\n\n1. Go to Settings\n2. Scroll down to Metanet Explorer\n3. Tap "Default Browser App"\n4. Select Metanet Explorer',
+              [
+                {
+                  text: 'Open Settings',
+                  onPress: () => Linking.openSettings()
+                },
+                {
+                  text: 'Cancel',
+                  style: 'cancel'
+                }
+              ]
+            )
+          }
         }
       }
-    }
-  ])
+    ]
+  )
 }

@@ -227,7 +227,12 @@ const RecoveryKeySaver = () => {
                   disabled={!isAllChecked}
                 >
                   <Text style={[styles.buttonText, { color: colors.buttonText }]}>Securely Saved</Text>
-                  <Ionicons name={isAllChecked ? "lock-closed" : "lock-open"} size={20} color={colors.buttonText} style={styles.buttonIcon} />
+                  <Ionicons
+                    name={isAllChecked ? 'lock-closed' : 'lock-open'}
+                    size={20}
+                    color={colors.buttonText}
+                    style={styles.buttonIcon}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -257,7 +262,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 5
   },
   scrollView: {
     maxHeight: 450,
@@ -365,7 +370,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '500'
   },
   buttonSecondaryText: {
     fontSize: 16

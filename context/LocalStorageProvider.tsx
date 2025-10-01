@@ -27,14 +27,14 @@ const PASSWORD_KEY = 'password'
 
 export const LocalStorageContext = createContext<LocalStorageContextType>({
   /* non-secure */
-  setSnap: async () => { },
+  setSnap: async () => {},
   getSnap: async () => null,
-  deleteSnap: async () => { },
+  deleteSnap: async () => {},
 
   /* secure */
-  setPassword: async () => { },
+  setPassword: async () => {},
   getPassword: async () => null,
-  deletePassword: async () => { },
+  deletePassword: async () => {},
 
   getItem: AsyncStorage.getItem,
   setItem: AsyncStorage.setItem,
@@ -79,11 +79,11 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
   const setSnap = useCallback(async (snap: number[]): Promise<void> => {
     try {
-      const snapAsJSON = typeof snap === 'string' ? snap : JSON.stringify(snap);
+      const snapAsJSON = typeof snap === 'string' ? snap : JSON.stringify(snap)
       if (Platform.OS === 'ios') {
         await SharedGroupPreferences.setItem(SNAP_KEY, snapAsJSON, APP_GROUP)
       } else {
-        await AsyncStorage.setItem(SNAP_KEY, snapAsJSON);
+        await AsyncStorage.setItem(SNAP_KEY, snapAsJSON)
       }
     } catch (err) {
       console.warn('[setSnap]', err)
@@ -92,7 +92,7 @@ export default function LocalStorageProvider({ children }: { children: React.Rea
 
   const getSnap = useCallback(async (): Promise<number[] | null> => {
     try {
-      let raw: string | null;
+      let raw: string | null
       if (Platform.OS === 'ios') {
         raw = await SharedGroupPreferences.getItem(SNAP_KEY, APP_GROUP)
       } else {

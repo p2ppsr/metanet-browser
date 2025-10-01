@@ -270,7 +270,9 @@ export function createWebViewMessageRouter(ctx: MessageRouterCtx) {
     // Auto-allow at the domain level and signal 'granted' so the page's wrapper calls the original geolocation,
     // which triggers the OS location prompt. This avoids react-native-permissions.
     if (Platform.OS === 'ios') {
-      try { await setDomainPermission(domain, permission, 'allow') } catch(e) {}
+      try {
+        await setDomainPermission(domain, permission, 'allow')
+      } catch (e) {}
       injectIntoActiveTab(
         ctx,
         `

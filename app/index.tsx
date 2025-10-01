@@ -84,7 +84,16 @@ export default function LoginScreen() {
     } finally {
       setLoading(false)
     }
-  }, [selectedWabUrl, selectedMethod, selectedNetwork, selectedStorageUrl, finalizeConfig, setItem, getSnap, managers?.walletManager])
+  }, [
+    selectedWabUrl,
+    selectedMethod,
+    selectedNetwork,
+    selectedStorageUrl,
+    finalizeConfig,
+    setItem,
+    getSnap,
+    managers?.walletManager
+  ])
 
   // Config modal state
   const [showConfig, setShowConfig] = useState(false)
@@ -121,7 +130,7 @@ export default function LoginScreen() {
 
   // Initial app load
   useEffect(() => {
-    ; (async () => {
+    ;(async () => {
       try {
         const snap = await getSnap()
         if (snap) {
@@ -179,9 +188,13 @@ export default function LoginScreen() {
               </View>
             </TouchableOpacity>
 
-            <Text style={[styles.termsText, { paddingHorizontal: 50, color: colors.textSecondary }]}>{t('terms_privacy_agreement')}</Text>
+            <Text style={[styles.termsText, { paddingHorizontal: 50, color: colors.textSecondary }]}>
+              {t('terms_privacy_agreement')}
+            </Text>
 
-            <TouchableOpacity style={styles.configButton} onPress={() => {
+            <TouchableOpacity
+              style={styles.configButton}
+              onPress={() => {
                 // Set mode to web2 immediately when button is pressed
                 setWeb2Mode(true)
 
@@ -195,18 +208,15 @@ export default function LoginScreen() {
                     handleGetStarted()
                   }
                 )
-              }}>
-                <Text style={[styles.configButtonText, { color: '#487dbf' }]}>{t('continue_without_login')}</Text>
+              }}
+            >
+              <Text style={[styles.configButtonText, { color: '#487dbf' }]}>{t('continue_without_login')}</Text>
             </TouchableOpacity>
           </>
         )}
       </View>
-      
-      <ConfigModal
-        visible={showConfig}
-        onDismiss={handleConfigDismiss}
-        onConfigured={handleConfigured}
-      />
+
+      <ConfigModal visible={showConfig} onDismiss={handleConfigDismiss} onConfigured={handleConfigured} />
     </SafeAreaView>
   )
 }
