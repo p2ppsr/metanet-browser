@@ -6,7 +6,7 @@
   "version": "0.4.0",
   "license": "Open BSV",
   "scripts": {
-    "apk-android": "eas build --profile production --platform android --local --verbose-logs --build-logger-level trace",
+    "apk-android": "eas build --profile production-apk --platform android --local --verbose-logs --build-logger-level trace",
     "aab-android": "cd android && ./gradlew bundleRelease",
     "ipa-ios": "eas build --profile production --platform ios --local --verbose-logs --build-logger-level trace",
     "start": "expo start --dev-client",
@@ -21,6 +21,8 @@
     "eas-build-post-install": "USE_FIREBASE=true ./scripts/android-firebase-patch.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "bump:patch": "node scripts/bump-version.js patch",
+    "bump:minor": "node scripts/bump-version.js minor",
     "fix": "npm run format && npm run lint:fix",
     "clean": "rm -rf yarn.lock && rm -rf .expo && rm -rf .expo-shared && rm -rf .vscode && rm -rf .idea && rm -rf ios/Pods && rm -rf android/.gradle && rm -rf android/app/build && rm -rf ./ios"
   },
