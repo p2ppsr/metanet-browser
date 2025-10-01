@@ -1,4 +1,4 @@
-# BSV Browser
+# Metanet Explorer
 
 Enabling identity, micropayments, and use of BSV websites on mobile devices.
 
@@ -21,7 +21,7 @@ npm run configure
 ```
 
 ```
-npm run start
+npm run sart
 ```
 
 - Choose your network (mainnet/testnet), WAB and pick your Auth Method (Twiloo Phone for now)

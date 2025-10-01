@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:139937765639:android:83d8043312391ba7a1cda2",
+        "android_client_info": {
+          "package_name": "app.metanet.explorer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCXrXRvZjrMfIiC7oTjQ7D6rksbFT8Neaw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:139937765639:android:1126c1bac95e5d57a1cda2",
         "android_client_info": {
           "package_name": "org.bsvblockchain.metanet"

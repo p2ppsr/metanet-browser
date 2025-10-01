@@ -1,4 +1,16 @@
-import { WalletInterface, AuthFetch, ProtoWallet, PrivateKey, P2PKH, PublicKey, InternalizeActionArgs, CachedKeyDeriver, Utils, SymmetricKey, CompletedProtoWallet } from '@bsv/sdk';
+import {
+  WalletInterface,
+  AuthFetch,
+  ProtoWallet,
+  PrivateKey,
+  P2PKH,
+  PublicKey,
+  InternalizeActionArgs,
+  CachedKeyDeriver,
+  Utils,
+  SymmetricKey,
+  CompletedProtoWallet
+} from '@bsv/sdk'
 // import { StorageClient, Services, Wallet, WalletSigner, WalletStorageManager } from '@bsv/wallet-toolbox-mobile';
 import { MessageBoxClient } from '@bsv/message-box-client'
 
@@ -44,7 +56,7 @@ function snap2privkey(snap: string): string {
   return Utils.toHex(payloadReader.read(32))
 }
 
-(globalThis as any).run = async (snap: string, messageId: string) => {
+;(globalThis as any).run = async (snap: string, messageId: string) => {
   let key: string
   try {
     key = snap2privkey(snap)
@@ -147,7 +159,7 @@ function snap2privkey(snap: string): string {
     host: 'https://messagebox.babbage.systems'
   })
 
-  console.error('[headless] 🔍 Listing messages from notifications box...');
+  console.error('[headless] 🔍 Listing messages from notifications box...')
   const messages = await messageBoxClient.listMessagesLite({
     messageBox: 'notifications',
     host: 'https://messagebox.babbage.systems'

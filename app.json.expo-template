@@ -2,7 +2,7 @@
   "expo": {
     "name": "Metanet",
     "slug": "metanet-mobile",
-    "version": "0.2.2",
+    "version": "0.4.1",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
@@ -56,7 +56,7 @@
       "useFirebase": false
     },
     "android": {
-      "package": "org.bsvblockchain.metanet",
+      "package": "app.metanet.explorer",
       "permissions": [
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
@@ -97,7 +97,7 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "org.bsvblockchain.metanet",
+      "bundleIdentifier": "app.metanet.explorer",
       "googleServicesFile": "GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs camera access to scan QR codes.",
@@ -107,7 +107,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
-            "CFBundleURLName": "org.bsvblockchain.metanet.urlscheme",
+            "CFBundleURLName": "app.metanet.explorer.urlscheme",
             "CFBundleURLSchemes": [
               "metanet",
               "http",

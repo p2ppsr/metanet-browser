@@ -9,7 +9,5 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": "."
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

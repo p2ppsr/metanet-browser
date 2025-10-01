@@ -2,7 +2,7 @@
   "expo": {
     "name": "Metanet",
     "slug": "metanet-mobile",
-    "version": "0.3.2",
+    "version": "0.4.1",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "metanet",
@@ -57,13 +57,15 @@
       "useFirebase": true
     },
     "android": {
-      "package": "org.bsvblockchain.metanet",
+      "package": "app.metanet.explorer",
       "permissions": [
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
         "android.permission.WAKE_LOCK",
         "android.permission.INTERNET",
         "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
@@ -80,7 +82,10 @@
               "scheme": "http"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         },
         {
           "action": "VIEW",
@@ -89,12 +94,15 @@
               "scheme": "metanet"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
     "ios": {
-      "bundleIdentifier": "org.bsvblockchain.metanet",
+      "bundleIdentifier": "app.metanet.explorer",
       "googleServicesFile": "GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs camera access to scan QR codes.",
@@ -104,17 +112,23 @@
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
-            "CFBundleURLName": "org.bsvblockchain.metanet.urlscheme",
-            "CFBundleURLSchemes": ["metanet"]
+            "CFBundleURLName": "app.metanet.explorer.urlscheme",
+            "CFBundleURLSchemes": [
+              "metanet"
+            ]
           }
         ],
-        "LSApplicationQueriesSchemes": ["https", "http"],
-        "NSLocationWhenInUseUsageDescription": "BSV Browser may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use."
+        "LSApplicationQueriesSchemes": [
+          "https",
+          "http"
+        ],
+        "NSLocationWhenInUseUsageDescription": "Metanet Explorer may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use."
       },
       "entitlements": {
         "aps-environment": "development",
-        "com.apple.developer.associated-domains": ["applinks:*"],
-        "com.apple.developer.web-browser": true
+        "com.apple.developer.associated-domains": [
+          "applinks:*"
+        ]
       }
     },
     "notification": {

@@ -11,9 +11,7 @@ function injectedPolyfills(acceptLanguage: string) {
 
     const send = (method: string, args: any[]) => {
       try {
-        ;(window as any).ReactNativeWebView?.postMessage(
-          JSON.stringify({ type: 'CONSOLE', method, args })
-        )
+        ;(window as any).ReactNativeWebView?.postMessage(JSON.stringify({ type: 'CONSOLE', method, args }))
       } catch {}
     }
 
@@ -41,7 +39,6 @@ function injectedPolyfills(acceptLanguage: string) {
       originalDebug.apply(console, args as any)
       send('debug', args)
     }
-
     ;(window as any).__consolePatched = true
     // Boot message to confirm injection ran
     console.log('[Injected] Console bridge installed')
@@ -560,7 +557,6 @@ function injectedPolyfills(acceptLanguage: string) {
           })
         )
       }
-
       ;(window as any).__consolePatched = true
     }
 

@@ -143,7 +143,8 @@ const resources = {
       ok: 'OK',
       yes: 'Yes',
       no: 'No',
-
+      ask: 'Ask',
+      deny: 'Deny',
       later: 'Later',
 
       // Navigation actions
@@ -151,7 +152,7 @@ const resources = {
       switch_to_desktop_view: 'Switch to Desktop View',
       add_to_device_homescreen: 'Add to Device Homescreen',
       back_to_homepage: 'Back to Homepage',
-      preferences: 'Preferences',
+      notifications: 'Notifications',
       permissions: 'Permissions',
 
       // Browser actions
@@ -301,7 +302,7 @@ const resources = {
       failed_resend_code: 'Failed to resend verification code. Please try again.',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'With identity and payments built in',
       get_started: 'Get Started',
       terms_privacy_agreement: 'By continuing, you agree to our Terms of Service and Privacy Policy',
@@ -321,7 +322,7 @@ const resources = {
       web3_benefit_works_everywhere_desc: 'Access thousands of Web3 apps with the same identity.',
       web3_benefit_future_proof: 'Future-proof',
       web3_benefit_future_proof_desc: 'Be early to the next generation of the internet.',
-      web3_benefits_get_identity: 'Get My Web3 Identity (30s)',
+      web3_benefits_get_identity: '🚀 Get My Web3 Identity (30s)',
       web3_benefits_maybe_later: 'Maybe later'
     }
   },
@@ -373,7 +374,8 @@ const resources = {
       ok: '确定',
       yes: '是',
       no: '否',
-
+      ask: '询问',
+      deny: '拒绝',
       later: '稍后',
 
       // Navigation actions
@@ -485,8 +487,8 @@ const resources = {
       empty: '空',
 
       // Units
-      satoshis: '聪',
-      sats: '聪',
+      satoshis: 'satoshis',
+      sats: 'sats',
 
       // Trust
       trust_network: '信任网络',
@@ -531,7 +533,7 @@ const resources = {
       failed_resend_code: '重新发送验证码失败。请重试。',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: '内置身份和支付功能的浏览器',
       get_started: '开始使用',
       terms_privacy_agreement: '继续即表示您同意我们的服务条款和隐私政策',
@@ -603,7 +605,8 @@ const resources = {
       ok: 'ठीक है',
       yes: 'हाँ',
       no: 'नहीं',
-
+      ask: 'पूछें',
+      deny: 'अस्वीकार',
       later: 'बाद में',
 
       // Navigation actions
@@ -757,7 +760,7 @@ const resources = {
       continue_without_login: 'बिना लॉगिन के जारी रखें',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'पहचान और भुगतान सुविधा के साथ ब्राउज़र',
       get_started: 'शुरू करें',
       terms_privacy_agreement: 'जारी रखकर, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
@@ -815,11 +818,11 @@ const resources = {
       // Apps & Homepage
       recent: 'Reciente',
       recommended: 'Recomendado',
-      customize_homepage: 'Personalizar Página de Inicio',
-      customize_homepage_description: 'Mostrar u ocultar secciones en tu página de inicio',
+      customize_homepage: 'Personalizar Página Inicial',
+      customize_homepage_description: 'Mostrar u ocultar secciones en tu página inicial',
       show_bookmarks: 'Mostrar Marcadores',
       show_recent_apps: 'Mostrar Apps Recientes',
-      show_recommended_apps: 'Mostrar Apps Recomendadas',
+      show_recommended_apps: 'Mostrar Apps Recomendados',
       hide_app: 'Ocultar App',
 
       // Actions
@@ -829,11 +832,13 @@ const resources = {
       ok: 'OK',
       yes: 'Sí',
       no: 'No',
+      ask: 'Preguntar',
+      deny: 'Denegar',
       later: 'Más tarde',
 
       // Navigation actions
-      switch_to_mobile_view: 'Cambiar a Vista Móvil',
-      switch_to_desktop_view: 'Cambiar a Vista de Escritorio',
+      switch_to_mobile_view: 'Cambiar a Visualización Móvil',
+      switch_to_desktop_view: 'Cambiar a Visualización Desktop',
       add_to_device_homescreen: 'Agregar a Pantalla de Inicio',
       back_to_homepage: 'Volver al Inicio',
       notifications: 'Notificaciones',
@@ -870,14 +875,14 @@ const resources = {
       block: 'Bloquear',
 
       // Errors
-      error_loading_page: 'Error al cargar la página',
+      error_loading_page: 'Error al cargar página',
       no_internet: 'Sin conexión a internet',
       invalid_url: 'URL inválida',
       something_went_wrong: 'Algo salió mal',
 
       // States
       loading: 'Cargando...',
-      no_results: 'No se encontraron resultados',
+      no_results: 'Nenhum resultado encontrado',
       empty: 'Vacío',
 
       // Units
@@ -927,7 +932,7 @@ const resources = {
       continue_without_login: 'Continuar sin iniciar sesión',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'Navegador con identidad y pagos integrados',
       get_started: 'Comenzar',
       terms_privacy_agreement: 'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad',
@@ -999,7 +1004,8 @@ const resources = {
       ok: 'OK',
       yes: 'Oui',
       no: 'Non',
-
+      ask: 'Demander',
+      deny: 'Refuser',
       later: 'Plus tard',
 
       // Navigation actions
@@ -1114,7 +1120,7 @@ const resources = {
       continue_without_login: 'Continuer sans se connecter',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'Navigateur avec identité et paiements intégrés',
       get_started: 'Commencer',
 
@@ -1188,7 +1194,8 @@ const resources = {
       ok: 'موافق',
       yes: 'نعم',
       no: 'لا',
-
+      ask: 'اسأل',
+      deny: 'رفض',
       later: 'لاحقاً',
 
       // Navigation actions
@@ -1295,7 +1302,7 @@ const resources = {
       continue_without_login: 'المتابعة بدون تسجيل الدخول',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'متصفح مع الهوية والمدفوعات المدمجة',
       get_started: 'ابدأ',
       terms_privacy_agreement: 'من خلال المتابعة، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا',
@@ -1367,7 +1374,8 @@ const resources = {
       ok: 'OK',
       yes: 'Sim',
       no: 'Não',
-
+      ask: 'Perguntar',
+      deny: 'Negar',
       later: 'Mais tarde',
 
       // Navigation actions
@@ -1461,7 +1469,7 @@ const resources = {
       continue: 'Continuar',
       forgot_password_link: 'Esqueceu a senha?',
       auth_failed_maybe_password: 'Falha na autenticação, talvez a senha esteja incorreta?',
-      auth_failed_try_again: 'Falha na autenticação. Tente novamente.',
+      auth_failed_try_again: 'Falha na autenticação. Por favor, tente novamente.',
 
       // Auth - OTP
       enter_verification_code: 'Digite o Código de Verificação',
@@ -1482,7 +1490,7 @@ const resources = {
       continue_without_login: 'Continuar sem fazer login',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'Navegador com identidade e pagamentos integrados',
       get_started: 'Começar',
       terms_privacy_agreement: 'Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade',
@@ -1554,7 +1562,8 @@ const resources = {
       ok: 'ঠিক আছে',
       yes: 'হ্যাঁ',
       no: 'না',
-
+      ask: 'জিজ্ঞাসা করুন',
+      deny: 'অস্বীকার করুন',
       later: 'পরে',
 
       // Navigation actions
@@ -1637,7 +1646,7 @@ const resources = {
       enter_password_subtitle: 'আপনার ওয়ালেট অ্যাক্সেস করতে অনুগ্রহ করে আপনার পাসওয়ার্ড লিখুন',
       enter_password_continue: 'অনুগ্রহ করে চালিয়ে যেতে আপনার পাসওয়ার্ড লিখুন',
       password: 'পাসওয়ার্ড',
-      password_min_chars: 'পাসওয়ার্ড কমপক্ষে ৬টি অক্ষর হতে হবে',
+      password_min_chars: 'পাসওয়ার্ড কমপক্ষে 6টি অক্ষর হতে হবে',
       continue: 'চালিয়ে যান',
       forgot_password_link: 'পাসওয়ার্ড ভুলে গেছেন?',
       auth_failed_maybe_password: 'প্রমাণীকরণ ব্যর্থ, সম্ভবত পাসওয়ার্ড ভুল?',
@@ -1645,7 +1654,7 @@ const resources = {
 
       // Auth - OTP
       enter_verification_code: 'যাচাইকরণ কোড লিখুন',
-      enter_6_digit_code: 'আপনার ফোনে পাঠানো ৬-সংখ্যার কোড লিখুন',
+      enter_6_digit_code: 'আপনার ফোনে পাঠানো 6-সংখ্যার কোড লিখুন',
       verify: 'যাচাই করুন',
       resend_code: 'কোড পুনরায় পাঠান',
       invalid_code: 'অবৈধ কোড',
@@ -1662,7 +1671,7 @@ const resources = {
       continue_without_login: 'লগইন ছাড়া চালিয়ে যান',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'পরিচয় এবং পেমেন্ট সুবিধা সহ ব্রাউজার',
       get_started: 'শুরু করুন',
       terms_privacy_agreement: 'চালিয়ে যেতে, আপনি আমাদের সেবার শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মত হচ্ছেন',
@@ -1682,7 +1691,7 @@ const resources = {
       web3_benefit_works_everywhere_desc: 'একই পরিচয়ের সাথে হাজার হাজার Web3 অ্যাপে অ্যাক্সেস করুন।',
       web3_benefit_future_proof: 'ভবিষ্যত-প্রমাণিত',
       web3_benefit_future_proof_desc: 'ইন্টারনেটের পরবর্তী প্রজন্মে তাড়াতাড়ি থাকুন।',
-      web3_benefits_get_identity: '🚀 আমার Web3 পরিচয় পান (৩০ সেকেন্ড)',
+      web3_benefits_get_identity: '🚀 আমার Web3 পরিচয় প্রাপ্ত করুন (30 সেকেন্ড)',
       web3_benefits_maybe_later: 'হয়তো পরে'
     }
   },
@@ -1734,7 +1743,8 @@ const resources = {
       ok: 'OK',
       yes: 'Да',
       no: 'Нет',
-
+      ask: 'Спросить',
+      deny: 'Отказать',
       later: 'Позже',
 
       // Navigation actions
@@ -1841,7 +1851,7 @@ const resources = {
       continue_without_login: 'Продолжить без входа',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'Браузер со встроенной идентификацией и платежами',
       get_started: 'Начать',
 
@@ -1915,7 +1925,8 @@ const resources = {
       ok: 'OK',
       yes: 'Ya',
       no: 'Tidak',
-
+      ask: 'Tanya',
+      deny: 'Tolak',
       later: 'Nanti',
 
       // Navigation actions
@@ -1942,6 +1953,13 @@ const resources = {
       theme: 'Tema',
       currency_format: 'Format Mata Uang',
       language: 'Bahasa',
+      appearance: 'Tampilan',
+      choose_theme_mode: 'Pilih mode tema yang Anda sukai',
+      light: 'Terang',
+      dark: 'Gelap',
+      system_default: 'Bawaan sistem',
+      account: 'Akun',
+      logout: 'Keluar',
 
       // Notifications
       notification_permission: 'Izin Notifikasi',
@@ -1961,7 +1979,7 @@ const resources = {
       empty: 'Kosong',
 
       // Units
-      satoshis: 'satoshi',
+      satoshis: 'satoshis',
       sats: 'sats',
 
       // Trust
@@ -2002,7 +2020,7 @@ const resources = {
       continue_without_login: 'Lanjutkan tanpa masuk',
 
       // Login/Welcome Screen
-      metanet: 'BSV Browser',
+      metanet: 'Metanet Explorer',
       browser_with_identity_payments: 'Browser dengan identitas dan pembayaran terintegrasi',
       get_started: 'Mulai',
       terms_privacy_agreement: 'Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi kami',
@@ -2019,7 +2037,7 @@ const resources = {
       web3_benefit_instant_desc: 'Pembayaran, akses, verifikasi - semuanya terjadi dalam hitungan detik.',
       web3_benefit_own_data: 'Data Anda milik Anda',
       web3_benefit_own_data_desc: 'Tidak ada perusahaan yang melacak Anda atau menjual informasi Anda.',
-      web3_benefit_works_everywhere: 'Bekerja di mana saja',
+      web3_benefit_works_everywhere: 'Fungsional di mana saja',
       web3_benefit_works_everywhere_desc: 'Akses ribuan aplikasi Web3 dengan identitas yang sama.',
       web3_benefit_future_proof: 'Tahan masa depan',
       web3_benefit_future_proof_desc: 'Jadilah yang terdepan dalam generasi internet berikutnya.',
@@ -2079,7 +2097,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType>({
   currentLanguage: 'en',
-  setCurrentLanguage: () => { }
+  setCurrentLanguage: () => {}
 })
 
 interface LanguageProviderProps {

@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>BSV Browser</string>
+    <string>Metanet</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -19,14 +19,14 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.3.3</string>
+    <string>0.4.1</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
     <array>
       <dict>
         <key>CFBundleURLName</key>
-        <string>org.bsvblockchain.metanet.urlscheme</string>
+        <string>app.metanet.explorer.urlscheme</string>
         <key>CFBundleURLSchemes</key>
         <array>
           <string>metanet</string>
@@ -40,7 +40,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>3</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSApplicationQueriesSchemes</key>
@@ -64,7 +64,7 @@
     <key>NSFaceIDUsageDescription</key>
     <string>This app uses Face ID/Touch ID to securely authenticate you and protect your wallet.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>BSV Browser may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use.</string>
+    <string>Metanet Explorer may request your location to enable features like discovering nearby devices/services and providing region-specific functionality. Your location is only used while the app is in use.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>This app needs microphone access for video recording features.</string>
     <key>NSPhotoLibraryUsageDescription</key>

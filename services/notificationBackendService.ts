@@ -50,7 +50,7 @@ export class NotificationBackendService {
   private static instance: NotificationBackendService
   private userKey: string | null = null
 
-  private constructor() { }
+  private constructor() {}
 
   static getInstance(): NotificationBackendService {
     if (!NotificationBackendService.instance) {

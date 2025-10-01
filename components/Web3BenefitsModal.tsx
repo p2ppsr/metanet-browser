@@ -76,18 +76,18 @@ const Web3BenefitsModal: React.FC<Web3BenefitsModalProps> = ({
             </Text>
             <Text style={[{ fontSize: 16, fontWeight: 'bold', color: colors.textPrimary }]}>Data Sovereignty</Text>
             <Text style={[{ fontSize: 14, lineHeight: 20, marginBottom: 8, color: colors.textPrimary }]}>
-             you're in control, with no 3rd party tracking.
+              you're in control, with no 3rd party tracking.
             </Text>
           </View>
 
-          <Text style={[{ padding: 20, fontSize: 16, fontWeight: 'bold', color: colors.textPrimary }]}>Become an early adopter and lead your peers to the future of everything.</Text>
+          <Text style={[{ padding: 20, fontSize: 16, fontWeight: 'bold', color: colors.textPrimary }]}>
+            Become an early adopter and lead your peers to the future of everything.
+          </Text>
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={onGoToLogin}>
-              <Text style={[styles.primaryButtonText, { color: colors.buttonText }]}>
-                Get Started
-              </Text>
+              <Text style={[styles.primaryButtonText, { color: colors.buttonText }]}>Get Started</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.secondaryButton} onPress={onContinueWithoutLogin}>
