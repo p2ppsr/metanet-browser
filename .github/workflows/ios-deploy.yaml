@@ -41,4 +41,4 @@ jobs:
         run: npx eas build --platform ios --profile production --non-interactive
 
       - name: EAS Submit (iOS production)
-        run: npx eas submit --platform ios --profile production --non-interactive --latest --asc-app-id ${{ secrets.ASC_APP_ID }}
+        run: npx eas submit --platform ios --profile production --non-interactive --latest
